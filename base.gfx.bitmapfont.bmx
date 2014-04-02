@@ -423,12 +423,14 @@ Type TBitmapFont
 		endif
 
 		'move along y according alignment
+		'-> aligned top: no change
+		'-> aligned_bottom: move up by whole blockheight so last line ends at Y
+		'-> aligned inbetween: move accordingly
 		if alignment
 			'empty space = height - (..)
 			'so alignTop = add 0 of that space, alignBottom = add 100% of that space
 			if alignment.GetY() <> ALIGN_TOP
-				y :+ alignment.GetY() * (h - (lines.length-1)*lineHeight)
-				y :- blockHeight
+				y :- alignment.GetY() * blockHeight
 			endif
 		endif
 
