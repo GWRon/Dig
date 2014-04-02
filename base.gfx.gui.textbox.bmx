@@ -16,7 +16,6 @@ Type TGUITextBox Extends TGUIobject
 	Field _autoAdjustHeight:Int	= False
 
 
-	'will be added to general GuiManager
 	Method Create:TGUITextBox(position:TPoint = null, dimension:TPoint = null, text:String, limitState:String="")
 		Super.CreateBase(position, dimension, limitState)
 

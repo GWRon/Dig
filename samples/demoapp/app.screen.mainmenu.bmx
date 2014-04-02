@@ -9,6 +9,7 @@ Import "../../base.gfx.gui.checkbox.bmx"
 Import "../../base.gfx.gui.input.bmx"
 Import "../../base.gfx.gui.textbox.bmx"
 Import "../../base.gfx.gui.panel.bmx"
+Import "../../base.gfx.gui.list.base.bmx"
 Import "app.screen.bmx"
 
 Type TScreenMainMenu extends TScreenMenuBase
@@ -27,6 +28,13 @@ Type TScreenMainMenu extends TScreenMenuBase
 		local panel:TGUIPanel = new TGUIPanel.Create(new TPoint.Init(20,250), new TPoint.Init(120, 150), self.GetName())
 		panel.SetBackground( new TGUIBackgroundBox.Create(null, null) )
 		panel.SetValue("press ~qspace~q to go to next screen")
+
+		local baseList:TGUIListBase = new TGUIListBase.Create(new TPoint.Init(20,450), new TPoint.Init(130,80), self.GetName())
+		'add some items to that list
+		for local i:int = 1 to 5
+			'base items do not have a size - so we have to give a manual one
+			baseList.AddItem( new TGUIListItem.Create(null, new TPoint.Init(100, 20), "test "+i) )
+		Next
 
 		'register demo click listener - only listen to click events of
 		'the "button" created above
