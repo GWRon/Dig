@@ -10,6 +10,7 @@ Import "../../base.gfx.gui.input.bmx"
 Import "../../base.gfx.gui.textbox.bmx"
 Import "../../base.gfx.gui.panel.bmx"
 Import "../../base.gfx.gui.list.base.bmx"
+Import "../../base.gfx.gui.list.selectlist.bmx"
 Import "app.screen.bmx"
 
 Type TScreenMainMenu extends TScreenMenuBase
@@ -33,7 +34,14 @@ Type TScreenMainMenu extends TScreenMenuBase
 		'add some items to that list
 		for local i:int = 1 to 5
 			'base items do not have a size - so we have to give a manual one
-			baseList.AddItem( new TGUIListItem.Create(null, new TPoint.Init(100, 20), "test "+i) )
+			baseList.AddItem( new TGUIListItem.Create(null, new TPoint.Init(100, 20), "basetest "+i) )
+		Next
+
+		local selectList:TGUISelectList = new TGUISelectList.Create(new TPoint.Init(200,450), new TPoint.Init(130,80), self.GetName())
+		'add some items to that list
+		for local i:int = 1 to 5
+			'base items do not have a size - so we have to give a manual one
+			selectList.AddItem( new TGUISelectListItem.Create(null, null, "selecttest "+i) )
 		Next
 
 		'register demo click listener - only listen to click events of

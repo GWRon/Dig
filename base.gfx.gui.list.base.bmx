@@ -10,7 +10,7 @@ End Rem
 SuperStrict
 Import "base.gfx.gui.bmx"
 Import "base.gfx.gui.scroller.bmx"
-Import "base.gfx.gui.panel.scrollable.bmx"
+Import "base.gfx.gui.panel.scrollablepanel.bmx"
 Import "base.util.helper.bmx"
 
 
@@ -676,6 +676,9 @@ Type TGUIListItem Extends TGUIobject
 
 
     Method Create:TGUIListItem(pos:TPoint=null, dimension:TPoint=null, value:String="")
+		'have a basic size (specify a dimension in your custom type)
+		if not dimension then dimension = new TPoint.Init(80,20)
+
 		'limit this items to nothing - as soon as we parent it, it will
 		'follow the parents limits
    		Super.CreateBase(pos, dimension, "")
@@ -775,32 +778,33 @@ Type TGUIListItem Extends TGUIobject
 		If Not(Self._flags & GUI_OBJECT_DRAGGED)
 			parent = Self._parent
 			If TGUIPanel(parent) Then parent = TGUIPanel(parent)._parent
-
 			If TGUIListBase(parent) Then draw = TGUIListBase(parent).RestrictViewPort()
 		EndIf
 		If draw
 			local oldCol:TColor = new TColor.Get()
 
+			Local maxWidth:Int = GetParent().getContentScreenWidth() - rect.getX()
+
 			'self.GetScreenX() and self.GetScreenY() include parents coordinate
 			SetColor 0,0,0
-			DrawRect(atPoint.GetX(), atPoint.GetY(), Self.rect.GetW(), Self.rect.GetH())
+			DrawRect(atPoint.GetX(), atPoint.GetY(), maxWidth, rect.getH())
 			If Self._flags & GUI_OBJECT_DRAGGED
 				SetColor 125,0,125
 			Else
 				SetColor 125,125,125
 			EndIf
-			DrawRect(atPoint.GetX() + 1, atPoint.GetY() + 1, Self.rect.GetW()-2, Self.rect.GetH()-2)
+			DrawRect(atPoint.GetX() + 1, atPoint.GetY() + 1, maxWidth-2, rect.getH()-2)
 
 			'hovered
 			if mouseover
 				SetBlend LightBlend
 				SetAlpha 0.25 * GetAlpha()
-				DrawRect(atPoint.GetX() + 1, atPoint.GetY() + 1, Self.rect.GetW()-2, Self.rect.GetH()-2)
+				DrawRect(atPoint.GetX() + 1, atPoint.GetY() + 1, maxWidth-2, rect.getH()-2)
 				SetAlpha 4 * GetAlpha()
 				SetBlend AlphaBlend
 			endif
 
-			GetFont().draw(Self.value + " [" + Self._id + "]", atPoint.GetX() + 5, atPoint.GetY() + 2 + 0.5*(Self.rect.getH() - Self.GetFont().getHeight(Self.value)), Self.valueColor)
+			GetFont().drawBlock(value + " [" + Self._id + "]", atPoint.GetX() + 5, atPoint.GetY() + 2 + 0.5*(rect.getH() - GetFont().getHeight(value)), maxWidth-2, rect.GetH(), null, valueColor)
 
 			oldCol.SetRGBA()
 		EndIf

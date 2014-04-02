@@ -47,40 +47,40 @@ Type TRegistryFontLoader extends TRegistryBaseLoader
 		endif
 
 
+
 		'=== HANDLE "<FONT>" ===
-			Local name:String	= Lower( xmlLoader.xml.FindValue(childNode, "name", "") )
-			Local url:String	= xmlLoader.xml.FindValue(childNode, "url", "")
-			Local size:Int		= xmlLoader.xml.FindValueInt(childNode, "size", 10)
-			Local setDefault:Int= xmlLoader.xml.FindValueInt(childNode, "default", 0)
+		Local name:String	= Lower( xmlLoader.xml.FindValue(childNode, "name", "") )
+		Local url:String	= xmlLoader.xml.FindValue(childNode, "url", "")
+		Local size:Int		= xmlLoader.xml.FindValueInt(childNode, "size", 10)
+		Local setDefault:Int= xmlLoader.xml.FindValueInt(childNode, "default", 0)
 
-			url = xmlLoader.ConvertURI(url)
+		url = xmlLoader.ConvertURI(url)
 
-			Local flags:Int = 0
-			Local flagsstring:String = xmlLoader.xml.FindValue(childNode, "flags", "")
-			If flagsstring <> ""
-				Local flagsarray:String[] = flagsstring.split(",")
-				For Local flag:String = EachIn flagsarray
-					flag = Upper(flag.Trim())
-					If flag = "BOLDFONT" Then flags = flags + BOLDFONT
-					If flag = "ITALICFONT" Then flags = flags + ITALICFONT
-				Next
+		Local flags:Int = 0
+		Local flagsstring:String = xmlLoader.xml.FindValue(childNode, "flags", "")
+		If flagsstring <> ""
+			Local flagsarray:String[] = flagsstring.split(",")
+			For Local flag:String = EachIn flagsarray
+				flag = Upper(flag.Trim())
+				If flag = "BOLDFONT" Then flags = flags + BOLDFONT
+				If flag = "ITALICFONT" Then flags = flags + ITALICFONT
+			Next
+		EndIf
+
+		If name="" Or url="" Then Return 0
+		Local font:TGW_BitmapFont = Assets.fonts.AddFont(name, url, size, SMOOTHFONT +flags)
+
+		If setDefault
+			If flags & BOLDFONT
+				Assets.fonts.baseFontBold = font
+			ElseIf flags & ITALICFONT
+				Assets.fonts.baseFontItalic = font
+			ElseIf name = "smalldefault"
+				Assets.fonts.baseFontSmall = font
+			Else
+				Assets.fonts.baseFont = font
 			EndIf
-
-			If name="" Or url="" Then Return 0
-			Local font:TGW_BitmapFont = Assets.fonts.AddFont(name, url, size, SMOOTHFONT +flags)
-
-			If setDefault
-				If flags & BOLDFONT
-					Assets.fonts.baseFontBold = font
-				ElseIf flags & ITALICFONT
-					Assets.fonts.baseFontItalic = font
-				ElseIf name = "smalldefault"
-					Assets.fonts.baseFontSmall = font
-				Else
-					Assets.fonts.baseFont = font
-				EndIf
-			EndIf
-
+		EndIf
 
 
 
@@ -139,7 +139,6 @@ Type TRegistryFontLoader extends TRegistryBaseLoader
 		local url:string = data.GetString("url")
 		if url = "" then return FALSE
 
-
 		'Print "LoadSpritePackResource: "+_name + " " + _flags + " ["+url+"]"
 		Local img:TImage = LoadImage(url, data.GetInt("flags", 0))
 		Local spritePack:TSpritePack = new TSpritePack.Init(img, data.GetString("name"))
@@ -168,10 +167,8 @@ Type TRegistryFontLoader extends TRegistryBaseLoader
 				), ..
 				childData.GetInt("frames") ..
 			)
-			'search for ninepatch
-'			if childData.GetBool("ninepatch")
-				sprite.EnableNinePatch()
-'			endif
+			'try to enable ninePatch (read borders)
+			sprite.EnableNinePatch()
 
 			'recolor/colorize?
 			If childData.GetInt("r",-1) >= 0 And childData.GetInt("g",-1) >= 0 And childData.GetInt("b",-1) >= 0

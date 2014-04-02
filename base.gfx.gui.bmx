@@ -646,13 +646,25 @@ Type TGUIobject
 	End Method
 
 
-	Method getClassName:String()
+	Method GetClassName:String()
 		Return TTypeId.ForObject(Self).Name()
 '		return self.className
 	End Method
 
 
-	Method getParent:TGUIobject(parentClassName:String="", strictMode:Int=False)
+	'convencience function to return the uppermost parent
+	Method GetUppermostParent:TGUIObject()
+		'also possible:
+		'getParent("someunlikelyname")
+		if _parent then return _parent.GetUppermostParent()
+		return self
+	End Method
+
+
+	'returns the requested parent
+	'if parentclassname is NOT found and <> "" you get the uppermost
+	'parent returned
+	Method GetParent:TGUIobject(parentClassName:String="", strictMode:Int=False)
 		'if no special parent is requested, just return the direct parent
 		If parentClassName="" Then Return _parent
 
