@@ -5,7 +5,6 @@ Rem
 End Rem
 SuperStrict
 Import "base.gfx.gui.bmx"
-Import "base.gfx.gui.label.bmx"
 Import "base.util.registry.spriteloader.bmx"
 
 
@@ -30,12 +29,22 @@ Type TGUIBackgroundBox Extends TGUIobject
 	End Method
 
 
-	'private getter
+	Method GetPadding:TRectangle()
+		'if no manual padding was setup - use sprite padding
+		if not _padding then return GetSprite().GetNinePatchContentBorder()
+		Return Super.GetPadding()
+	End Method
+
+
 	'acts as cache
-	Method _GetSprite:TSprite()
+	Method GetSprite:TSprite()
 		'refresh cache if not set or wrong sprite name
 		if not sprite or sprite.GetName() <> spriteBaseName
 			sprite = GetSpriteFromRegistry(spriteBaseName)
+			'new -non default- sprite: adjust appearance
+			if sprite.GetName() <> "defaultsprite"
+				SetAppearanceChanged(TRUE)
+			endif
 		endif
 		return sprite
 	End Method
@@ -46,7 +55,7 @@ Type TGUIBackgroundBox Extends TGUIobject
 		local oldCol:TColor = new TColor.Get()
 
 		SetAlpha oldCol.a * spriteAlpha
-		_GetSprite().DrawArea(drawPos.getX(), drawPos.getY(), GetScreenWidth(), GetScreenHeight())
+		GetSprite().DrawArea(drawPos.getX(), drawPos.getY(), GetScreenWidth(), GetScreenHeight())
 
 		oldCol.SetRGBA()
 	End Method

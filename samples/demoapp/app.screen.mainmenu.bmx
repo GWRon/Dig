@@ -8,6 +8,7 @@ Import "../../base.gfx.gui.backgroundbox.bmx"
 Import "../../base.gfx.gui.checkbox.bmx"
 Import "../../base.gfx.gui.input.bmx"
 Import "../../base.gfx.gui.textbox.bmx"
+Import "../../base.gfx.gui.panel.bmx"
 Import "app.screen.bmx"
 
 Type TScreenMainMenu extends TScreenMenuBase
@@ -23,7 +24,10 @@ Type TScreenMainMenu extends TScreenMenuBase
 		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TPoint.Init(120,50), null, true, "anklicken", self.GetName())
 
 		local text:TGUITextbox = new TGUITextbox.Create(new TPoint.Init(20,90), new TPoint.Init(100,100), "Klick hier rein wenn es geht ich bin mehrzeilig.", self.GetName())
-		local bgbox:TGUIBackgroundBox = new TGUIBackgroundBox.Create(new TPoint.Init(20,150), new TPoint.Init(50, 50), self.GetName())
+		local panel:TGUIPanel = new TGUIPanel.Create(new TPoint.Init(20,250), new TPoint.Init(100, 100), self.GetName())
+		panel.SetBackground( new TGUIBackgroundBox.Create(null, null) )
+		panel.SetValue("this panels text")
+		panel.SetValue("this")
 	End Method
 
 
