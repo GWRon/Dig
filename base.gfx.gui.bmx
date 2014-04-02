@@ -32,6 +32,9 @@ Const GUI_OBJECT_ACCEPTS_DROP:Int				= 2^9
 Const GUI_OBJECT_CAN_RECEIVE_KEYSTROKES:Int		= 2^10
 Const GUI_OBJECT_DRAWMODE_GHOST:Int				= 2^11
 
+'===== GUI STATUS CONSTANTS =====
+CONST GUI_OBJECT_STATUS_APPEARANCE_CHANGED:Int	= 2^0
+
 Const GUI_OBJECT_ORIENTATION_VERTICAL:Int		= 0
 Const GUI_OBJECT_ORIENTATION_HORIZONTAL:Int		= 1
 
@@ -516,7 +519,6 @@ Global GUIManager:TGUIManager = TGUIManager.GetInstance()
 Type TGUIobject
 	Field rect:TRectangle = new TRectangle.Init(-1,-1,-1,-1)
 	Field positionBackup:TPoint = Null
-	Field padding:TRectangle = new TRectangle.Init(0,0,0,0)
 	'storage for additional data
 	Field data:TData = new TData
 	Field scale:Float = 1.0
@@ -532,7 +534,10 @@ Type TGUIobject
 	Field mouseOver:Int	= 0						'could be done with TPoint
 	Field children:TList = Null
 	Field _id:Int
+	Field _padding:TRectangle = null 'by default no padding
 	Field _flags:Int = 0
+	'status of the widget: eg. GUI_OBJECT_STATUS_APPEARANCE_CHANGED
+	Field _status:int = 0
 	'the font used to display text in the widget
 	Field _font:TBitmapFont
 	'time when item got dragged, maybe find a better name
@@ -792,6 +797,39 @@ Type TGUIobject
 	End Method
 
 
+	Method HasStatus:Int(statusCode:Int)
+		Return _status & statusCode
+	End Method
+
+
+	Method SetStatus(statusCode:Int, enable:Int=True)
+		If enable
+			_status :| statusCode
+		Else
+			_status :& ~statusCode
+		EndIf
+	End Method
+
+
+	Method IsAppearanceChanged:Int()
+		Return _status & GUI_OBJECT_STATUS_APPEARANCE_CHANGED
+	End Method
+
+
+	Method SetAppearanceChanged:Int(bool:int)
+		SetStatus(GUI_OBJECT_STATUS_APPEARANCE_CHANGED, bool)
+	End Method
+
+	'called when appearance changes - override in widgets to react
+	'to it
+	'do not call this directly, this is handled at the end of
+	'each "update" call so multiple things can set "appearanceChanged"
+	'but this function is called only "once"
+	Method onStatusAppearanceChange:int()
+		'
+	End Method
+
+
 	Method isDragable:Int()
 		Return _flags & GUI_OBJECT_DRAGABLE
 	End Method
@@ -869,13 +907,18 @@ Type TGUIobject
 
 
 	Method SetPadding:Int(top:Int,Left:Int,bottom:Int,Right:Int)
-		padding.setTLBR(top,Left,bottom,Right)
+		if not _padding
+			_padding = new TRectangle.Init(top, left, bottom, right)
+		else
+			_padding.setTLBR(top,Left,bottom,Right)
+		endif
 		resize()
 	End Method
 
 
 	Method GetPadding:TRectangle()
-		Return padding
+		if not _padding then _padding = new TRectangle.Init(0,0,0,0)
+		Return _padding
 	End Method
 
 
@@ -1042,19 +1085,19 @@ Type TGUIobject
 
 	'at which x-coordinate has content/children to be drawn
 	Method GetContentScreenX:Float()
-		Return GetScreenX() + padding.getLeft()
+		Return GetScreenX() + GetPadding().getLeft()
 	End Method
 	'at which y-coordinate has content/children to be drawn
 	Method GetContentScreenY:Float()
-		Return GetScreenY() + padding.getTop()
+		Return GetScreenY() + GetPadding().getTop()
 	End Method
 	'available width for content/children
 	Method GetContentScreenWidth:Float()
-		Return GetScreenWidth() - (padding.getLeft() + padding.getRight())
+		Return GetScreenWidth() - (GetPadding().getLeft() + GetPadding().getRight())
 	End Method
 	'available height for content/children
 	Method GetContentScreenHeight:Float()
-		Return GetScreenHeight() - (padding.getTop() + padding.getBottom())
+		Return GetScreenHeight() - (GetPadding().getTop() + GetPadding().getBottom())
 	End Method
 
 
@@ -1169,6 +1212,12 @@ Type TGUIobject
 
 
 	Method Update:Int()
+		'if appearance changed since last update tick: inform widget
+		If isAppearanceChanged()
+			onStatusAppearanceChange()
+			SetAppearanceChanged(false)
+		Endif
+
 		'always be above parent
 		If _parent And _parent.rect.position.z >= rect.position.z Then setZIndex(_parent.rect.position.z+10)
 
@@ -1306,7 +1355,6 @@ Type TGUIobject
 					EndIf
 				EndIf
 			EndIf
-
 		EndIf
 	End Method
 
