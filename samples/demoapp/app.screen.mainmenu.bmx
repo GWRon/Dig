@@ -16,18 +16,17 @@ Type TScreenMainMenu extends TScreenMenuBase
 
 
 	Method Setup:Int()
-		local button:TGUIButton = new TGUIButton.Create(new TPoint.Init(20,20), new TPoint.Init(100,-1), "Klick?", self.GetName())
-		local input:TGUIInput = new TGUIInput.Create(new TPoint.Init(20,50), new TPoint.Init(100,-1), "leer", 20, self.GetName())
-		input.SetOverlay("gfx_gui_overlay_player")
+		local button:TGUIButton = new TGUIButton.Create(new TPoint.Init(20,20), new TPoint.Init(130,-1), "Clickeriki?", self.GetName())
+		local input:TGUIInput = new TGUIInput.Create(new TPoint.Init(20,55), new TPoint.Init(130,-1), "empty", 20, self.GetName())
+		input.SetOverlay("gfx_gui_icon_arrowRight")
 
-		local arrow:TGUIArrowButton = new TGUIArrowButton.Create(new TPoint.Init(120,20), null, "left", self.GetName())
-		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TPoint.Init(120,50), null, true, "anklicken", self.GetName())
+		local arrow:TGUIArrowButton = new TGUIArrowButton.Create(new TPoint.Init(155,20), null, "left", self.GetName())
+		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TPoint.Init(155,55), null, true, "checkbox", self.GetName())
 
-		local text:TGUITextbox = new TGUITextbox.Create(new TPoint.Init(20,90), new TPoint.Init(100,100), "Klick hier rein wenn es geht ich bin mehrzeilig.", self.GetName())
-		local panel:TGUIPanel = new TGUIPanel.Create(new TPoint.Init(20,250), new TPoint.Init(100, 100), self.GetName())
+		local text:TGUITextbox = new TGUITextbox.Create(new TPoint.Init(20,90), new TPoint.Init(100,100), "I am a multiline textbox. Not pretty but nice to have.", self.GetName())
+		local panel:TGUIPanel = new TGUIPanel.Create(new TPoint.Init(20,250), new TPoint.Init(120, 150), self.GetName())
 		panel.SetBackground( new TGUIBackgroundBox.Create(null, null) )
-		panel.SetValue("this panels text")
-		panel.SetValue("this")
+		panel.SetValue("press ~qspace~q to go to next screen")
 	End Method
 
 
@@ -41,6 +40,8 @@ Type TScreenMainMenu extends TScreenMenuBase
 		If KeyManager.IsHit(KEY_SPACE)
 			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("room1") )
 		Endif
+
+		GuiManager.Update(self.name)
 	End Method
 
 
@@ -55,5 +56,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 			logo.Draw( GraphicsWidth()/2 - logo.area.GetW() / 2, 100)
 			SetAlpha oldAlpha
 		Endif
+
+		GuiManager.Draw(self.name)
 	End Method
 End Type

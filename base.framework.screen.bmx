@@ -327,6 +327,8 @@ Type TScreenFader
 
 	Method Render:Int()
 		If Not active then Return False
+		local oldCol:TColor = new TColor.Get()
+
 		If fadeOut
 			SetAlpha(GetProgress())
 		Else
@@ -334,8 +336,8 @@ Type TScreenFader
 		EndIf
 		SetColor(0, 0, 0)
 		DrawRect(0, 0, GraphicsWidth(), GraphicsHeight())
-		SetAlpha(1.0)
-		SetColor(255, 255, 255)
+
+		oldCol.SetRGBA()
 	End Method
 End Type
 

@@ -20,7 +20,7 @@ Type TGUIArrowButton Extends TGUIObject
 
 	Method Create:TGUIArrowButton(pos:TPoint, dimension:TPoint, direction:String="LEFT", limitState:String = "")
 		'setup base widget
-		Super.CreateBase(pos, dimension, State)
+		Super.CreateBase(pos, dimension, limitState)
 
 		SetDirection(direction)
 		setZindex(40)

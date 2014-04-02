@@ -33,9 +33,11 @@ End Type
 Type TScreenMenuBase extends TScreen
 
 	Method Update:int()
+		'
 	End Method
 
 	Method Render:int()
+		'draw a background on all menus
 		SetColor(255,255,255)
 		GetSpriteFromRegistry("gfx_startscreen").Draw(0,0)
 	End Method

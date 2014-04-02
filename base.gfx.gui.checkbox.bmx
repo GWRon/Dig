@@ -22,7 +22,7 @@ Type TGUICheckBox  Extends TGUIObject
 
 	Method Create:TGUICheckbox(pos:TPoint, dimension:TPoint, checked:Int=False, labelValue:String, limitState:String="")
 		'setup base widget
-		Super.CreateBase(pos, dimension, State)
+		Super.CreateBase(pos, dimension, limitState)
 
 		SetZindex(40)
 		SetValue(labelValue)

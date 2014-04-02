@@ -42,6 +42,11 @@ Type TApp
 	End Method
 
 
+	Method SetTitle:Int(title:String)
+		AppTitle = title
+	End Method
+
+
 	Function __Update:int()
 		'refresh mouse/keyboard
 		MouseManager.ChangeStatus()

@@ -54,10 +54,7 @@ Type TMyApp extends TGraphicalApp
 		Super.Update()
 
 		'=== UPDATE GUI ===
-		'screen specific gui updates
-		local screen:TScreen = GetScreenManager().GetCurrent()
-		If screen then GuiManager.Update(screen.name)
-		'system wide gui updates
+		'system wide gui elements
 		GuiManager.Update("SYSTEM")
 
 		'check if new resources have to get loaded
@@ -70,10 +67,7 @@ Type TMyApp extends TGraphicalApp
 
 	Method RenderContent:Int()
 		'=== RENDER GUI ===
-		'screen specific gui updates
-		local screen:TScreen = GetScreenManager().GetCurrent()
-		If screen then GuiManager.Draw(screen.name)
-		'system wide gui updates
+		'system wide gui elements
 		GuiManager.Draw("SYSTEM")
 	End Method
 
@@ -113,5 +107,6 @@ End Type
 
 
 'kickoff
+MyApp.SetTitle("Demoapp")
 MyApp.Run()
 

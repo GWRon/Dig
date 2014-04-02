@@ -59,8 +59,6 @@ Type TGraphicalApp extends TApp
 			screen.DebugRender()
 		EndIf
 
-		RenderContent()
-
 		'render debug info?
 		If debugLevel > 0 then RenderDebug()
 

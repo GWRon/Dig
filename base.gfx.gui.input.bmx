@@ -232,9 +232,10 @@ Type TGUIinput Extends TGUIobject
 			Wend
 			GetFont().draw(printValue, position.GetIntX(), position.GetIntY())
 
-			SetAlpha Ceil(Sin(MilliSecs() / 4))
+			SetAlpha Ceil(Sin(MilliSecs() / 4)) * oldCol.a
 			GetFont().draw("_", Int(position.GetIntX() + GetFont().getWidth(printValue)), Int(position.GetY()) )
-			SetAlpha 1
+
+			'oldCol.SetRGBA()
 	    Else
 			color.setRGB()
 			While GetFont().GetWidth(printValue) > maxTextWidth And printvalue.length > 0
