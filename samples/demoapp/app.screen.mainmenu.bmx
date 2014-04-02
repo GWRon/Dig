@@ -27,7 +27,43 @@ Type TScreenMainMenu extends TScreenMenuBase
 		local panel:TGUIPanel = new TGUIPanel.Create(new TPoint.Init(20,250), new TPoint.Init(120, 150), self.GetName())
 		panel.SetBackground( new TGUIBackgroundBox.Create(null, null) )
 		panel.SetValue("press ~qspace~q to go to next screen")
+
+		'register demo click listener - only listen to click events of
+		'the "button" created above
+		EventManager.RegisterListenerFunction("guiobject.onclick", onClickMyButton, button)
+		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement)
+		EventManager.RegisterListenerFunction("guiobject.onclick", onClickOnAButton, "tguibutton")
 	End Method
+
+
+	Function onClickAGuiElement:Int(triggerEvent:TEventBase)
+		local obj:TGUIObject = TGUIObject(triggerEvent.GetSender())
+		print "a gui element of type "+ obj.GetClassName() + " was clicked"
+	End Function
+
+
+	Function onClickOnAButton:Int(triggerEvent:TEventBase)
+		'sender in this case is the gui object
+		'cast as button to see if it is a button (or extends from one)
+		local button:TGUIButton = TGuiButton(triggerEvent.GetSender())
+		'not interested in other widgets
+		if not button then return FALSE
+
+		local mouseButton:Int = triggerEvent.GetData().GetInt("button")
+		print "a TGUIButton just got clicked with mouse button "+mouseButton
+	End Function
+
+
+	Function onClickMyButton:Int(triggerEvent:TEventBase)
+		'sender in this case is the gui object
+		'cast as button to see if it is a button (or extends from one)
+		local button:TGUIButton = TGuiButton(triggerEvent.GetSender())
+		'not interested in other widgets
+		if not button then return FALSE
+
+		local mouseButton:Int = triggerEvent.GetData().GetInt("button")
+		print "my button just got clicked with mouse button "+mouseButton
+	End Function
 
 
 	Method PrepareStart:Int()
