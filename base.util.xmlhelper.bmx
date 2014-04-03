@@ -17,16 +17,18 @@ Type TXmlHelper
 	End Function
 
 
-	Method FindNode:TxmlNode(startNode:TXmlNode, nodeName:string)
+	'find a "<tag>"-element within a given start node
+	Method FindElementNode:TxmlNode(startNode:TXmlNode, nodeName:string)
 		nodeName = nodeName.ToLower()
 		if not startNode then startNode = root
 
-		local children:TList = startNode.getChildren()
+		'return all children of the node: nodes, attributes...
+		local children:TList = startNode.getChildren(XML_ELEMENT_NODE)
 		if not children then return null
 		For local child:TxmlNode = eachin children
 			if child.getName().ToLower() = nodeName then return child
 			For local subStartNode:TxmlNode = eachin child.getChildren()
-				local subChild:TXmlNode = FindNode(subStartNode, nodeName)
+				local subChild:TXmlNode = FindElementNode(subStartNode, nodeName)
 				if subChild then return subChild
 			Next
 		Next
@@ -46,7 +48,7 @@ Type TXmlHelper
 
 	Function FindChild:TxmlNode(node:TxmlNode, nodeName:string)
 		nodeName = nodeName.ToLower()
-		local children:TList = node.getChildren()
+		local children:TList = node.getChildren(XML_ELEMENT_NODE)
 		if not children then return null
 		For local child:TxmlNode = eachin children
 			if child.getName().ToLower() = nodeName then return child
@@ -68,11 +70,17 @@ Type TXmlHelper
 
 
 	Function HasValue:int(node:TXmlNode, fieldName:string)
+		'loop through all potential fieldnames ("frames|f" -> "frames", "f")
 		local fieldNames:string[] = fieldName.ToLower().Split("|")
+
 		For local name:String = eachin fieldNames
 			If node.hasAttribute(name) then Return True
 
-			For local subNode:TxmlNode = EachIn node
+			'GetChildren(0) means ALL types - instead of only "XML_TEXT_NODE"
+			local children:TList = node.getChildren(XML_ELEMENT_NODE)
+			if not children then continue
+
+			For local subNode:TxmlNode = EachIn children
 				if subNode.getType() = XML_TEXT_NODE then continue
 				If subNode.getName().ToLower() = name then return TRUE
 				If subNode.getName().ToLower() = "data" and subNode.hasAttribute(name) then Return TRUE
@@ -82,6 +90,11 @@ Type TXmlHelper
 	End Function
 
 
+	'find a value within:
+	'- the current NODE's attributes
+	'  <obj FIELDNAME="bla" />
+	'- the first level children
+	'- <obj><FIELDNAME>bla</FIELDNAME><anotherfield ...></anotherfield></obj>
 	Function FindValue:string(node:TxmlNode, fieldName:string, defaultValue:string, logString:string="")
 		'loop through all potential fieldnames ("frames|f" -> "frames", "f")
 		local fieldNames:string[] = fieldName.ToLower().Split("|")
@@ -90,12 +103,14 @@ Type TXmlHelper
 			'given node has attribute (<episode number="1">)
 			If node.hasAttribute(name) then Return node.getAttribute(name)
 
-			For local subNode:TxmlNode = EachIn node
-				if subNode.getType() = XML_TEXT_NODE then continue
-				if subNode <> null
-					If subNode.getName().ToLower() = name then return subNode.getContent()
-					If subNode.getName().ToLower() = "data" and subNode.hasAttribute(name) then Return subNode.getAttribute(name)
-				endif
+			'GetChildren(0) means ALL types - instead of only "XML_TEXT_NODE"
+			'we want only elements "<element>"
+			local children:TList = node.getChildren(XML_ELEMENT_NODE)
+			if not children then continue
+
+			For local subNode:TxmlNode = EachIn children
+				If subNode.getName().ToLower() = name then return subNode.getContent()
+				If subNode.getName().ToLower() = "data" and subNode.hasAttribute(name) then Return subNode.getAttribute(name)
 			Next
 		Next
 		if logString <> "" then print logString

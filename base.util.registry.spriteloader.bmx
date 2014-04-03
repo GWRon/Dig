@@ -41,9 +41,12 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 		If not childrenNode then return data
 
 		local childrenData:TData[]
-		For Local childNode:TxmlNode = EachIn childrenNode
-			If childNode.getType() <> XML_ELEMENT_NODE Then Continue
 
+		'GetChildren() means only "XML_TEXT_NODE", we want "<tag>"-elements
+		local children:TList = childrenNode.getChildren(XML_ELEMENT_NODE)
+		if not children then return null
+
+		For Local childNode:TxmlNode = EachIn children
 			'load child config into a new data
 			local childData:TData = new TData
 			local fieldNames:String[]
@@ -53,6 +56,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 			fieldNames :+ ["frames|f"]
 			fieldNames :+ ["ninepatch"]
 			TXmlHelper.LoadValuesToData(childNode, childData, fieldNames)
+
 			'add script data
 			childrenData :+ [childData]
 		Next
@@ -90,7 +94,6 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 	Method LoadSpritePackFromConfig:Int(data:TData)
 		local url:string = data.GetString("url")
 		if url = "" then return FALSE
-
 
 		'Print "LoadSpritePackResource: "+_name + " " + _flags + " ["+url+"]"
 		Local img:TImage = LoadImage(url, data.GetInt("flags", 0))

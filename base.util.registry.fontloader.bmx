@@ -32,7 +32,13 @@ Type TRegistryFontLoader extends TRegistryBaseLoader
 		Local nodeTypeName:String = TXmlHelper.FindValue(node, "name", node.GetName())
 		if nodeTypeName.toLower() = "fonts"
 			Local childrenNode:TxmlNode = TXmlHelper.FindChild(node, "font")
-			For Local childNode:TData = EachIn childrenNode
+			if not childrenNode then return data
+
+			'GetChildren() means only "XML_TEXT_NODE", we want "<tag>"-elements
+			local children:TList = childrenNode.getChildren(XML_ELEMENT_NODE)
+			if not children then return data
+
+			For Local childNode:TData = EachIn children
 				local childData:TData = GetConfigFromXML(loader, childNode)
 				'skip invalid configurations
 				if not childData then continue
@@ -85,13 +91,14 @@ Type TRegistryFontLoader extends TRegistryBaseLoader
 
 
 		Local childrenNode:TxmlNode = TXmlHelper.FindChild(node, "font")
-		Local childrenNode:TxmlNode = TXmlHelper.FindChild(node, "children")
 		If not childrenNode then return data
 
-		local childrenData:TData[]
-		For Local childNode:TxmlNode = EachIn childrenNode
-			If childNode.getType() <> XML_ELEMENT_NODE Then Continue
+		'GetChildren() means only "XML_TEXT_NODE", we want "<tag>"-elements
+		local children:TList = childrenNode.getChildren(XML_ELEMENT_NODE)
+		if not children then return data
 
+		local childrenData:TData[]
+		For Local childNode:TxmlNode = EachIn children
 			'load child config into a new data
 			local childData:TData = new TData
 			local fieldNames:String[]
