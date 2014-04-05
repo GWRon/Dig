@@ -42,11 +42,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 
 		local childrenData:TData[]
 
-		'GetChildren() means only "XML_TEXT_NODE", we want "<tag>"-elements
-		local children:TList = childrenNode.getChildren(XML_ELEMENT_NODE)
-		if not children then return null
-
-		For Local childNode:TxmlNode = EachIn children
+		For Local childNode:TxmlNode = EachIn TXmlHelper.GetNodeChildElements(childrenNode)
 			'load child config into a new data
 			local childData:TData = new TData
 			local fieldNames:String[]

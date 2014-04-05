@@ -150,7 +150,8 @@ Type TEventManager
 
 
 	Method update(onlyChannel:Int=Null)
-		Assert _ticks >= 0, "TEventManager: updating event manager that hasn't been prepared"
+		if not isStarted() then Init()	
+		'Assert _ticks >= 0, "TEventManager: updating event manager that hasn't been prepared"
 		_processEvents(onlyChannel)
 		_ticks = MilliSecs()
 	End Method

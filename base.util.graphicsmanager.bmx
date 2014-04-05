@@ -92,7 +92,7 @@ Type TGraphicsManager
 		'virtual resolution
 		InitVirtualGraphics()
 
-		Try
+'		Try
 			Select renderer
 				?Win32
 				Case RENDERER_DIRECTX7
@@ -124,7 +124,7 @@ Type TGraphicsManager
 			endif
 			?
 			if not _g then Throw "Graphics initiation error! no render engine available."
-		End Try
+'		End Try
 		SetBlend ALPHABLEND
 		SetMaskColor 0, 0, 0
 		HideMouse()

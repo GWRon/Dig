@@ -89,7 +89,7 @@ Type TLogger
 		If debugType & LOG_XML Then debugtext :+ "XML "
 		If debugType & LOG_NETWORK Then debugtext :+ "NET "
 		If debugType & LOG_SAVELOAD Then debugtext :+  "SAVELOAD "
-		if len(debugText < MODE_LENGTH)
+		if len(debugText) < MODE_LENGTH
 			debugtext = LSet(debugtext, MODE_LENGTH) + " | "
 		else
 			debugtext = debugtext + " | "

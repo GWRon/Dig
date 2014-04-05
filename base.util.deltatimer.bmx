@@ -8,6 +8,7 @@ REM
 	_funcUpdate and _funcRender properties.
 ENDREM
 SuperStrict
+Import "base.util.event.bmx" 'to emit events
 ?Threaded
 Import Brl.threads
 ?

@@ -196,22 +196,14 @@ Type TRegistryLoader
 
 
 	Method LoadResourceFromXML:int(node:TXmlNode, forceDirectLoad:int=FALSE)
-		'GetChildren(0) means ALL types - instead of only "XML_TEXT_NODE"
-		'we only want "<bla>"-elements
-		local children:TList = node.GetChildren(XML_ELEMENT_NODE)
-		if not children then return False
-
-		For local resourceNode:TxmlNode = eachin children
-			'only interested in elements and attributes
-'			if resourceNode.GetType() <> XML_ELEMENT_NODE or resourceNode.GetType() <> XML_ATTRIBUTE_NODE then continue
-
+		For local resourceNode:TxmlNode = eachin TXmlHelper.GetNodeChildElements(node)
 			'get the name defined in:
 			'- type (<bla type="identifier" />) or
 			'- tagname ( <identifier x="1" />)
-			local resourceName:string = xmlHelper.findValue(resourceNode, "type", resourceNode.getName())
+			local resourceName:string = TXmlHelper.FindValue(resourceNode, "type", resourceNode.getName())
 			'we handle "resource" on our own
 			if resourceName.ToUpper() = "RESOURCES"
-				local directLoad:int = xmlHelper.findValueBool(resourceNode, "directload", forceDirectLoad)
+				local directLoad:int = TXmlHelper.findValueBool(resourceNode, "directload", forceDirectLoad)
 				LoadResourceFromXML(resourceNode, directLoad)
 			else
 				local loader:TRegistryBaseLoader = GetResourceLoader(resourceName)
@@ -600,14 +592,11 @@ Type TRegistryDataLoader extends TRegistryBaseLoader
 		data.AddNumber("dataMerge", TXmlHelper.FindValueBool(node, "merge", TRUE))
 		local values:TData = new TData
 
-		'only return "<bla>"-elements
-		local children:TList = node.GetChildren(XML_ELEMENT_NODE)
-		if not children then return data
 
-		For local child:TxmlNode = eachin node.getChildren()
-			local name:String = loader.xmlHelper.FindValue(child, "type", child.getName())
+		For local child:TxmlNode = eachin TXmlHelper.GetNodeChildElements(node)
+			local name:String = TXmlHelper.FindValue(child, "type", child.getName())
 			if name = "" then continue
-			local value:String = loader.xmlHelper.FindValue(child, "value", child.getcontent())
+			local value:String = TXmlHelper.FindValue(child, "value", child.getcontent())
 
 			values.Add(name, value)
 		Next

@@ -22,12 +22,9 @@ Type TXmlHelper
 		nodeName = nodeName.ToLower()
 		if not startNode then startNode = root
 
-		'return all children of the node: nodes, attributes...
-		local children:TList = startNode.getChildren(XML_ELEMENT_NODE)
-		if not children then return null
-		For local child:TxmlNode = eachin children
+		For local child:TxmlNode = eachin GetNodeChildElements(startNode)
 			if child.getName().ToLower() = nodeName then return child
-			For local subStartNode:TxmlNode = eachin child.getChildren()
+			For local subStartNode:TxmlNode = eachin GetNodeChildElements(child)
 				local subChild:TXmlNode = FindElementNode(subStartNode, nodeName)
 				if subChild then return subChild
 			Next
@@ -46,11 +43,22 @@ Type TXmlHelper
 	End Function
 
 
+	'returns a list of all child elements (one level deeper)
+	'in comparison to "txmlnode.GetChildren()" it returns a TList
+	'in all cases.
+	Function GetNodeChildElements:TList(node:TxmlNode)
+		'we only want "<ELEMENTS>"
+		local res:TList
+		if node then res = node.GetChildren(XML_ELEMENT_NODE)
+		if not res then res = CreateList()
+		return res
+	End Function
+
+
+	'non recursive child finding
 	Function FindChild:TxmlNode(node:TxmlNode, nodeName:string)
 		nodeName = nodeName.ToLower()
-		local children:TList = node.getChildren(XML_ELEMENT_NODE)
-		if not children then return null
-		For local child:TxmlNode = eachin children
+		For local child:TxmlNode = eachin GetNodeChildElements(node)
 			if child.getName().ToLower() = nodeName then return child
 		Next
 		return null
@@ -76,11 +84,7 @@ Type TXmlHelper
 		For local name:String = eachin fieldNames
 			If node.hasAttribute(name) then Return True
 
-			'GetChildren(0) means ALL types - instead of only "XML_TEXT_NODE"
-			local children:TList = node.getChildren(XML_ELEMENT_NODE)
-			if not children then continue
-
-			For local subNode:TxmlNode = EachIn children
+			For local subNode:TxmlNode = EachIn GetNodeChildElements(node)
 				if subNode.getType() = XML_TEXT_NODE then continue
 				If subNode.getName().ToLower() = name then return TRUE
 				If subNode.getName().ToLower() = "data" and subNode.hasAttribute(name) then Return TRUE
@@ -103,12 +107,7 @@ Type TXmlHelper
 			'given node has attribute (<episode number="1">)
 			If node.hasAttribute(name) then Return node.getAttribute(name)
 
-			'GetChildren(0) means ALL types - instead of only "XML_TEXT_NODE"
-			'we want only elements "<element>"
-			local children:TList = node.getChildren(XML_ELEMENT_NODE)
-			if not children then continue
-
-			For local subNode:TxmlNode = EachIn children
+			For local subNode:TxmlNode = EachIn GetNodeChildElements(node)
 				If subNode.getName().ToLower() = name then return subNode.getContent()
 				If subNode.getName().ToLower() = "data" and subNode.hasAttribute(name) then Return subNode.getAttribute(name)
 			Next

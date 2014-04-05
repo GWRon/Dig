@@ -172,11 +172,7 @@ Type TRegistryImageLoader extends TRegistryBaseLoader
 		'TLogger.log("TRegistryImageLoader.ParseScripts()", "found script block.", LOG_LOADING | LOG_DEBUG, TRUE)
 		local datas:TData[]
 
-		'GetChildren() means "XML_TEXT_NODE", we want "<tag>"-elements
-		local children:TList = node.getChildren(XML_ELEMENT_NODE)
-		if not children then return null
-
-		For Local script:TxmlNode = EachIn children
+		For Local script:TxmlNode = EachIn TXmlHelper.GetNodeChildElements(scripts)
 			local data:TData = new TData
 
 			'only add to data if the fields exist in the xml
