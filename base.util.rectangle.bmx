@@ -2,6 +2,8 @@ Rem
 	===========================================================
 	Rectangle Class
 	===========================================================
+
+	Base rectangle class including some helper functions.
 End Rem
 SuperStrict
 Import "base.util.point.bmx"
@@ -10,8 +12,11 @@ Import "base.util.point.bmx"
 Type TRectangle {_exposeToLua="selected"}
 	Field position:TPoint {_exposeToLua}
 	Field dimension:TPoint {_exposeToLua}
+	'global helper variables should be faster than allocating locals each time (in huge amount)
+	global ix:float,iy:float,iw:float,ih:float
 
 
+	'sets the position and dimension (creates new point objects)
 	Method Init:TRectangle(x:Float=0, y:Float=0, w:float=0, h:float=0)
 		position = new TPoint.Init(x, y)
 		dimension = new TPoint.Init(w, h)
@@ -19,12 +24,13 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
+	'create a new rectangle with the same values
 	Method Copy:TRectangle()
 		return new TRectangle.Init(position.x, position.y, dimension.x, dimension.y)
 	End Method
 
 
-	'returns if the rect overlaps with the gien one
+	'returns if the rect overlaps with the given one
 	Method Intersects:int(rect:TRectangle) {_exposeToLua}
 		return ( containsXY( rect.GetX(), rect.GetY() ) ..
 		         OR containsXY( rect.GetX() + rect.GetW(),  rect.GetY() + rect.GetH() ) ..
@@ -32,9 +38,9 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
-	'global helper variables should be faster than allocating locals each time (in huge amount)
-	global ix:float,iy:float,iw:float,ih:float
-	'get intersecting rectangle
+	'returns a rectangle describing the intersection of the
+	'rectangle and the given one
+	'attention: returns NULL if there is no intersection 
 	Method IntersectRect:TRectangle(rectB:TRectangle) {_exposeToLua}
 		ix = max(GetX(), rectB.GetX())
 		iy = max(GetY(), rectB.GetY())
@@ -48,29 +54,31 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
-	'does the point overlap?
+	'returns whether the rectangle contains a point
 	Method ContainsPoint:int(point:TPoint) {_exposeToLua}
 		return containsXY( point.GetX(), point.GetY() )
 	End Method
 
 
-	'does the point overlap?
+	'returns whether the rectangle contains the given rectangle
 	Method ContainsRect:int(rect:TRectangle) {_exposeToLua}
 		return containsXY(rect.GetX(), rect.GetY()) And containsXY(rect.GetX2(), rect.GetY2())
 	End Method
 
 
+	'returns whether x is within the x-coords of the rectangle
 	Method ContainsX:int(x:float) {_exposeToLua}
 		return (x >= GetX() And x < GetX2())
 	End Method
 
 
+	'returns whether y is within the y-coords of the rectangle
 	Method ContainsY:int(y:float) {_exposeToLua}
 		return (y >= GetY() And y < GetY2() )
 	End Method
 
 
-	'does the rect overlap with the coordinates?
+	'returns whether the rectangle contains the given coord
 	Method ContainsXY:int(x:float, y:float) {_exposeToLua}
 		return (    x >= GetX() And x < GetX2() ..
 		        And y >= GetY() And y < GetY2() ..
@@ -78,12 +86,13 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
+	'moves the rectangle to x,y
 	Method MoveXY:int(x:float,y:float)
 		position.MoveXY(x, y)
 	End Method
 
 
-	'rectangle names
+	'Set the rectangles values
 	Method setXYWH(x:float, y:float, w:float, h:float)
 		position.setXY(x,y)
 		dimension.setXY(w,h)
@@ -178,10 +187,4 @@ Type TRectangle {_exposeToLua="selected"}
 		If rect.dimension.y*rect.dimension.x > dimension.y*dimension.x then Return 1
 		Return 0
 	End Method
-
-Rem
-	Method Render:int()
-		DrawRect(GetX(), GetY(), GetW(), GetH())
-	End Method
-EndRem
 End Type

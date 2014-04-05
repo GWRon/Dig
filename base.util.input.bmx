@@ -1,3 +1,14 @@
+REM
+	===========================================================
+	Input classes
+	===========================================================
+
+	There are 3 Managers:
+
+	TMouseManager: Mouse position, buttons ...
+	TKeyManager: key states ...
+	TKeyWrapper: managing "hold down" states for keys
+ENDREM
 SuperStrict
 Import brl.System
 Import brl.PolledInput
@@ -7,7 +18,7 @@ Global MOUSEMANAGER:TMouseManager = New TMouseManager
 Global KEYMANAGER:TKeyManager = New TKeyManager
 Global KEYWRAPPER:TKeyWrapper = New TKeyWrapper
 
-'Tastenstadien
+
 Const KEY_STATE_NORMAL:int		= 0
 Const KEY_STATE_HIT:int			= 1
 Const KEY_STATE_DOWN:int		= 2
@@ -20,45 +31,57 @@ For local i:int = 0 To 255
 	KEYWRAPPER.allowKey(i,KEYWRAP_ALLOW_BOTH,600,100)
 Next
 
+
 Type TMouseManager
 	Field lastPos:TPoint = new TPoint
-	Field x:float				= 0.0
-	Field y:float				= 0.0
+	Field x:float = 0.0
+	Field y:float = 0.0
 
-	Field hasMoved:int			= FALSE
-	Field scrollWheelMoved:int	= 0			'amount of pixels moved (0=zero, -upwards, +downwards)
-	Field _keyStatus:Int[]		= [0,0,0,0]
-	Field _keyDownTime:Int[]	= [0,0,0,0]		'time since when the button is pressed
-	Field _keyHitTime:Int[]		= [0,0,0,0]		'time when the button was last hit
-	Field _doubleClickTime:int	= 300			'ms between two clicks for 1 double click
+	Field hasMoved:int = FALSE
+	'amount of pixels moved (0=zero, -upwards, +downwards)
+	Field scrollWheelMoved:int = 0
+	'current status of the buttons
+	Field _keyStatus:Int[] = [0,0,0,0]
+	'time since when the button is pressed
+	Field _keyDownTime:Int[] = [0,0,0,0]
+	'time when the button was last hit
+	Field _keyHitTime:Int[]	= [0,0,0,0]
+	'ms between two clicks for 1 double click
+	Field _doubleClickTime:int = 300
 
-	'Statusabfragen
+
+	'returns whether the button is in normal state
 	Method isNormal:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_NORMAL
 	End Method
 
 
+	'returns whether the button is in hit state
 	Method isHit:Int(key:Int, ignoreDoubleClicks:int=TRUE)
 		if ignoreDoubleClicks then return _keyStatus[key] = KEY_STATE_HIT
 		return (_keyStatus[key] = KEY_STATE_HIT) or (_keyStatus[key] = KEY_STATE_DOUBLEHIT) or (_keyStatus[key] = KEY_STATE_CLICKED)
 	End Method
 
 
+	'returns whether the button is in doublehit state
 	Method isDoubleHit:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_DOUBLEHIT
 	EndMethod
 
 
+	'returns whether the button is in clicked state
 	Method isClicked:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_CLICKED
 	End Method
 
 
+	'returns whether the button is in down state
 	Method isDown:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_DOWN
 	End Method
 
 
+	'returns how many milliseconds a button is down
 	Method isDownTime:Int(key:Int)
 		if _keyDownTime[key] > 0
 			return Millisecs() - _keyDownTime[key]
@@ -68,6 +91,7 @@ Type TMouseManager
 	End Method
 
 
+	'returns whether the button is in up state
 	Method isUp:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_UP
 	End Method
@@ -78,8 +102,8 @@ Type TMouseManager
 	End Method
 
 
-	'ändert ggf. den Status der Keys
-	Method changeStatus()
+	'Update the button state
+	Method Update:Int()
 		hasMoved = False
 		If lastPos.x <> MouseX() Or lastPos.y <> MouseY()
 			hasMoved = True
@@ -133,7 +157,13 @@ Type TMouseManager
 		Next
 	End Method
 
+	'deprecated
+	Method changeStatus()
+		Update()
+	End Method
 
+
+	'reset the state of the given button
 	Method resetKey:Int(key:Int)
 		_keyDownTime[key] = 0
 		_keyStatus[key] = KEY_STATE_UP
@@ -141,6 +171,7 @@ Type TMouseManager
 	End Method
 
 
+	'returns array of bools describing down state of each button
 	Method getStatusDown:int[]()
 		return [false,..
 		        _keyStatus[1] = KEY_STATE_DOWN,..
@@ -150,6 +181,7 @@ Type TMouseManager
 	End Method
 
 
+	'returns array of bools describing hit/doublehit state of each button
 	Method getStatusHit:int[]()
 		return [false,..
 		        _keyStatus[1] = (KEY_STATE_HIT or KEY_STATE_DOUBLEHIT),..
@@ -159,6 +191,7 @@ Type TMouseManager
 	End Method
 
 
+	'returns array of bools describing clicked state of each button
 	Method getStatusClicked:int[]()
 		return [false,..
 		        _keyStatus[1] = KEY_STATE_CLICKED,..
@@ -168,11 +201,14 @@ Type TMouseManager
 	End Method
 
 
+	'returns the status of a button
 	Method getStatus:Int(key:Int)
 		Return _keyStatus[key]
 	End Method
 
 
+	'returns positive or negative value describing the movement
+	'of the scrollwheel
 	Method getScrollwheelMovement:int()
 		return scrollWheelMoved
 	End Method
@@ -182,36 +218,43 @@ EndType
 
 
 Type TKeyManager
-	'Array aller Tasten die man zur Auswahl hat
+	'status of all keys
 	Field _keyStatus:Int[256]
 	Field _blockKeyTime:Int[256]
 
 
+	'returns whether the button is in normal state
 	Method isNormal:Int(key:Int)
 		return _keyStatus[Key] = KEY_STATE_NORMAL
 	End Method
 
+
+	'returns whether the button is currently blocked
 	Method isBlocked:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_BLOCKED
 	End Method
 
 
+	'returns whether the button is in hit state
 	Method isHit:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_HIT
 	End Method
 
 
+	'returns whether the button is in down state
 	Method isDown:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_DOWN
 	End Method
 
 
+	'returns whether the button is in up state
 	Method isUp:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_UP
 	End Method
 
 
-	Method changeStatus(  )
+	'refresh all key states
+	Method Update:Int())
 		local time:int = Millisecs()
 		For Local i:Int = 1 To 255
 			'ignore key if it is blocked
@@ -236,11 +279,19 @@ Type TKeyManager
 	End Method
 
 
+	'deprecated
+	Method changeStatus()
+		Update()
+	End Method
+
+
+	'returns the status of a key
 	Method getStatus:Int(key:Int)
 		Return _keyStatus[key]
 	End Method
 
 
+	'set a key as blocked for the given time
 	Method blockKey:int(key:int, milliseconds:int=0)
 		'time can be absolute as a key block is just for blocking a key
 		'which has not to be deterministic
@@ -250,6 +301,7 @@ Type TKeyManager
 	End Method
 
 
+	'resets the keys status
 	Method resetKey:Int(key:Int)
 		_keyStatus[key] = KEY_STATE_UP
 		Return KEY_STATE_UP
@@ -263,13 +315,14 @@ Const KEYWRAP_ALLOW_HIT:int	= 1
 Const KEYWRAP_ALLOW_HOLD:int= 2
 Const KEYWRAP_ALLOW_BOTH:int= 3
 
+
 Type TKeyWrapper
-	rem
-		0 - Allow-Rule
-		1 - Pausenlaenge fuer Hold nach Hit
-		2 - Pausenlaenge fuer Hold nach Hold
-		3 - Gesamtzeit bis zum naechsten Hold
-	endrem
+	Rem
+		0 - --
+		1 - time to wait to get "hold" state after "hit"
+		2 - time to wait for next "hold" after "hold"
+		3 - total time till next hold
+	EndRem
 	Field _keySet:Int[256, 4]
 
 

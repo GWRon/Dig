@@ -28,15 +28,19 @@ Type THelper
 	End Function
 
 
+	'returns whether the mouse is within the given rectangle coords
 	Function MouseIn:int(x:float,y:float,w:float,h:float)
 		return IsIn(MouseManager.x, MouseManager.y, x,y,w,h)
 	End Function
 
+
+	'returns whether the mouse is within the given rectangle
 	Function MouseInRect:int(rect:TRectangle)
 		return IsIn(MouseManager.x, MouseManager.y, rect.position.x,rect.position.y,rect.dimension.x, rect.dimension.y)
 	End Function
 
 
+	'returns whether two pairs of "start-end"-values intersect
 	Function DoMeet:int(startA:float, endA:float, startB:float, endB:float)
 		'DoMeet - 4 possibilities - but only 2 for not meeting
 		' |--A--| .--B--.    or   .--B--. |--A--|
@@ -44,6 +48,7 @@ Type THelper
 	End function
 
 
+	'returns whether the given x,y coordinate is within the given rectangle coords
 	Function IsIn:Int(x:Float, y:Float, rectx:Float, recty:Float, rectw:Float, recth:Float)
 		If x >= rectx And x<=rectx+rectw And..
 		   y >= recty And y<=recty+recth
