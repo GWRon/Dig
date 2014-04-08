@@ -14,7 +14,7 @@ Import "base.gfx.gui.arrowbutton.bmx"
 
 
 Type TGUIScroller Extends TGUIobject
-	Field mouseDownTime:Int = 200	'milliseconds until we react on "mousedown"
+	Field mouseDownTime:Int = 250	'milliseconds until we react on "mousedown"
 	Field guiButtonMinus:TGUIArrowButton = Null
 	Field guiButtonPlus:TGUIArrowButton	= Null
 	Field _orientation:int = GUI_OBJECT_ORIENTATION_VERTICAL
@@ -36,8 +36,8 @@ Type TGUIScroller Extends TGUIobject
 		guiButtonPlus.setParent(Self)
 
 		'scroller is interested in click on its buttons
-		EventManager.registerListenerFunction( "guiobject.onClick",	TGUIScroller.onButtonClick, Self.guiButtonMinus )
-		EventManager.registerListenerFunction( "guiobject.onClick",	TGUIScroller.onButtonClick, Self.guiButtonPlus )
+		EventManager.registerListenerFunction( "guiobject.onHit",	TGUIScroller.onButtonHit, Self.guiButtonMinus )
+		EventManager.registerListenerFunction( "guiobject.onHit",	TGUIScroller.onButtonHit, Self.guiButtonPlus )
 		EventManager.registerListenerFunction( "guiobject.onMouseDown",	TGUIScroller.onButtonDown, Self.guiButtonMinus )
 		EventManager.registerListenerFunction( "guiobject.onMouseDown",	TGUIScroller.onButtonDown, Self.guiButtonPlus )
 
@@ -109,8 +109,8 @@ Type TGUIScroller Extends TGUIobject
 	End Method
 
 
-	'handle clicks on the up/down-buttons and inform others about changes
-	Function onButtonClick:Int( triggerEvent:TEventBase )
+	'handle hits on the up/down-buttons and inform others about changes
+	Function onButtonHit:Int( triggerEvent:TEventBase )
 		Local sender:TGUIArrowButton = TGUIArrowButton(triggerEvent.GetSender())
 		If sender = Null Then Return False
 
@@ -119,14 +119,14 @@ Type TGUIScroller Extends TGUIobject
 
 		'emit event that the scroller position has changed
 		If sender = guiScroller.guiButtonMinus
-			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", "minus").AddNumber("scrollAmount", 15), guiScroller ) )
+			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", "up").AddNumber("scrollAmount", 15), guiScroller ) )
 		ElseIf sender = guiScroller.guiButtonPlus
 			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", "down").AddNumber("scrollAmount", 15), guiScroller ) )
 		EndIf
 	End Function
 
 
-	'handle clicks on the up/down-buttons and inform others about changes
+	'handle mousedown on the up/down-buttons and inform others about changes
 	Function onButtonDown:Int( triggerEvent:TEventBase )
 		Local sender:TGUIArrowButton = TGUIArrowButton(triggerEvent.GetSender())
 		If sender = Null Then Return False
@@ -136,11 +136,10 @@ Type TGUIScroller Extends TGUIobject
 
 		If MOUSEMANAGER.GetDownTime(1) > 0
 			'if we still have to wait - return without emitting events
-			If (MilliSecs() - MOUSEMANAGER.GetDownTime(1)) < guiScroller.mouseDownTime
+			If MOUSEMANAGER.GetDownTime(1) < guiScroller.mouseDownTime
 				Return False
 			EndIf
 		EndIf
-
 
 		'emit event that the scroller position has changed
 		If sender = guiScroller.guiButtonMinus

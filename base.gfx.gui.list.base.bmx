@@ -552,7 +552,7 @@ endrem
 
 		'by default scroll by 2 pixels
 		Local scrollAmount:Int = data.GetInt("scrollAmount", 2)
-print "onScroll"
+'print "onScroll"
 		'this should be "calculate height and change amount"
 		If data.GetString("direction") = "up" Then guiList.ScrollEntries(0, +scrollAmount)
 		If data.GetString("direction") = "down" Then guiList.ScrollEntries(0, -scrollAmount)
