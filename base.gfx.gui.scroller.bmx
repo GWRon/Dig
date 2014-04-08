@@ -134,9 +134,9 @@ Type TGUIScroller Extends TGUIobject
 		Local guiScroller:TGUIScroller = TGUIScroller( sender._parent )
 		If guiScroller = Null Then Return False
 
-		If MOUSEMANAGER.IsDownTime(1) > 0
+		If MOUSEMANAGER.GetDownTime(1) > 0
 			'if we still have to wait - return without emitting events
-			If (MilliSecs() - MOUSEMANAGER.IsDownTime(1)) < guiScroller.mouseDownTime
+			If (MilliSecs() - MOUSEMANAGER.GetDownTime(1)) < guiScroller.mouseDownTime
 				Return False
 			EndIf
 		EndIf

@@ -19,19 +19,29 @@ Global KEYMANAGER:TKeyManager = New TKeyManager
 Global KEYWRAPPER:TKeyWrapper = New TKeyWrapper
 
 
-Const KEY_STATE_NORMAL:int		= 0
-Const KEY_STATE_HIT:int			= 1
-Const KEY_STATE_DOWN:int		= 2
-Const KEY_STATE_UP:int			= 3
-Const KEY_STATE_DOUBLEHIT:int	= 4
-Const KEY_STATE_CLICKED:int		= 5
-Const KEY_STATE_BLOCKED:int		= 6
+Const KEY_STATE_NORMAL:int			= 0	'nothing done
+Const KEY_STATE_HIT:int				= 1	'once dow, now up
+Const KEY_STATE_DOWN:int			= 2 'down
+Const KEY_STATE_UP:int				= 3 'up
+Const KEY_STATE_BLOCKED:int			= 6
 
 For local i:int = 0 To 255
 	KEYWRAPPER.allowKey(i,KEYWRAP_ALLOW_BOTH,600,100)
 Next
 
 
+Rem
+	Hint:
+	"hit":   the button was down and is now released
+	"click": the button was hit and the waiting time for another
+	         hit is gone now.
+	This means: if you tap tap tap tap on your mouse button, you
+	            generate "hits". If you then wait a certain amount of time
+	            (eg. 100 ms) all your last hits get converted to "clicks".
+	            A "tap tap tap" therefor is no "click" and also no
+	            "doubleclick" (in this case "GetClicks()" returns 3 so you
+	            might call it "tripleClick" :D).
+End Rem
 Type TMouseManager
 	Field lastPos:TPoint = new TPoint
 	Field x:float = 0.0
@@ -46,8 +56,23 @@ Type TMouseManager
 	Field _keyDownTime:Int[] = [0,0,0,0]
 	'time when the button was last hit
 	Field _keyHitTime:Int[]	= [0,0,0,0]
-	'ms between two clicks for 1 double click
-	Field _doubleClickTime:int = 300
+	'amount of hits until "doubleClickTime" was over without another hit
+	Field _keyHitCount:Int[] = [0,0,0,0]
+	'amount of clicks (hits until doubleClickTime was over)
+	Field _keyClickCount:Int[] = [0,0,0,0]
+	'time (in ms) to wait for another click to recognize doubleclicks
+	'so it is also the maximum time "between" that needed two clicks
+	Field _doubleClickTime:int = 250
+
+
+
+	'reset the state of the given button
+	Method ResetKey:Int(key:Int)
+		_keyDownTime[key] = 0
+		_keyHitTime[key] = 0
+		_keyStatus[key] = KEY_STATE_UP
+		Return KEY_STATE_UP
+	End Method
 
 
 	'returns whether the button is in normal state
@@ -57,21 +82,26 @@ Type TMouseManager
 
 
 	'returns whether the button is in hit state
-	Method isHit:Int(key:Int, ignoreDoubleClicks:int=TRUE)
-		if ignoreDoubleClicks then return _keyStatus[key] = KEY_STATE_HIT
-		return (_keyStatus[key] = KEY_STATE_HIT) or (_keyStatus[key] = KEY_STATE_DOUBLEHIT) or (_keyStatus[key] = KEY_STATE_CLICKED)
+	Method isHit:Int(key:Int)
+		return _keyStatus[key] = KEY_STATE_HIT
 	End Method
 
 
-	'returns whether the button is in doublehit state
-	Method isDoubleHit:Int(key:Int)
-		return _keyStatus[key] = KEY_STATE_DOUBLEHIT
+	'returns whether the button was clicked 2 times
+	'strictMode defines whether more than 2 clicks also count
+	'as "double click"
+	Method isDoubleClicked:Int(key:Int, strictMode:int=TRUE)
+		if strictMode
+			return GetClicks(key) = 2
+		else
+			return GetClicks(key) > 2
+		endif
 	EndMethod
 
 
 	'returns whether the button is in clicked state
 	Method isClicked:Int(key:Int)
-		return _keyStatus[key] = KEY_STATE_CLICKED
+		return GetClicks(key) = 1
 	End Method
 
 
@@ -81,9 +111,15 @@ Type TMouseManager
 	End Method
 
 
+	'returns whether the button is in up state
+	Method isUp:Int(key:Int)
+		return _keyStatus[key] = KEY_STATE_UP
+	End Method
+
+
 	'returns how many milliseconds a button is down
-	Method isDownTime:Int(key:Int)
-		if _keyDownTime[key] > 0
+	Method GetDownTime:Int(key:Int)
+		If _keyDownTime[key] > 0
 			return Millisecs() - _keyDownTime[key]
 		else
 			return 0
@@ -91,88 +127,30 @@ Type TMouseManager
 	End Method
 
 
-	'returns whether the button is in up state
-	Method isUp:Int(key:Int)
-		return _keyStatus[key] = KEY_STATE_UP
+	'returns positive or negative value describing the movement
+	'of the scrollwheel
+	Method GetScrollwheelMovement:int()
+		return scrollWheelMoved
 	End Method
 
 
-	Method SetDown:Int(key:Int)
-		_keyStatus[key] = KEY_STATE_DOWN
+	'returns the status of a button
+	Method GetStatus:Int(key:Int)
+		Return _keyStatus[key]
 	End Method
 
 
-	'Update the button state
-	Method Update:Int()
-		hasMoved = False
-		If lastPos.x <> MouseX() Or lastPos.y <> MouseY()
-			hasMoved = True
-			lastPos.SetXY(MouseX(), MouseY())
-		endif
-		scrollWheelMoved = 0
-		if lastPos.z <> MouseZ()
-			scrollWheelMoved = lastPos.z - MouseZ()
-			lastPos.z = MouseZ()
-		endif
-		x = MouseX()
-		y = MouseY()
-
-		For Local i:Int = 1 To 3
-			If _keyStatus[i] = KEY_STATE_NORMAL
-				If MouseHit(i)
-					_keyStatus[i] = KEY_STATE_HIT
-					'check for double click
-					'only act if we already clicked in the past
-					if _keyHitTime[i] > 0
-						'did we click in the time frame ?
-						if _keyHitTime[i] + _doubleClickTime > Millisecs()
-							_keyStatus[i] = KEY_STATE_DOUBLEHIT
-							_keyHitTime[i] = 0
-						else
-							'start a new doubleclick time
-							_keyHitTime[i] = millisecs()
-						endif
-					else
-						'save the click time so we now the passed time on next click
-						_keyHitTime[i] = millisecs()
-					endif
-
-				endif
-			ElseIf _keyStatus[i] = KEY_STATE_HIT or _keyStatus[i] = KEY_STATE_DOUBLEHIT or _keyStatus[i] = KEY_STATE_CLICKED
-				If MouseDown(i) Then _keyStatus[i] = KEY_STATE_DOWN Else _keyStatus[i] = KEY_STATE_UP
-			ElseIf _keyStatus[i] = KEY_STATE_DOWN
-				If Not MouseDown(i) Then _keyStatus[i] = KEY_STATE_UP
-			ElseIf _keyStatus[i] = KEY_STATE_UP
-				_keyStatus[i] = KEY_STATE_NORMAL
-			EndIf
-
-			if MouseDown(i)
-				'store time when first mousedown happened
-				if _keyDownTime[i] = 0 then _keyDownTime[i] = millisecs()
-			Else
-				if _keyDownTime[i] > 0 then _keyStatus[i] = KEY_STATE_CLICKED
-				'reset time - mousedown no longer happening
-				_keyDownTime[i] = 0
-			endif
-		Next
-	End Method
-
-	'deprecated
-	Method changeStatus()
-		Update()
-	End Method
-
-
-	'reset the state of the given button
-	Method resetKey:Int(key:Int)
-		_keyDownTime[key] = 0
-		_keyStatus[key] = KEY_STATE_UP
-		Return KEY_STATE_UP
+	'returns the amount of clicks
+	Method GetClicks:int(key:int)
+		'there still may come other hits... after then we know
+		'the real amount of clicks
+		if _keyHitTime[key] > 0 then return 0
+		return _keyHitCount[key]
 	End Method
 
 
 	'returns array of bools describing down state of each button
-	Method getStatusDown:int[]()
+	Method GetAllStatusDown:int[]()
 		return [false,..
 		        _keyStatus[1] = KEY_STATE_DOWN,..
 		        _keyStatus[2] = KEY_STATE_DOWN,..
@@ -182,35 +160,109 @@ Type TMouseManager
 
 
 	'returns array of bools describing hit/doublehit state of each button
-	Method getStatusHit:int[]()
+	Method GetAllStatusHit:int[]()
 		return [false,..
-		        _keyStatus[1] = (KEY_STATE_HIT or KEY_STATE_DOUBLEHIT),..
-		        _keyStatus[2] = (KEY_STATE_HIT or KEY_STATE_DOUBLEHIT),..
-		        _keyStatus[3] = (KEY_STATE_HIT or KEY_STATE_DOUBLEHIT)..
-		        ]
+		        _keyStatus[1] = (KEY_STATE_HIT),..
+		        _keyStatus[2] = (KEY_STATE_HIT),..
+		        _keyStatus[3] = (KEY_STATE_HIT)..
+		       ]
 	End Method
 
 
 	'returns array of bools describing clicked state of each button
-	Method getStatusClicked:int[]()
+	Method GetAllStatusClicked:int[]()
 		return [false,..
-		        _keyStatus[1] = KEY_STATE_CLICKED,..
-		        _keyStatus[2] = KEY_STATE_CLICKED,..
-		        _keyStatus[3] = KEY_STATE_CLICKED..
-		        ]
+		        isClicked(1),..
+		        isClicked(2),..
+		        isClicked(3)..
+		       ]
 	End Method
 
 
-	'returns the status of a button
-	Method getStatus:Int(key:Int)
-		Return _keyStatus[key]
+	'returns array of bools describing clicked state of each button
+	Method GetAllStatusDoubleClicked:int[]()
+		return [false,..
+		        isDoubleClicked(1),..
+		        isDoubleClicked(2),..
+		        isDoubleClicked(3)..
+		       ]
 	End Method
 
 
-	'returns positive or negative value describing the movement
-	'of the scrollwheel
-	Method getScrollwheelMovement:int()
-		return scrollWheelMoved
+	Method UpdateKey:int(i:int)
+		'reset hit count if there is no hit time (which means: waited
+		'long enough for another hit)
+		'-> if the hit evolved into a click, this should have been
+		'handled already after the last call of UpdateKey()
+		if _keyHitTime[i] = 0 then _keyHitCount[i] = 0
+	
+		If _keyStatus[i] = KEY_STATE_NORMAL
+			If MouseHit(i) then _keyStatus[i] = KEY_STATE_HIT
+		ElseIf _keyStatus[i] = KEY_STATE_HIT
+			If MouseDown(i) Then _keyStatus[i] = KEY_STATE_DOWN Else _keyStatus[i] = KEY_STATE_UP
+		ElseIf _keyStatus[i] = KEY_STATE_DOWN
+			If Not MouseDown(i) Then _keyStatus[i] = KEY_STATE_UP
+		ElseIf _keyStatus[i] = KEY_STATE_UP
+			_keyStatus[i] = KEY_STATE_NORMAL
+		EndIf
+
+
+		'=== MOUSE HIT/CLICK COUNTER ====
+		'hit means: button was DOWN and is now UP
+		If _keyStatus[i] = KEY_STATE_HIT
+			'increase hit count of this button
+			_keyHitCount[i] :+1
+
+			'refresh hit time - so we wait for more hits
+			'-> time gone -> "click" happened
+			_keyHitTime[i] = Millisecs()
+		endif
+
+		'mouse is normal and was hit at least once
+		'-> check if this are "clicks" or still "hits"
+		If _keyStatus[i] = KEY_STATE_NORMAL and _keyHitCount[i] > 0
+			'waited long enough for another hit?
+			if _keyHitTime[i] + _doubleClickTime < Millisecs()
+				'reset hit time - indicator that "waiting is over"
+				_keyHitTime[i] = 0
+			Endif
+		EndIf
+
+
+		'=== MOUSE DOWN TIME ====
+		'store mousedown time ... someone may need this measurement
+		If MouseDown(i)
+			'store time when first mousedown happened
+			If _keyDownTime[i] = 0 Then _keyDownTime[i] = millisecs()
+		Else
+			'reset time - mousedown no longer happening
+			_keyDownTime[i] = 0
+		EndIf
+	End Method
+
+
+	'Update the button states
+	Method Update:Int()
+		'by default mouse did not move
+		hasMoved = False
+		'same for scrollwheel
+		scrollWheelMoved = 0
+		
+		If lastPos.x <> MouseX() Or lastPos.y <> MouseY()
+			hasMoved = True
+			lastPos.SetXY(MouseX(), MouseY())
+		endif
+		If lastPos.z <> MouseZ()
+			scrollWheelMoved = lastPos.z - MouseZ()
+			lastPos.z = MouseZ()
+		endif
+		
+		x = MouseX()
+		y = MouseY()
+
+		For Local i:Int = 1 To 3
+			UpdateKey(i)
+		Next
 	End Method
 EndType
 
@@ -254,7 +306,7 @@ Type TKeyManager
 
 
 	'refresh all key states
-	Method Update:Int())
+	Method Update:Int()
 		local time:int = Millisecs()
 		For Local i:Int = 1 To 255
 			'ignore key if it is blocked
@@ -278,11 +330,6 @@ Type TKeyManager
 		Next
 	End Method
 
-
-	'deprecated
-	Method changeStatus()
-		Update()
-	End Method
 
 
 	'returns the status of a key

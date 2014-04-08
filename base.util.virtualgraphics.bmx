@@ -1,5 +1,5 @@
 SuperStrict
-Import BRL.Pixmap
+'Import BRL.Pixmap
 Import BRL.Graphics
 Import BRL.Max2D
 
@@ -56,7 +56,7 @@ Type TVirtualGfx
 		If GraphicsWidth () > 0 Or GraphicsHeight () > 0
 			EndGraphics
 			Notify "Programmer error! Call InitVirtualGraphics BEFORE Graphics!", True
-			End
+			'End
 		endif
 		self.DTW = DesktopWidth ()
 		self.DTH = DesktopHeight ()
@@ -70,12 +70,12 @@ Type TVirtualGfx
 			' Graphics has been called...
 			If GraphicsWidth () = 0 Or GraphicsHeight () = 0
 				Notify "Programmer error! Must call Graphics before SetVirtualGraphics", True
-				End
+				'End
 			EndIf
 		Else
 			EndGraphics
 			Notify "Programmer error! Call InitVirtualGraphics before Graphics!", True
-			End
+			'End
 		EndIf
 
 		' Reset of display needed when re-calculating virtual graphics stuff/clearing borders...

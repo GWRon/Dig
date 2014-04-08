@@ -74,8 +74,8 @@ Type TApp
 
 	Function __Update:int()
 		'refresh mouse/keyboard
-		MouseManager.ChangeStatus()
-		KeyManager.ChangeStatus()
+		MouseManager.Update()
+		KeyManager.Update()
 
 		'every second update do a system update
 		if GetDeltaTimer().timesUpdated mod 2 = 0 then EventManager.triggerEvent( TEventSimple.Create("App.onSystemUpdate",null) )

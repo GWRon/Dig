@@ -20,6 +20,13 @@ Type TMyApp extends TGraphicalApp
 
 	Method Prepare:int()
 		super.Prepare()
+
+		local gm:TGraphicsManager = TGraphicsManager.GetInstance()
+		'scale everything from 800x600 to 1024x768
+	'	gm.SetResolution(1024, 768)
+	'	gm.SetDesignedResolution(800, 600)
+	'	gm.InitGraphics()
+
 		'we use a full screen background - so no cls needed
 		autoCls = False
 
@@ -102,6 +109,7 @@ Type TMyApp extends TGraphicalApp
 		If mouseCursorState = 1 Then GetSpriteFromRegistry("gfx_mousecursor").Draw(MouseManager.x-11, MouseManager.y-8, 1)
 		'grabbing hand
 		If mouseCursorState = 2 Then GetSpriteFromRegistry("gfx_mousecursor").Draw(MouseManager.x-11, MouseManager.y-16, 2)
+		DrawText(MouseManager._keyStatus[1], MouseManager.x + 30, MouseManager.y)
 	End Method
 End Type
 

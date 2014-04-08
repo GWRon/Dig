@@ -11,6 +11,7 @@ Import "../../base.gfx.gui.textbox.bmx"
 Import "../../base.gfx.gui.panel.bmx"
 Import "../../base.gfx.gui.list.base.bmx"
 Import "../../base.gfx.gui.list.selectlist.bmx"
+Import "../../base.gfx.gui.dropdown.bmx"
 Import "app.screen.bmx"
 
 Type TScreenMainMenu extends TScreenMenuBase
@@ -44,11 +45,18 @@ Type TScreenMainMenu extends TScreenMenuBase
 			selectList.AddItem( new TGUISelectListItem.Create(null, null, "selecttest "+i) )
 		Next
 
+
+		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(380,450), new TPoint.Init(130,80), self.GetName())
+		'add some items to that list
+		for local i:int = 1 to 10
+			'base items do not have a size - so we have to give a manual one
+			dropdown.AddItem( new TGUIDropDownItem.Create(null, null, "dropdown "+i) )
+		Next
 		'register demo click listener - only listen to click events of
 		'the "button" created above
-		EventManager.RegisterListenerFunction("guiobject.onclick", onClickMyButton, button)
-		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement)
-		EventManager.RegisterListenerFunction("guiobject.onclick", onClickOnAButton, "tguibutton")
+'		EventManager.RegisterListenerFunction("guiobject.onclick", onClickMyButton, button)
+'		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement)
+'		EventManager.RegisterListenerFunction("guiobject.onclick", onClickOnAButton, "tguibutton")
 	End Method
 
 

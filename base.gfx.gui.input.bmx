@@ -27,7 +27,7 @@ Type TGUIinput Extends TGUIobject
 	Field valueDisplacement:TPoint
 	Field _valueChanged:Int	= False '1 if changed
 	Field _valueBeforeEdit:String = ""
-	Field _activated:Int = False
+	Field _editable:Int = True
 
 	Global minDimension:TPoint = new TPoint.Init(40,28)
 	'default name for all inputs
@@ -40,7 +40,11 @@ Type TGUIinput Extends TGUIobject
 
 		SetZindex(20)
 		SetValue(value)
-		SetMaxLength(maxLength)
+		if maxLength >= 0
+			SetMaxLength(maxLength)
+		else
+			SetMaxLength(2048)
+		endif
 '		SetValueColor(new TColor.Init(120,120,120))
 
 		'this element reacts to keystrokes
@@ -54,6 +58,11 @@ Type TGUIinput Extends TGUIobject
 	'override resize to add autocalculation and min handling
 	Method Resize(w:Float=-1,h:Float=-1)
 		Super.Resize(Max(w, minDimension.GetX()), Max(h, minDimension.GetY()))
+	End Method
+
+
+	Method SetEditable:Int(bool:Int)
+		_editable = bool
 	End Method
 
 
@@ -80,29 +89,31 @@ Type TGUIinput Extends TGUIobject
 		Super.Update()
 
 		If Self._flags & GUI_OBJECT_ENABLED
-			'manual entering "focus" with ENTER-key is not intended,
-			'this is done by the app/game with "if enter then setFocus..."
+			if _editable
+				'manual entering "focus" with ENTER-key is not intended,
+				'this is done by the app/game with "if enter then setFocus..."
 
-			'enter pressed means: finished editing -> loose focus too
-			If KEYMANAGER.isHit(KEY_ENTER) And hasFocus()
-				KEYMANAGER.blockKey(KEY_ENTER, 200) 'to avoid auto-enter on a chat input
-				GuiManager.ResetFocus()
-				If Self = GuiManager.GetKeystrokeReceiver() Then GuiManager.SetKeystrokeReceiver(Null)
-			EndIf
-
-			'as soon as an input field is marked as active input
-			'all key strokes could change the input
-			If Self = GuiManager.GetKeystrokeReceiver()
-				If Not ConvertKeystrokesToText(value)
-					value = _valueBeforeEdit
-
-					'do not allow another ESC-press for 150ms
-					KeyManager.blockKey(KEY_ESCAPE, 150)
-
-					If Self = GuiManager.GetKeystrokeReceiver() Then GuiManager.SetKeystrokeReceiver(Null)
+				'enter pressed means: finished editing -> loose focus too
+				If KEYMANAGER.isHit(KEY_ENTER) And hasFocus()
+					KEYMANAGER.blockKey(KEY_ENTER, 200) 'to avoid auto-enter on a chat input
 					GuiManager.ResetFocus()
-				Else
-					_valueChanged = (_valueBeforeEdit <> value)
+					If Self = GuiManager.GetKeystrokeReceiver() Then GuiManager.SetKeystrokeReceiver(Null)
+				EndIf
+
+				'as soon as an input field is marked as active input
+				'all key strokes could change the input
+				If Self = GuiManager.GetKeystrokeReceiver()
+					If Not ConvertKeystrokesToText(value)
+						value = _valueBeforeEdit
+
+						'do not allow another ESC-press for 150ms
+						KeyManager.blockKey(KEY_ESCAPE, 150)
+
+						If Self = GuiManager.GetKeystrokeReceiver() Then GuiManager.SetKeystrokeReceiver(Null)
+						GuiManager.ResetFocus()
+					Else
+						_valueChanged = (_valueBeforeEdit <> value)
+					EndIf
 				EndIf
 			EndIf
 
@@ -117,7 +128,7 @@ Type TGUIinput Extends TGUIobject
 			EndIf
 		EndIf
 		'set to "active" look
-		If Self = GuiManager.GetKeystrokeReceiver() Then setState("active")
+		If _editable and Self = GuiManager.GetKeystrokeReceiver() Then setState("active")
 
 		'limit input length
         If value.length > maxlength Then value = value[..maxlength]
@@ -200,7 +211,7 @@ Type TGUIinput Extends TGUIobject
 			ElseIf overlayPosition = "iconRight"
 				overlayBGSprite.DrawArea(position.GetX() + rect.GetW() - dim.GetX(), position.getY(), dim.GetX(), rect.GetH())
 				'move area of overlay (eg. icon)
-				overlayArea.position.SetX(position.GetX() + rect.GetW() - dim.GetX() + bgBorderWidth/2)
+				overlayArea.position.SetX(rect.GetW() - dim.GetX() + bgBorderWidth/2)
 			EndIf
 		EndIf
 
@@ -225,7 +236,7 @@ Type TGUIinput Extends TGUIobject
 		'if we are the input receiving keystrokes, symbolize it with the
 		'blinking underscore sign "text_"
 		'else just draw it like a normal gui object
-		If Self = GuiManager.GetKeystrokeReceiver()
+		If _editable AND Self = GuiManager.GetKeystrokeReceiver()
 			color.copy().AdjustFactor(-80).SetRGB()
 			While Len(printvalue) >1 And GetFont().getWidth(printValue + "_") > maxTextWidth
 				printvalue = printValue[1..]

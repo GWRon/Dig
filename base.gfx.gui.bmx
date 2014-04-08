@@ -17,8 +17,9 @@ Import "base.util.event.bmx"
 
 
 '===== GUI CONSTANTS =====
-Const EVENT_GUI_CLICK:Int						= 1
-Const EVENT_GUI_DOUBLECLICK:Int					= 2
+Const EVENT_GUI_HIT:Int							= 1
+Const EVENT_GUI_CLICK:Int						= 2
+Const EVENT_GUI_DOUBLECLICK:Int					= 4
 Const GUI_OBJECT_DRAGGED:Int					= 2^0
 Const GUI_OBJECT_VISIBLE:Int					= 2^1
 Const GUI_OBJECT_ENABLED:Int					= 2^2
@@ -64,7 +65,7 @@ Type TGUIManager
 	Field UpdateState_mouseButtonDown:Int[]
 	Field UpdateState_mouseButtonHit:Int[]
 	Field UpdateState_mouseScrollwheelMovement:Int = 0
-	Field UpdateState_foundClickObject:Int = False
+	Field UpdateState_foundHitObject:Int = False
 	Field UpdateState_foundHoverObject:Int = False
 
 	'=== PRIVATE PROPERTIES ===
@@ -409,8 +410,8 @@ Type TGUIManager
 	Method StartUpdates:Int()
 		UpdateState_mouseScrollwheelMovement = MOUSEMANAGER.GetScrollwheelmovement()
 
-		UpdateState_mouseButtonDown	= MOUSEMANAGER.GetStatusDown()
-		UpdateState_mouseButtonHit = MOUSEMANAGER.GetStatusHit() 'single and double clicks!
+		UpdateState_mouseButtonDown = MOUSEMANAGER.GetAllStatusDown()
+		UpdateState_mouseButtonHit = MOUSEMANAGER.GetAllStatusHit() 'single and double clicks!
 	End Method
 
 
@@ -430,7 +431,7 @@ Type TGUIManager
 
 		UpdateState_mouseScrollwheelMovement = MOUSEMANAGER.GetScrollwheelmovement()
 
-		UpdateState_foundClickObject = False
+		UpdateState_foundHitObject = False
 		UpdateState_foundHoverObject = False
 		Local screenRect:TRectangle = Null
 
@@ -480,6 +481,9 @@ Type TGUIManager
 			'all special objects get drawn separately
 			If ListDragged.contains(obj) Then Continue
 			If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
+
+			'skip invisible objects
+			if not obj.IsVisible() then continue
 
 			'avoid getting drawn multiple times
 			'this can be overcome with a manual "obj.Draw()"-call
@@ -665,8 +669,11 @@ Type TGUIobject
 	'if parentclassname is NOT found and <> "" you get the uppermost
 	'parent returned
 	Method GetParent:TGUIobject(parentClassName:String="", strictMode:Int=False)
-		'if no special parent is requested, just return the direct parent
-		If parentClassName="" Then Return _parent
+		'if no special parent is requested, just return the direct parent or self
+		If parentClassName=""
+			if _parent then Return _parent
+			return self
+		endif
 
 		If _parent
 			If _parent.getClassName().toLower() = parentClassName.toLower() Then Return _parent
@@ -697,6 +704,13 @@ Type TGUIobject
 	'default click handler for all gui objects
 	'by default they do nothing
 	Method onClick:Int(triggerEvent:TEventBase)
+		Return False
+	End Method
+	
+
+	'default hit handler for all gui objects
+	'by default they do nothing
+	Method onHit:Int(triggerEvent:TEventBase)
 		Return False
 	End Method
 
@@ -852,7 +866,9 @@ Type TGUIobject
 	End Method
 
 
-	Method isVisible:Int()
+	Method IsVisible:Int()
+		'i am invisible if my parent is not visible
+'		if _parent and not _parent.IsVisible() then return FALSE
 		Return _flags & GUI_OBJECT_VISIBLE
 	End Method
 
@@ -1192,12 +1208,18 @@ Type TGUIobject
 	Method DrawChildren:Int()
 		If Not children Then Return False
 
+		'skip children if self not visible
+		if not IsVisible() then return false
+
 		'update added elements
 		For Local obj:TGUIobject = EachIn children
 			'before skipping a dragged one, we try to ask it as a ghost (at old position)
 			If obj.isDragged() Then obj.drawGhost()
 			'skip dragged ones - as we set them to managed by GUIManager for that time
 			If obj.isDragged() Then Continue
+
+			'skip invisible objects
+			if not obj.IsVisible() then continue
 
 			'avoid getting updated multiple times
 			'this can be overcome with a manual "obj.Update()"-call
@@ -1248,7 +1270,7 @@ Type TGUIobject
 			'mouseclick somewhere - should deactivate active object
 			'no need to use the cached mouseButtonDown[] as we want the
 			'general information about a click
-			If MOUSEMANAGER.isHit(1,False) And hasFocus() Then GUIManager.setFocus(Null)
+			If MOUSEMANAGER.isHit(1) And hasFocus() Then GUIManager.setFocus(Null)
 		'mouse over object
 		Else
 			'inform others about a scroll with the mousewheel
@@ -1291,10 +1313,10 @@ Type TGUIobject
 
 				'we found a gui element which can accept clicks
 				'dont check further guiobjects for mousedown
+				'ATTENTION: do not use MouseManager.ResetKey(1)
+				'as this also removes "down" state
 				GUIManager.UpdateState_mouseButtonDown[1] = False
 				GUIManager.UpdateState_mouseButtonHit[1] = False
-				'no underlaying clicks!
-				'attention: resetting a key from a non-mainthread ?!
 				'MOUSEMANAGER.ResetKey(1)
 			EndIf
 
@@ -1322,6 +1344,8 @@ Type TGUIobject
 				EndIf
 
 				'inform others about a right guiobject click
+				'we do use a "cached hit state" so we can reset it if
+				'we found a one handling it
 				If GUIManager.UpdateState_mouseButtonHit[2]
 					Local clickEvent:TEventSimple = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_CLICK).AddNumber("button",2), Self)
 					OnClick(clickEvent)
@@ -1334,25 +1358,34 @@ Type TGUIobject
 					GUIManager.UpdateState_mouseButtonHit[2] = False
 				EndIf
 
-				If MOUSEMANAGER.isDoubleHit(1)
-					Local clickEvent:TEventSimple = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_DOUBLECLICK).AddNumber("button",1), Self)
-					'let the object handle the click
-					OnClick(clickEvent)
-					'fire onClickEvent
-					EventManager.triggerEvent(clickEvent)
-				EndIf
+				If Not GUIManager.UpdateState_foundHitObject And _flags & GUI_OBJECT_ENABLED
+					local handledHitOrClick:int = FALSE
+					'=== HITS ====
+					For local i:int = 1 to 3
+						If MOUSEMANAGER.IsHit(1)
+							handledHitOrClick = True
+							local event:TEventSimple = TEventSimple.Create("guiobject.OnHit", new TData.AddNumber("type", EVENT_GUI_HIT).AddNumber("button",i), Self)
+							'let the object handle the click
+							OnHit(event)
+							'fire onHitEvent
+							EventManager.triggerEvent(event)
+						EndIf
+					Next
 
-				'do not use the cached mousebuttons when checking for "not pressed"
-				'If MOUSEMANAGER.isUp(1) And MouseIsDown
-				If MOUSEMANAGER.IsClicked(1)
-					If Not GUIManager.UpdateState_foundClickObject And _flags & GUI_OBJECT_ENABLED
+					'=== CLICKS ====
+					'by default clicks do not happen if a "hit" happened
+					'but there is no need to explicitely check this again
+					If MOUSEMANAGER.IsClicked(1) or MOUSEMANAGER.IsDoubleClicked(1)
+						handledHitOrClick = True
 						mouseIsClicked = new TPoint.Init( MouseManager.x, MouseManager.y)
 
-						'clicking on an object sets focus to it
-						'so remove from old before
-						If Not HasFocus() Then GUIManager.ResetFocus()
-
-						Local clickEvent:TEventSimple = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_CLICK).AddNumber("button",1), Self)
+						'=== SEND OUT CLICK EVENT ====
+						Local clickEvent:TEventSimple
+						If MOUSEMANAGER.IsClicked(1)
+							clickEvent = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_CLICK).AddNumber("button",1), Self)
+						Else
+							clickEvent = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_DOUBLECLICK).AddNumber("button",1), Self)
+						EndIf
 						'let the object handle the click
 						OnClick(clickEvent)
 						'fire onClickEvent
@@ -1360,11 +1393,18 @@ Type TGUIobject
 
 						'added for imagebutton and arrowbutton not being reset when mouse standing still
 						MouseIsDown = Null
-						GUIManager.UpdateState_foundClickObject = True
-
 						'reset mouse button
 						MOUSEMANAGER.ResetKey(1)
 					EndIf
+
+					'if there was a hit or click
+					if handledHitOrClick
+						'clicking on an object sets focus to it
+						'so remove from old before
+						If Not HasFocus() Then GUIManager.ResetFocus()
+
+						GUIManager.UpdateState_foundHitObject = True
+					endif
 				EndIf
 			EndIf
 		EndIf

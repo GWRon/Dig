@@ -75,6 +75,7 @@ Type TData
 			default
 				return False
 		End Select
+		return False
 	End Method
 
 
