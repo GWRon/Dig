@@ -1362,7 +1362,7 @@ Type TGUIobject
 					local handledHitOrClick:int = FALSE
 					'=== HITS ====
 					For local i:int = 1 to 3
-						If MOUSEMANAGER.IsHit(1)
+						If MOUSEMANAGER.IsHit(i)
 							handledHitOrClick = True
 							local event:TEventSimple = TEventSimple.Create("guiobject.OnHit", new TData.AddNumber("type", EVENT_GUI_HIT).AddNumber("button",i), Self)
 							'let the object handle the click
