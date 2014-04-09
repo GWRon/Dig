@@ -17,9 +17,6 @@ Import "base.util.event.bmx"
 
 
 '===== GUI CONSTANTS =====
-Const EVENT_GUI_HIT:Int							= 1
-Const EVENT_GUI_CLICK:Int						= 2
-Const EVENT_GUI_DOUBLECLICK:Int					= 4
 Const GUI_OBJECT_DRAGGED:Int					= 2^0
 Const GUI_OBJECT_VISIBLE:Int					= 2^1
 Const GUI_OBJECT_ENABLED:Int					= 2^2
@@ -701,16 +698,27 @@ Type TGUIobject
 	End Method
 
 
-	'default click handler for all gui objects
+
+	'default single click handler for all gui objects
 	'by default they do nothing
-	Method onClick:Int(triggerEvent:TEventBase)
+	'singleClick: waited long enough to see if there comes another mouse click
+	Method onSingleClick:Int(triggerEvent:TEventBase)
+		Return False
+	End Method
+
+
+	'default double click handler for all gui objects
+	'by default they do nothing
+	'doubleClick: waited long enough to see if there comes another mouse click
+	Method onDoubleClick:Int(triggerEvent:TEventBase)
 		Return False
 	End Method
 	
 
 	'default hit handler for all gui objects
 	'by default they do nothing
-	Method onHit:Int(triggerEvent:TEventBase)
+	'click: no wait: mouse button was down and is now up again
+	Method onClick:Int(triggerEvent:TEventBase)
 		Return False
 	End Method
 
@@ -1343,51 +1351,47 @@ Type TGUIobject
 					setState("hover")
 				EndIf
 
+
 				'inform others about a right guiobject click
 				'we do use a "cached hit state" so we can reset it if
 				'we found a one handling it
 				If GUIManager.UpdateState_mouseButtonHit[2]
-					Local clickEvent:TEventSimple = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_CLICK).AddNumber("button",2), Self)
+					Local clickEvent:TEventSimple = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("button",2), Self)
 					OnClick(clickEvent)
 					'fire onClickEvent
 					EventManager.triggerEvent(clickEvent)
 
 					'maybe change to "isAccepted" - but then each gui object
 					'have to modify the event IF they accepted the click
+					
 					'reset Button
 					GUIManager.UpdateState_mouseButtonHit[2] = False
 				EndIf
 
 				If Not GUIManager.UpdateState_foundHitObject And _flags & GUI_OBJECT_ENABLED
-					local handledHitOrClick:int = FALSE
-					'=== HITS ====
-					For local i:int = 1 to 3
-						If MOUSEMANAGER.IsHit(i)
-							handledHitOrClick = True
-							local event:TEventSimple = TEventSimple.Create("guiobject.OnHit", new TData.AddNumber("type", EVENT_GUI_HIT).AddNumber("button",i), Self)
-							'let the object handle the click
-							OnHit(event)
-							'fire onHitEvent
-							EventManager.triggerEvent(event)
-						EndIf
-					Next
-
-					'=== CLICKS ====
-					'by default clicks do not happen if a "hit" happened
-					'but there is no need to explicitely check this again
-					If MOUSEMANAGER.IsClicked(1) or MOUSEMANAGER.IsDoubleClicked(1)
-						handledHitOrClick = True
+					If MOUSEMANAGER.IsClicked(1)
+						'=== SET CLICKED VAR ====
 						mouseIsClicked = new TPoint.Init( MouseManager.x, MouseManager.y)
 
 						'=== SEND OUT CLICK EVENT ====
+						'if recognized as "double click" no normal "onClick"
+						'is emitted. Same for "single clicks".
+						'this avoids sending "onClick" and after 100ms
+						'again "onSingleClick" AND "onClick"
 						Local clickEvent:TEventSimple
-						If MOUSEMANAGER.IsClicked(1)
-							clickEvent = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_CLICK).AddNumber("button",1), Self)
+						If MOUSEMANAGER.IsDoubleClicked(1)
+							clickEvent = TEventSimple.Create("guiobject.OnDoubleClick", new TData.AddNumber("button",1), Self)
+							'let the object handle the click
+							OnDoubleClick(clickEvent)
+						ElseIf MOUSEMANAGER.IsSingleClicked(1)
+							clickEvent = TEventSimple.Create("guiobject.OnSingleClick", new TData.AddNumber("button",1), Self)
+							'let the object handle the click
+							OnSingleClick(clickEvent)
 						Else
-							clickEvent = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("type", EVENT_GUI_DOUBLECLICK).AddNumber("button",1), Self)
+							clickEvent = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("button",1), Self)
+							'let the object handle the click
+							OnClick(clickEvent)
 						EndIf
-						'let the object handle the click
-						OnClick(clickEvent)
 						'fire onClickEvent
 						EventManager.triggerEvent(clickEvent)
 
@@ -1395,16 +1399,13 @@ Type TGUIobject
 						MouseIsDown = Null
 						'reset mouse button
 						MOUSEMANAGER.ResetKey(1)
-					EndIf
 
-					'if there was a hit or click
-					if handledHitOrClick
 						'clicking on an object sets focus to it
 						'so remove from old before
 						If Not HasFocus() Then GUIManager.ResetFocus()
 
 						GUIManager.UpdateState_foundHitObject = True
-					endif
+					EndIf
 				EndIf
 			EndIf
 		EndIf

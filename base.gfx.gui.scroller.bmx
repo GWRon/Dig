@@ -35,9 +35,9 @@ Type TGUIScroller Extends TGUIobject
 		guiButtonMinus.setParent(Self)
 		guiButtonPlus.setParent(Self)
 
-		'scroller is interested in click on its buttons
-		EventManager.registerListenerFunction( "guiobject.onHit",	TGUIScroller.onButtonHit, Self.guiButtonMinus )
-		EventManager.registerListenerFunction( "guiobject.onHit",	TGUIScroller.onButtonHit, Self.guiButtonPlus )
+		'scroller is interested in hits (not clicks) on its buttons
+		EventManager.registerListenerFunction( "guiobject.onClick",	TGUIScroller.onButtonClick, Self.guiButtonMinus )
+		EventManager.registerListenerFunction( "guiobject.onClick",	TGUIScroller.onButtonClick, Self.guiButtonPlus )
 		EventManager.registerListenerFunction( "guiobject.onMouseDown",	TGUIScroller.onButtonDown, Self.guiButtonMinus )
 		EventManager.registerListenerFunction( "guiobject.onMouseDown",	TGUIScroller.onButtonDown, Self.guiButtonPlus )
 
@@ -109,8 +109,8 @@ Type TGUIScroller Extends TGUIobject
 	End Method
 
 
-	'handle hits on the up/down-buttons and inform others about changes
-	Function onButtonHit:Int( triggerEvent:TEventBase )
+	'handle clicks on the up/down-buttons and inform others about changes
+	Function onButtonClick:Int( triggerEvent:TEventBase )
 		Local sender:TGUIArrowButton = TGUIArrowButton(triggerEvent.GetSender())
 		If sender = Null Then Return False
 

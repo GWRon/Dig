@@ -33,14 +33,14 @@ Type TScreenMainMenu extends TScreenMenuBase
 
 		local baseList:TGUIListBase = new TGUIListBase.Create(new TPoint.Init(20,450), new TPoint.Init(130,80), self.GetName())
 		'add some items to that list
-		for local i:int = 1 to 5
+		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
 			baseList.AddItem( new TGUIListItem.Create(null, new TPoint.Init(100, 20), "basetest "+i) )
 		Next
 
 		local selectList:TGUISelectList = new TGUISelectList.Create(new TPoint.Init(200,450), new TPoint.Init(130,80), self.GetName())
 		'add some items to that list
-		for local i:int = 1 to 5
+		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
 			selectList.AddItem( new TGUISelectListItem.Create(null, null, "selecttest "+i) )
 		Next

@@ -144,7 +144,7 @@ Type TPoint {_exposeToLua="selected"}
 
 	'switches values of given points
 	'(switching point references might corrupt references in other objects)
-	Function SwitchPoints(pointA:TPoint Var, pointB:TPoint Var)
+	Function SwitchPoints(pointA:TPoint, pointB:TPoint)
 		local tmpPoint:TPoint = pointA.Copy()
 		pointA.CopyFrom(pointB)
 		pointB.CopyFrom(tmpPoint)

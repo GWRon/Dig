@@ -161,21 +161,20 @@ Type TGUIListBase Extends TGUIobject
 		If showScrollerH and not guiScrollerH.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
 			guiScrollerH.rect.position.setXY(_entriesBlockDisplacement.x, rect.getH() + _entriesBlockDisplacement.y - guiScrollerH.guiButtonMinus.rect.getH())
 			if showScrollerV
-				guiScrollerH.Resize(w - guiScrollerV.GetScreenWidth(), 0)
+				guiScrollerH.Resize(GetScreenWidth() - guiScrollerV.GetScreenWidth(), 0)
 			else
-				guiScrollerH.Resize(w)
+				guiScrollerH.Resize(GetScreenWidth())
 			endif
 		EndIf
 		'move vertical scroller |
 		If showScrollerV and not guiScrollerV.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
 			guiScrollerV.rect.position.setXY( rect.getW() + _entriesBlockDisplacement.x - guiScrollerV.guiButtonMinus.rect.getW(), _entriesBlockDisplacement.y)
 			if showScrollerH
-				guiScrollerV.Resize(0, h - guiScrollerH.GetScreenHeight())
+				guiScrollerV.Resize(0, GetScreenHeight() - guiScrollerH.GetScreenHeight()-03)
 			else
-				guiScrollerV.Resize(0, h)
+				guiScrollerV.Resize(0, GetScreenHeight())
 			endif
 		EndIf
-
 
 		If guiBackground
 			'move background by negative padding values ( -> ignore padding)
@@ -540,7 +539,7 @@ endrem
 		local guiSender:TGUIObject = TGUIObject(triggerEvent.GetSender())
 		if not guiSender then return False
 
-		Local guiList:TGUIListBase = TGUIListBase(guiSender.GetParent("topitem"))
+		Local guiList:TGUIListBase = TGUIListBase(guiSender.GetParent("TGUIListBase"))
 		If Not guiList Then Return False
 
 		'do not allow scrolling if not enabled
