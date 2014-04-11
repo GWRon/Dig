@@ -65,6 +65,10 @@ Type TScreenManager
 
 
 	Method SetCurrent:Int(screen:TScreen)
+		'if there was no current set check if we can use this
+		'screen as exit screen
+		if screen and not currentScreen and not exitScreen then exitScreen = screen
+
 		currentScreen = screen
 	End Method
 
