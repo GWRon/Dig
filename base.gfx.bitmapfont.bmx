@@ -40,7 +40,7 @@ Type TFontManager
 		'create a default font if not done yet
 		if not DefaultFont
 			'add a defaultFont (uses default BlitzMax font if none was set before)
-			DefaultFont = TBitmapFont.Create("Default", "", 12, 0)
+			DefaultFont = TBitmapFont.Create("Default", "", 12, SMOOTHFONT)
 		EndIf
 
 		'no details given: return default font
