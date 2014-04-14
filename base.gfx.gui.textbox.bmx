@@ -76,11 +76,6 @@ Type TGUITextBox Extends TGUIobject
 
 	Method Draw:Int()
 		Local drawPos:TPoint = new TPoint.Init(GetScreenX(), GetScreenY())
-		'horizontal and vertical alignment are done in drawBlock too
-		'so pre-adjust the drawing position
-		'drawPos.y :+ valueAlignment.GetY() * (GetHeight() - GetFont().getHeight(value))
-		drawPos.y :+ valueAlignment.GetY() * rect.GetH()
-
 		GetFont().drawBlock(value, drawPos.GetIntX(), drawPos.GetIntY(), rect.GetW(), rect.GetH(), valueAlignment, valueColor, 1, 1, 0.25)
 	End Method
 End Type
