@@ -221,8 +221,8 @@ Type TSprite extends TRenderable
 
 		'center has to consider the marker_width (content dimension marker)
 		ninePatch_centerDimension = new TPoint.Init(..
-					area.GetW() - (ninePatch_borderDimension.GetLeft() + ninePatch_borderDimension.GetRight() + NINEPATCH_MARKER_WIDTH), ..
-					area.GetH() - (ninePatch_borderDimension.GetTop() + ninePatch_borderDimension.GetBottom() + NINEPATCH_MARKER_WIDTH) ..
+					area.GetW() - (ninePatch_borderDimension.GetLeft() + ninePatch_borderDimension.GetRight()), ..
+					area.GetH() - (ninePatch_borderDimension.GetTop() + ninePatch_borderDimension.GetBottom()) ..
 				  )
 
 		ninePatchEnabled = true
@@ -439,7 +439,8 @@ Type TSprite extends TRenderable
 			If ninePatch_borderDimension.GetRight() then DrawResized(new TRectangle.Init(x+stretchDestW+ninePatch_borderDimension.GetLeft()*ninePatch_borderDimensionScale, y, ninePatch_borderDimension.GetRight()*ninePatch_borderDimensionScale, ninePatch_borderDimension.GetTop()*ninePatch_borderDimensionScale), new TRectangle.Init(ninePatch_centerDimension.GetX()+ninePatch_borderDimension.GetLeft() - NINEPATCH_MARKER_WIDTH, NINEPATCH_MARKER_WIDTH, ninePatch_borderDimension.GetRight(), ninePatch_borderDimension.GetTop()), frame)
 			'middle
 			If ninePatch_borderDimension.GetLeft() Then DrawResized(new TRectangle.Init(x, y+ninePatch_borderDimension.GetTop()*ninePatch_borderDimensionScale, ninePatch_borderDimension.GetLeft()*ninePatch_borderDimensionScale, stretchDestH), new TRectangle.Init(NINEPATCH_MARKER_WIDTH, ninePatch_borderDimension.GetTop(), ninePatch_borderDimension.GetLeft(), ninePatch_centerDimension.GetY()), frame)
-			DrawResized(new TRectangle.Init(x+ninePatch_borderDimension.GetLeft()*ninePatch_borderDimensionScale, y+ninePatch_borderDimension.GetTop()*ninePatch_borderDimensionScale, stretchDestW, stretchDestH), new TRectangle.Init(NINEPATCH_MARKER_WIDTH+ninePatch_borderDimension.GetLeft(), NINEPATCH_MARKER_WIDTH+ninePatch_borderDimension.GetTop(), ninePatch_centerDimension.GetX(), ninePatch_centerDimension.GetY()), frame)
+'			DrawResized(new TRectangle.Init(x+ninePatch_borderDimension.GetLeft()*ninePatch_borderDimensionScale, y+ninePatch_borderDimension.GetTop()*ninePatch_borderDimensionScale, stretchDestW, stretchDestH), new TRectangle.Init(NINEPATCH_MARKER_WIDTH+ninePatch_borderDimension.GetLeft(), NINEPATCH_MARKER_WIDTH+ninePatch_borderDimension.GetTop(), ninePatch_centerDimension.GetX(), ninePatch_centerDimension.GetY()), frame)
+			DrawResized(new TRectangle.Init(x+ninePatch_borderDimension.GetLeft()*ninePatch_borderDimensionScale, y+ninePatch_borderDimension.GetTop()*ninePatch_borderDimensionScale, stretchDestW, stretchDestH), new TRectangle.Init(ninePatch_borderDimension.GetLeft(), ninePatch_borderDimension.GetTop(), ninePatch_centerDimension.GetX(), ninePatch_centerDimension.GetY()), frame)
 			If ninePatch_borderDimension.GetRight() Then DrawResized(new TRectangle.Init(x+stretchDestW+ninePatch_borderDimension.GetLeft()*ninePatch_borderDimensionScale, y+ninePatch_borderDimension.GetTop()*ninePatch_borderDimensionScale, ninePatch_borderDimension.GetRight()*ninePatch_borderDimensionScale, stretchDestH), new TRectangle.Init(ninePatch_centerDimension.GetX()+ninePatch_borderDimension.GetLeft() - NINEPATCH_MARKER_WIDTH, ninePatch_borderDimension.GetTop(), ninePatch_borderDimension.GetRight(), ninePatch_centerDimension.GetY()), frame)
 			'bottom
 			If ninePatch_borderDimension.GetLeft() Then DrawResized(new TRectangle.Init(x, y+stretchDestH+ninePatch_borderDimension.GetTop()*ninePatch_borderDimensionScale, ninePatch_borderDimension.GetLeft()*ninePatch_borderDimensionScale, ninePatch_borderDimension.GetBottom()*ninePatch_borderDimensionScale), new TRectangle.Init(NINEPATCH_MARKER_WIDTH, ninePatch_centerDimension.GetY()+ninePatch_borderDimension.GetTop() - NINEPATCH_MARKER_WIDTH, ninePatch_borderDimension.GetLeft(), ninePatch_borderDimension.GetBottom()), frame)
