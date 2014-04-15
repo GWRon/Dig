@@ -219,10 +219,10 @@ Type TSprite extends TRenderable
 			return FALSE
 		Endif
 
-
+		'center has to consider the marker_width (content dimension marker)
 		ninePatch_centerDimension = new TPoint.Init(..
-					area.GetW() - (ninePatch_borderDimension.GetLeft() + ninePatch_borderDimension.GetRight()), ..
-					area.GetH() - (ninePatch_borderDimension.GetTop() + ninePatch_borderDimension.GetBottom()) ..
+					area.GetW() - (ninePatch_borderDimension.GetLeft() + ninePatch_borderDimension.GetRight() + NINEPATCH_MARKER_WIDTH), ..
+					area.GetH() - (ninePatch_borderDimension.GetTop() + ninePatch_borderDimension.GetBottom() + NINEPATCH_MARKER_WIDTH) ..
 				  )
 
 		ninePatchEnabled = true
