@@ -132,6 +132,7 @@ Type TBitmapFont
 	Field _charsEffectFuncConfig:TData[]
 	Field _pixmapFormat:int = PF_A8			'by default this is 8bit alpha only
 	Field _maxCharHeight:int = 0
+	Field _hasEllipsis:int = -1
 
 	global drawToPixmap:TPixmap = null
 'DISABLECACHE	global ImageCaches:TMap = CreateMap()
@@ -283,6 +284,19 @@ Type TBitmapFont
 	End Method
 
 
+	'Returns whether this font has a visible ellipsis char ("…")
+	Method HasEllipsis:int()
+		if _hasEllipsis = -1 then _hasEllipsis = GetWidth(chr(8230))
+		return _hasEllipsis
+	End Method
+
+
+	Method GetEllipsis:string()
+		if hasEllipsis() then return chr(8230)
+		return "..."
+	End Method
+
+
 	Method getMaxCharHeight:int()
 		if _maxCharHeight = 0 then _maxCharHeight = getHeight("gQ'_")
 		return _maxCharHeight
@@ -320,7 +334,10 @@ Type TBitmapFont
 	End Function
 
 
-	Method TextToMultiLine:string[](text:string,w:float,h:float, lineHeight:float)
+	'splits a given text into an array of lines
+	'splitting is done on "spaces", "-"
+	'or in the middle of a word if "nicelyTruncateLastLine" is "FALSE"
+	Method TextToMultiLine:string[](text:string, w:float, h:float, lineHeight:float, nicelyTruncateLastLine:int=TRUE)
 		Local fittingChars:int	= 0
 		Local processedChars:Int= 0
 		Local paragraphs:string[]	= text.replace(chr(13), "~n").split("~n")
@@ -355,18 +372,24 @@ Type TBitmapFont
 					'whether we found a break position by a rule
 					local FoundBreakPosition:int = FALSE
 
-					'search for the "most right" position of a linebreak
-					For local charPos:int = 0 To linePartial.length-1
-						'special line break rules (spaces, -, ...)
-						If linePartial[charPos] = Asc(" ")
-							breakPosition = charPos
-							FoundBreakPosition=TRUE
-						endif
-						If linePartial[charPos] = Asc("-")
-							breakPosition = charPos
-							FoundBreakPosition=TRUE
-						endif
-					Next
+					'search for "nice" linebreak:
+					'- if not on last line
+					'- if enforced to do so ("nicelyTruncateLastLine")
+					if i < (paragraphs.length-1) or nicelyTruncateLastLine
+						'search for the "most right" position of a linebreak
+						For local charPos:int = 0 To linePartial.length-1
+							'special line break rules (spaces, -, ...)
+							If linePartial[charPos] = Asc(" ")
+								breakPosition = charPos
+								FoundBreakPosition=TRUE
+							endif
+							If linePartial[charPos] = Asc("-")
+								breakPosition = charPos
+								FoundBreakPosition=TRUE
+							endif
+						Next
+					endif
+
 					'if no line break rule hit, use a "cut" in the middle of a word
 					if not FoundBreakPosition then breakPosition = Max(0, linePartial.length-1 -1)
 
@@ -380,14 +403,14 @@ Type TBitmapFont
 					linePartial = linePartial[..breakPosition]
 				wend
 				'add that line to the lines to draw
-				lines = lines[..lines.length +1]
-				lines[lines.length-1] = linePartial
+				lines :+ [linePartial]
 
 				heightLeft :- lineHeight
 
 
 				'strip the processed part from the original line
 				line = line[linePartial.length..]
+
 				if skipNextChar then line = line[Min(1, line.length)..]
 			'until no text left, or no space left for another line
 			until line.length = 0  or (limitHeight and heightLeft < lineHeight)
@@ -397,10 +420,11 @@ Type TBitmapFont
 				'get the line BEFORE
 				local currentLine:string = lines[lines.length-1]
 				'check whether we have to subtract some chars for the "..."
-				if getWidth(currentLine+chr(8230)) > w
-					currentLine = currentLine[.. currentLine.length-3] + chr(8230) ' "..."
+				local ellipsisChar:string = GetEllipsis()
+				if getWidth(currentLine + ellipsisChar) > w
+					currentLine = currentLine[.. currentLine.length-3] + ellipsisChar
 				else
-					currentLine = currentLine[.. currentLine.length] + chr(8230) ' "..."
+					currentLine = currentLine[.. currentLine.length] + ellipsisChar
 				endif
 				lines[lines.length-1] = currentLine
 			endif
@@ -410,11 +434,11 @@ Type TBitmapFont
 	End Method
 
 
-	Method drawBlock:TPoint(text:String, x:Float, y:Float, w:Float, h:Float, alignment:TPoint=null, color:TColor=null, style:int=0, doDraw:int = 1, special:float=1.0, singleLine:int=FALSE)
+	Method drawBlock:TPoint(text:String, x:Float, y:Float, w:Float, h:Float, alignment:TPoint=null, color:TColor=null, style:int=0, doDraw:int = 1, special:float=1.0, nicelyTruncateLastLine:int=TRUE)
 		'use special chars (instead of text) for same height on all lines
 		Local alignedX:float	= 0.0
-		local lineHeight:float	= getMaxCharHeight()
-		local lines:string[]	= TextToMultiLine(text, w, h, lineHeight) ', singleLine)
+		Local lineHeight:float	= getMaxCharHeight()
+		Local lines:string[] = TextToMultiLine(text, w, h, lineHeight, nicelyTruncateLastLine)
 
 		local blockHeight:Float = lineHeight * lines.length
 		if lines.length > 1
