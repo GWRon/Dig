@@ -301,11 +301,20 @@ Type TSprite extends TRenderable
 
 	'returns the image of this sprite (reference, no copy)
 	'if the frame is 0+, only this frame is returned
-	Method GetImage:TImage(frame:int=-1)
+	'if includeBorder is TRUE, then an potential ninePatchBorder will be
+	'included
+	Method GetImage:TImage(frame:int=-1, includeBorder:int=FALSE)
 		'if a frame is requested, just return it (no need for "animated" check)
 		if frame >=0 then return GetFrameImage(frame)
 
-		Local DestPixmap:TPixmap = LockImage(parent.image, 0, False, True).Window(area.GetX(), area.GetY(), area.GetW(), area.GetH())
+		Local DestPixmap:TPixmap
+		if includeBorder
+			DestPixmap = LockImage(parent.image, 0, False, True).Window(area.GetX(), area.GetY(), area.GetW(), area.GetH())
+		else
+			local border:TRectangle = GetNinePatchBorderDimension()
+			DestPixmap = LockImage(parent.image, 0, False, True).Window(area.GetX()+ border.GetLeft(), area.GetY() + border.GetTop(), area.GetW() - border.GetLeft() - border.GetRight(), area.GetH() - border.GetTop() - border.GetBottom())
+		endif
+
 		UnlockImage(parent.image)
 		GCCollect() '<- FIX!
 

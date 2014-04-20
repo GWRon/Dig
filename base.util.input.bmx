@@ -47,7 +47,6 @@ Type TMouseManager
 	Field x:float = 0.0
 	Field y:float = 0.0
 
-	Field hasMoved:int = FALSE
 	'amount of pixels moved (0=zero, -upwards, +downwards)
 	Field scrollWheelMoved:int = 0
 	'current status of the buttons
@@ -108,7 +107,7 @@ Type TMouseManager
 
 
 	'returns whether the button got clicked, no waiting time
-	'is added 
+	'is added
 	Method isClicked:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_NORMAL and (_keyHitCount[key] > 0)
 	End Method
@@ -123,6 +122,16 @@ Type TMouseManager
 	'returns whether the button is in up state
 	Method isUp:Int(key:Int)
 		return _keyStatus[key] = KEY_STATE_UP
+	End Method
+
+
+	Method HasMoved:int()
+		return (0 = GetMovedDistance())
+	End Method
+
+
+	Method GetMovedDistance:int()
+		Return sqr((lastPos.X - int(x))^2 + (lastPos.y - int(y))^2)
 	End Method
 
 
@@ -204,7 +213,7 @@ Type TMouseManager
 		'-> if the hit evolved into a click, this should have been
 		'handled already after the last call of UpdateKey()
 		if _keyHitTime[i] = 0 then _keyHitCount[i] = 0
-	
+
 		If _keyStatus[i] = KEY_STATE_NORMAL
 			If MouseHit(i) then _keyStatus[i] = KEY_STATE_HIT
 		ElseIf _keyStatus[i] = KEY_STATE_HIT
@@ -252,26 +261,22 @@ Type TMouseManager
 
 	'Update the button states
 	Method Update:Int()
-		'by default mouse did not move
-		hasMoved = False
-		'same for scrollwheel
+		'by default scroll wheel did not move
 		scrollWheelMoved = 0
-		
-		If lastPos.x <> MouseX() Or lastPos.y <> MouseY()
-			hasMoved = True
-			lastPos.SetXY(MouseX(), MouseY())
-		endif
+
 		If lastPos.z <> MouseZ()
 			scrollWheelMoved = lastPos.z - MouseZ()
 			lastPos.z = MouseZ()
 		endif
-		
+
 		x = MouseX()
 		y = MouseY()
 
 		For Local i:Int = 1 To 3
 			UpdateKey(i)
 		Next
+
+		lastPos.SetXY(x, y)
 	End Method
 EndType
 
