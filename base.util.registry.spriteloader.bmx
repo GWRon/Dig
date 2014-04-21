@@ -48,7 +48,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 			local fieldNames:String[]
 			fieldNames :+ ["name"]
 			fieldNames :+ ["x", "y", "w", "h"]
-			fieldNames :+ ["offsetTop", "offsetLeft", "offsetBottom", "offsetRight"]
+			fieldNames :+ ["offsetLeft", "offsetTop", "offsetRight", "offsetBottom"]
 			fieldNames :+ ["frames|f"]
 			fieldNames :+ ["ninepatch"]
 			TXmlHelper.LoadValuesToData(childNode, childData, fieldNames)
@@ -63,6 +63,8 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 
 
 	Method LoadFromConfig:int(data:TData, resourceName:string)
+		resourceName = resourceName.ToLower()
+
 		if resourceName = "sprite" then return LoadSpriteFromConfig(data)
 
 		'also create sprites from images
@@ -93,6 +95,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 
 		'Print "LoadSpritePackResource: "+_name + " " + _flags + " ["+url+"]"
 		Local img:TImage = LoadImage(url, data.GetInt("flags", 0))
+
 		Local spritePack:TSpritePack = new TSpritePack.Init(img, data.GetString("name"))
 		'add spritepack to asset
 		GetRegistry().Set(spritePack.name, spritePack)
@@ -120,9 +123,9 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 				childData.GetInt("frames") ..
 			)
 			'search for ninepatch
-'			if childData.GetBool("ninepatch")
+			if childData.GetBool("ninepatch")
 				sprite.EnableNinePatch()
-'			endif
+			endif
 
 			'recolor/colorize?
 			If childData.GetInt("r",-1) >= 0 And childData.GetInt("g",-1) >= 0 And childData.GetInt("b",-1) >= 0

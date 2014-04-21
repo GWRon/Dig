@@ -70,6 +70,8 @@ Type TRegistryImageLoader extends TRegistryBaseLoader
 
 
 	Method LoadFromConfig:int(data:TData, resourceName:string)
+		resourceName = resourceName.ToLower()
+
 		local pixmap:TPixmap = LoadPixmap(data.GetString("url"))
 		if not pixmap then return FALSE
 

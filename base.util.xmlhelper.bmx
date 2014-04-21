@@ -39,7 +39,7 @@ Type TXmlHelper
 
 
 	Function findAttribute:string(node:TxmlNode, attributeName:string, defaultValue:string)
-		if node.hasAttribute(attributeName) <> null then return node.getAttribute(attributeName) else return defaultValue
+		if HasAttribute(node, attributeName) then return GetAttribute(node, attributeName) else return defaultValue
 	End Function
 
 
@@ -77,17 +77,42 @@ Type TXmlHelper
 	End Function
 
 
+	'search for an attribute
+	'(compared to node.HasAttribute() this is NOT case sensitive!)
+	Function HasAttribute:int(node:TXmlNode, fieldName:string)
+		local att:TList = node.GetAttributeList()
+		fieldName = fieldName.ToLower()
+		For local attribute:TxmlBase = eachin att
+			if attribute.GetName().toLower() = fieldname then return TRUE
+		Next
+
+		return FALSE
+	End Function
+
+
+	'returns the value of an attribute
+	'(compared to node.GetAttribute() this is NOT case sensitive!)
+	Function GetAttribute:string(node:TXmlNode, fieldName:string)
+		local att:TList = node.GetAttributeList()
+		fieldName = fieldName.ToLower()
+		For local attribute:TxmlBase = eachin att
+			if attribute.GetName().toLower() = fieldname then return node.GetAttribute(attribute.GetName())
+		Next
+		return ""
+	End Function
+
+
 	Function HasValue:int(node:TXmlNode, fieldName:string)
 		'loop through all potential fieldnames ("frames|f" -> "frames", "f")
 		local fieldNames:string[] = fieldName.ToLower().Split("|")
 
 		For local name:String = eachin fieldNames
-			If node.hasAttribute(name) then Return True
+			If HasAttribute(node, name) then Return True
 
 			For local subNode:TxmlNode = EachIn GetNodeChildElements(node)
 				if subNode.getType() = XML_TEXT_NODE then continue
 				If subNode.getName().ToLower() = name then return TRUE
-				If subNode.getName().ToLower() = "data" and subNode.hasAttribute(name) then Return TRUE
+				If subNode.getName().ToLower() = "data" and HasAttribute(subNode, name) then Return TRUE
 			Next
 		Next
 		return FALSE
@@ -105,11 +130,11 @@ Type TXmlHelper
 
 		For local name:String = eachin fieldNames
 			'given node has attribute (<episode number="1">)
-			If node.hasAttribute(name) then Return node.getAttribute(name)
+			If HasAttribute(node, name) then Return GetAttribute(node, name)
 
 			For local subNode:TxmlNode = EachIn GetNodeChildElements(node)
 				If subNode.getName().ToLower() = name then return subNode.getContent()
-				If subNode.getName().ToLower() = "data" and subNode.hasAttribute(name) then Return subNode.getAttribute(name)
+				If subNode.getName().ToLower() = "data" and HasAttribute(subNode, name) then Return GetAttribute(subNode, name)
 			Next
 		Next
 		if logString <> "" then print logString

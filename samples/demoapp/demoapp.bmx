@@ -101,15 +101,13 @@ Type TMyApp extends TGraphicalApp
 		'if there is a resource loading currently - display information
 		RenderLoadingResourcesInformation()
 
+		SetAlpha 0.2
+		DrawRect(200,100,100,20)
+		SetAlpha 1.0
+		GetFontManager().Get("Default", 12).DrawBlock("Die Feuerzangenbowle", 200,100,100,20,null,null,0,1,1,false)
 
 		'=== DRAW MOUSE CURSOR ===
-		'default pointer
-		If mouseCursorState = 0 Then GetSpriteFromRegistry("gfx_mousecursor").Draw(MouseManager.x-9, MouseManager.y-2, 0)
-		'open hand
-		If mouseCursorState = 1 Then GetSpriteFromRegistry("gfx_mousecursor").Draw(MouseManager.x-11, MouseManager.y-8, 1)
-		'grabbing hand
-		If mouseCursorState = 2 Then GetSpriteFromRegistry("gfx_mousecursor").Draw(MouseManager.x-11, MouseManager.y-16, 2)
-		DrawText(MouseManager._keyStatus[1], MouseManager.x + 30, MouseManager.y)
+		GetSpriteFromRegistry("gfx_mousecursor"+mouseCursorState).Draw(MouseManager.x, MouseManager.y, 0)
 	End Method
 End Type
 

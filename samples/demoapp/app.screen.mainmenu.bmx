@@ -117,6 +117,8 @@ Type TScreenMainMenu extends TScreenMenuBase
 			SetAlpha oldAlpha
 		Endif
 
+		GetSpriteFromRegistry("screen_financial_newsLog2").DrawArea(520, 39, 218, 19)
+
 		GuiManager.Draw(self.name)
 	End Method
 End Type
