@@ -216,9 +216,9 @@ Function ColorizeImageCopy:TImage(imageOrPixmap:object, color:TColor, cellW:Int=
 
 	'load
 	If cellW > 0 And cellCount > 0
-		Return LoadAnimImage( ColorizePixmap(pixmap, color), cellW, cellH, cellFirst, cellCount, flag)
+		Return LoadAnimImage( ColorizePixmapCopy(pixmap, color), cellW, cellH, cellFirst, cellCount, flag)
 	else
-		Return LoadImage( ColorizePixmap(pixmap, color) )
+		Return LoadImage( ColorizePixmapCopy(pixmap, color) )
 	endif
 End Function
 
