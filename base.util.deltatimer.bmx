@@ -147,7 +147,7 @@ Type TDeltaTimer
 	Method RunRender()
 		'the time available for rendering has to consider the time
 		'used for updating - so subtract that from the accumulator
-		_renderAccumulator:+ (_lastLoopTime - getCurrentLoopTime()) / 1000.0
+		_renderAccumulator:+ Max(0, _lastLoopTime - getCurrentLoopTime()) / 1000.0
 
 		if(_renderAccumulator > _renderRate)
 			'if there is a function connected - run it

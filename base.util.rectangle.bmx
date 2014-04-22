@@ -10,16 +10,16 @@ Import "base.util.point.bmx"
 
 
 Type TRectangle {_exposeToLua="selected"}
-	Field position:TPoint {_exposeToLua}
-	Field dimension:TPoint {_exposeToLua}
+	Field position:TPoint = new TPoint {_exposeToLua}
+	Field dimension:TPoint = new TPoint {_exposeToLua}
 	'global helper variables should be faster than allocating locals each time (in huge amount)
 	global ix:float,iy:float,iw:float,ih:float
 
 
 	'sets the position and dimension (creates new point objects)
 	Method Init:TRectangle(x:Float=0, y:Float=0, w:float=0, h:float=0)
-		position = new TPoint.Init(x, y)
-		dimension = new TPoint.Init(w, h)
+		position.SetXY(x, y)
+		dimension.SetXY(w, h)
 		return self
 	End Method
 
@@ -40,7 +40,7 @@ Type TRectangle {_exposeToLua="selected"}
 
 	'returns a rectangle describing the intersection of the
 	'rectangle and the given one
-	'attention: returns NULL if there is no intersection 
+	'attention: returns NULL if there is no intersection
 	Method IntersectRect:TRectangle(rectB:TRectangle) {_exposeToLua}
 		ix = max(GetX(), rectB.GetX())
 		iy = max(GetY(), rectB.GetY())
