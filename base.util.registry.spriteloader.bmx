@@ -93,7 +93,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 		local url:string = data.GetString("url")
 		if url = "" then return FALSE
 
-		'Print "LoadSpritePackResource: "+_name + " " + _flags + " ["+url+"]"
+		'Print "LoadSpritePackResource: "+data.GetString("name") + " ["+url+"]"
 		Local img:TImage = LoadImage(url, data.GetInt("flags", 0))
 
 		Local spritePack:TSpritePack = new TSpritePack.Init(img, data.GetString("name"))

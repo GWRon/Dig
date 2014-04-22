@@ -208,7 +208,7 @@ End Function
 
 
 'colorizes an TImage (may be an AnimImage when given cell_width and height)
-Function ColorizeImage:TImage(imageOrPixmap:object, color:TColor, cellW:Int=0, cellH:Int=0, cellFirst:Int=0, cellCount:Int=1, flag:Int=0)
+Function ColorizeImageCopy:TImage(imageOrPixmap:object, color:TColor, cellW:Int=0, cellH:Int=0, cellFirst:Int=0, cellCount:Int=1, flag:Int=0)
 	local pixmap:TPixmap
 	if TPixmap(imageOrPixmap) then pixmap = TPixmap(imageOrPixmap)
 	if TImage(imageOrPixmap) then pixmap = LockImage(TImage(imageOrPixmap))
@@ -226,7 +226,7 @@ End Function
 
 
 'creates a pixmap copy and colorizes it
-Function ColorizePixmap:TPixmap(sourcePixmap:TPixmap, color:TColor)
+Function ColorizePixmapCopy:TPixmap(sourcePixmap:TPixmap, color:TColor)
 	'create a copy to work on
 	local colorizedPixmap:TPixmap = sourcePixmap.Copy()
 
