@@ -79,7 +79,7 @@ Type TSpritePack
 		Local tmpSpriteDest:TSprite = GetSprite(spriteNameDest)
 		Local tmppix:TPixmap = LockImage(image, 0)
 			tmppix.Window(tmpSpriteDest.area.GetX(), tmpSpriteDest.area.GetY(), tmpSpriteDest.area.GetW(), tmpSpriteDest.area.GetH()).ClearPixels(0)
-			DrawImageOnImage(ColorizeImage(GetSprite(spriteNameSrc).GetImage(), color), tmppix, tmpSpriteDest.area.GetX(), tmpSpriteDest.area.GetY())
+			DrawImageOnImage(ColorizeImageCopy(GetSprite(spriteNameSrc).GetImage(), color), tmppix, tmpSpriteDest.area.GetX(), tmpSpriteDest.area.GetY())
 		UnlockImage(image, 0)
 		GCCollect() '<- FIX!
 	End Method
@@ -89,7 +89,7 @@ Type TSpritePack
 		local spriteCopy:TSprite = new TSprite.Init(self, spriteNameDest, area, offset, animcount)
 		Local tmppix:TPixmap = LockImage(image, 0)
 			tmppix.Window(spriteCopy.area.GetX(), spriteCopy.area.GetY(), spriteCopy.area.GetW(), spriteCopy.area.GetH()).ClearPixels(0)
-			DrawImageOnImage(ColorizeImage(GetSprite(spriteNameSrc).GetImage(), color), tmppix, spriteCopy.area.GetX(), spriteCopy.area.GetY())
+			DrawImageOnImage(ColorizeImageCopy(GetSprite(spriteNameSrc).GetImage(), color), tmppix, spriteCopy.area.GetX(), spriteCopy.area.GetY())
 		UnlockImage(image, 0)
 		GCCollect() '<- FIX!
 
@@ -350,7 +350,7 @@ Type TSprite extends TRenderable
 
 
 	Method GetColorizedImage:TImage(color:TColor, frame:int=-1)
-		return ColorizeImage(GetImage(frame), color)
+		return ColorizeImageCopy(GetImage(frame), color)
 	End Method
 
 
@@ -394,7 +394,7 @@ Type TSprite extends TRenderable
 	Method Colorize(color:TColor)
 		'store backup
 		'(we clean image data before pasting colorized output)
-		local newImg:TImage = ColorizeImage(GetImage(), color)
+		local newImg:TImage = ColorizeImageCopy(GetImage(), color)
 		'remove old image part
 		ClearImageData()
 		'draw now colorized image on the parent image

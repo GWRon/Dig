@@ -100,7 +100,7 @@ Type TGUIManager
 
 
 	Method GetDefaultFont:TBitmapFont()
-		If Not _defaultFont Then _defaultFont = GetFontManager().Get("Default", 12)
+		If Not _defaultFont Then _defaultFont = GetBitmapFontManager().Get("Default", 12)
 		Return _defaultFont
 	End Method
 
@@ -713,7 +713,7 @@ Type TGUIobject
 	Method onDoubleClick:Int(triggerEvent:TEventBase)
 		Return False
 	End Method
-	
+
 
 	'default hit handler for all gui objects
 	'by default they do nothing
@@ -1363,7 +1363,7 @@ Type TGUIobject
 
 					'maybe change to "isAccepted" - but then each gui object
 					'have to modify the event IF they accepted the click
-					
+
 					'reset Button
 					GUIManager.UpdateState_mouseButtonHit[2] = False
 				EndIf

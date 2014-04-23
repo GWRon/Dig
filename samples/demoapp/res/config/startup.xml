@@ -4,6 +4,7 @@
 	<resources directload="true">
 		<image name="gfx_startscreen"				url="res/gfx/start_bg.jpg" />
 		<image name="gfx_startscreen_logo"			url="res/gfx/start_logo.png" />
+		<bitmapfont name="default" url="res/font/Vera.ttf" size="11" default="TRUE" />
 
 		<resource name="gfx_mousecursor_pack">
 			<type>SpritePack</type>

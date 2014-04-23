@@ -45,6 +45,9 @@ Type TScreenMainMenu extends TScreenMenuBase
 			selectList.AddItem( new TGUISelectListItem.Create(null, null, "selecttest "+i) )
 		Next
 
+New TGUICheckBox.Create(new TPoint.Init(430, 0), new TPoint.Init(20,20), True, "24 h tag")
+
+
 
 		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(380,450), new TPoint.Init(130,80), self.GetName())
 		'add some items to that list
@@ -116,8 +119,6 @@ Type TScreenMainMenu extends TScreenMenuBase
 			logo.Draw( GraphicsWidth()/2 - logo.area.GetW() / 2, 100)
 			SetAlpha oldAlpha
 		Endif
-
-		GetSpriteFromRegistry("screen_financial_newsLog2").DrawArea(520, 39, 218, 19)
 
 		GuiManager.Draw(self.name)
 	End Method

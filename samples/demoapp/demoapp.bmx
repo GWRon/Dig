@@ -6,6 +6,7 @@ Import "../../base.framework.graphicalapp.bmx"
 Import "../../base.util.registry.bmx"
 Import "../../base.util.registry.imageloader.bmx"
 Import "../../base.gfx.bitmapfont.bmx"
+Import "../../base.util.registry.bitmapfontloader.bmx"
 
 'game specific
 Import "app.screen.mainmenu.bmx"
@@ -39,7 +40,6 @@ Type TMyApp extends TGraphicalApp
 		'afterwards we can display background images and cursors
 		'"TRUE" indicates that the content has to get loaded immediately
 		registryLoader.LoadFromXML("res/config/startup.xml", TRUE)
-
 		registryLoader.LoadFromXML("res/config/resources.xml")
 
 		'set a basic font ?
@@ -69,6 +69,11 @@ Type TMyApp extends TGraphicalApp
 
 		'reset modal window states
 		GUIManager.EndUpdates()
+	End Method
+
+
+	Method Render:int()
+		Super.Render()
 	End Method
 
 
@@ -104,7 +109,7 @@ Type TMyApp extends TGraphicalApp
 		SetAlpha 0.2
 		DrawRect(200,100,100,20)
 		SetAlpha 1.0
-		GetFontManager().Get("Default", 12).DrawBlock("Die Feuerzangenbowle", 200,100,100,20,null,null,0,1,1,false)
+		GetBitmapFont("Default", 12).DrawBlock("Die Feuerzangenbowle", 200,100,100,20,null,null,0,1,1,false)
 
 		'=== DRAW MOUSE CURSOR ===
 		GetSpriteFromRegistry("gfx_mousecursor"+mouseCursorState).Draw(MouseManager.x, MouseManager.y, 0)

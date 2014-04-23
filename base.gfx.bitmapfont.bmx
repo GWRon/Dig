@@ -12,14 +12,14 @@ Import "base.gfx.spriteatlas.bmx"
 CONST SHADOWFONT:INT = 256
 CONST GRADIENTFONT:INT = 512
 
-Type TFontManager
+Type TBitmapFontManager
 	Field DefaultFont:TBitmapFont
 	Field baseFont:TBitmapFont
 	Field baseFontBold:TBitmapFont
 	Field baseFontItalic:TBitmapFont
 	Field baseFontSmall:TBitmapFont
 	Field List:TList = CreateList()
-	global _instance:TFontManager
+	global _instance:TBitmapFontManager
 
 
 	Method New()
@@ -27,8 +27,8 @@ Type TFontManager
 	End Method
 
 
-	Function GetInstance:TFontManager()
-		if not _instance then _instance = new TFontManager
+	Function GetInstance:TBitmapFontManager()
+		if not _instance then _instance = new TBitmapFontManager
 		return _instance
 	End Function
 
@@ -87,9 +87,17 @@ Type TFontManager
 	End Method
 End Type
 
-'convenience function
-Function GetFontManager:TFontManager()
-	return TFontManager.GetInstance()
+'===== CONVENIENCE ACCESSORS =====
+'convenience instance getter
+Function GetBitmapFontManager:TBitmapFontManager()
+	return TBitmapFontManager.GetInstance()
+End Function
+
+'===== CONVENIENCE ACCESSORS =====
+'not really needed - but for convenience to avoid direct call to the
+'instance getter GetFontManager()
+Function GetBitmapFont:TBitmapfont(name:string, size:Int=-1, style:Int=-1)
+	Return TBitmapFontManager.GetInstance().Get(name, size, style)
 End Function
 
 
@@ -574,13 +582,13 @@ Type TBitmapFont
 			endif
 		endif
 
-		if command = "b" then font = GetFontManager().Get(FName, FSize, BOLDFONT)
+		if command = "b" then font = GetBitmapFontManager().Get(FName, FSize, BOLDFONT)
 		if command = "/b" then font = self
 
-		if command = "bi" then font = GetFontManager().Get(FName, FSize, BOLDFONT | ITALICFONT)
+		if command = "bi" then font = GetBitmapFontManager().Get(FName, FSize, BOLDFONT | ITALICFONT)
 		if command = "/bi" then font = self
 
-		if command = "i" then font = GetFontManager().Get(FName, FSize, ITALICFONT)
+		if command = "i" then font = GetBitmapFontManager().Get(FName, FSize, ITALICFONT)
 		if command = "/i" then font = self
 
 		'adjust line height if another font is selected

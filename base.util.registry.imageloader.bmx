@@ -77,7 +77,7 @@ Type TRegistryImageLoader extends TRegistryBaseLoader
 
 		'colorize if needed
 		If data.GetInt("r",-1) >= 0 And data.GetInt("g",-1) >= 0 And data.GetInt("r",-1) >= 0
-			ColorizePixmap( pixmap, TColor.Create(data.GetInt("r"), data.GetInt("g"), data.GetInt("b")) )
+			pixmap = ColorizePixmapCopy( pixmap, TColor.Create(data.GetInt("r"), data.GetInt("g"), data.GetInt("b")) )
 		Endif
 
 		'add to registry
@@ -214,7 +214,7 @@ Type TRegistryImageLoader extends TRegistryBaseLoader
 				'check prerequisites
 				If dest = "" or not TImage(parent) then return FALSE
 
-				local img:Timage = ColorizeImage(TImage(parent), color)
+				local img:Timage = ColorizeImageCopy(TImage(parent), color)
 				'add to registry
 				if img then GetRegistry().Set(dest, new TSprite.InitFromImage(img, dest))
 

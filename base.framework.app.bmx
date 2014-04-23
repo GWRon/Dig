@@ -58,7 +58,7 @@ Type TApp
 	End Function
 
 
-	Method Init:TApp(updatesPerSecond:Int=60, framesPerSecond:Int=30)
+	Method Init:TApp(updatesPerSecond:Int=30, framesPerSecond:Int=30)
 		GetDeltaTimer().Init(updatesPerSecond, framesPerSecond)
 
 		'connect functions
