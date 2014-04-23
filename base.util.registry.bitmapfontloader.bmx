@@ -33,8 +33,6 @@ Type TRegistryBitmapFontLoader extends TRegistryBaseLoader
 	End Method
 
 
-
-	'override image config loader - to add children (sprites) support
 	Method GetConfigFromXML:TData(loader:TRegistryLoader, node:TxmlNode)
 		local data:TData = new TData
 

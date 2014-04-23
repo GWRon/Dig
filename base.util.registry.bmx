@@ -230,7 +230,9 @@ Type TRegistryLoader
 			Endif
 
 			'inform others about the to-load-element
-			EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadResourceFromXML", new TData.AddString("resourceName", resourceName).Add("xmlNode", node) ))
+			'sender: self (the loader)
+			'target: resourceName in uppercases ("SPRITE") -> so listeners can filter on it
+			EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadResourceFromXML", new TData.AddString("resourceName", resourceName).Add("xmlNode", node), self, resourceName.ToUpper()))
 		Next
 	End Method
 End Type
