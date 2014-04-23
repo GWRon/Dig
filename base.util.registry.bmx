@@ -201,32 +201,36 @@ Type TRegistryLoader
 			'- type (<bla type="identifier" />) or
 			'- tagname ( <identifier x="1" />)
 			local resourceName:string = TXmlHelper.FindValue(resourceNode, "type", resourceNode.getName())
+
 			'we handle "resource" on our own
 			if resourceName.ToUpper() = "RESOURCES"
 				local directLoad:int = TXmlHelper.findValueBool(resourceNode, "directload", forceDirectLoad)
 				LoadResourceFromXML(resourceNode, directLoad)
 			else
 				local loader:TRegistryBaseLoader = GetResourceLoader(resourceName)
-				if not loader then continue
+				if loader
+					'load config from XML
+					local conf:TData = loader.GetConfigFromXML(self, resourceNode)
 
-				'load config from XML
-				local conf:TData = loader.GetConfigFromXML(self, resourceNode)
-
-				'do nothing without a configuration (maybe it is a virtual group handled
-				'directly by the loader -> eg. "fonts" which only groups "font")
-				if conf
-					'directly load the objects or defer to a helper
-					if loader.directLoading or forceDirectLoad
-						loader.LoadFromConfig(conf, resourceName)
-					else
-						local name:String = loader.GetNameFromConfig(conf)
-						'add to "ToLoad"-list
-						TRegistryUnloadedResourceCollection.GetInstance().Add(..
-							new TRegistryUnloadedResource.Init(name, resourceName, conf)..
-						)
+					'do nothing without a configuration (maybe it is a virtual group handled
+					'directly by the loader -> eg. "fonts" which only groups "font")
+					if conf
+						'directly load the objects or defer to a helper
+						if loader.directLoading or forceDirectLoad
+							loader.LoadFromConfig(conf, resourceName)
+						else
+							local name:String = loader.GetNameFromConfig(conf)
+							'add to "ToLoad"-list
+							TRegistryUnloadedResourceCollection.GetInstance().Add(..
+								new TRegistryUnloadedResource.Init(name, resourceName, conf)..
+							)
+						endif
 					endif
 				endif
 			Endif
+
+			'inform others about the to-load-element
+			EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadResourceFromXML", new TData.AddString("resourceName", resourceName).Add("xmlNode", node) ))
 		Next
 	End Method
 End Type
