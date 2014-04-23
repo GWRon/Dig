@@ -12,6 +12,7 @@ Import "../../base.gfx.gui.panel.bmx"
 Import "../../base.gfx.gui.list.base.bmx"
 Import "../../base.gfx.gui.list.selectlist.bmx"
 Import "../../base.gfx.gui.dropdown.bmx"
+Import "../../base.gfx.gui.window.base.bmx"
 Import "app.screen.bmx"
 
 Type TScreenMainMenu extends TScreenMenuBase
@@ -45,8 +46,10 @@ Type TScreenMainMenu extends TScreenMenuBase
 			selectList.AddItem( new TGUISelectListItem.Create(null, null, "selecttest "+i) )
 		Next
 
-New TGUICheckBox.Create(new TPoint.Init(430, 0), new TPoint.Init(20,20), True, "24 h tag")
-
+		'a simple window
+		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TPoint.Init(550,200), new TPoint.Init(200,150), self.GetName())
+		window.SetCaption("testwindow")
+		window.SetValue("content")
 
 
 		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(380,450), new TPoint.Init(130,80), self.GetName())
