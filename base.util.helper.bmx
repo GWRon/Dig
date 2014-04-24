@@ -99,16 +99,6 @@ Type THelper
 	End Function
 
 
-	'returns whether the given x,y coordinate is within the given rectangle coords
-	Function IsIn:Int(x:Float, y:Float, rectx:Float, recty:Float, rectw:Float, recth:Float)
-		If x >= rectx And x<=rectx+rectw And..
-		   y >= recty And y<=recty+recth
-			Return 1
-		Else
-			Return 0
-		End If
-	End Function
-
 
 	Function GetTweenedValue:float(currentValue:float, oldValue:float, tween:Float, avoidShaking:int=TRUE)
 		local result:float = currentValue * tween + oldValue * (1.0 - tween)

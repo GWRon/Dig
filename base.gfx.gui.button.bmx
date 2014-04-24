@@ -15,7 +15,11 @@ Type TGUIButton Extends TGUIobject
 	Field spriteName:String = "gfx_gui_button.default"
 	Field caption:TGUILabel	= Null
 	Field captionArea:TRectangle = null
+	Field autoSizeModeWidth:int = 0
+	Field autoSizeModeHeight:int = 0
 
+	Global AUTO_SIZE_MODE_TEXT:int = 0
+	Global AUTO_SIZE_MODE_SPRITE:int = 1
 	Global _typeDefaultFont:TBitmapFont
 
 
@@ -60,14 +64,34 @@ Type TGUIButton Extends TGUIobject
 	'override resize to add autocalculation and caption handling
 	Method Resize(w:Float=Null,h:Float=Null)
 		'autocalculate width/height
-		if w = -1 then w = GetFont().getWidth(self.value) + 8
-		if h = -1 then h = GetSpriteFromRegistry(spriteName).area.GetH()
+		if w = -1
+			if autoSizeModeWidth = AUTO_SIZE_MODE_TEXT
+				w = GetFont().getWidth(self.value) + 8
+			elseif autoSizeModeWidth = AUTO_SIZE_MODE_SPRITE
+				w = GetSpriteFromRegistry(spriteName).area.GetW()
+			endif
+		endif
+		if h = -1
+			if autoSizeModeHeight = AUTO_SIZE_MODE_TEXT
+				H = GetFont().GetMaxCharHeight() + 8
+			elseif autoSizeModeHeight = AUTO_SIZE_MODE_SPRITE
+				h = GetSpriteFromRegistry(spriteName).area.GetH()
+			endif
+		endif
+
 
 		If w Then rect.dimension.setX(w)
 		If h Then rect.dimension.setY(h)
 
 		'move caption according to its rules
 		RepositionCaption()
+	End Method
+
+
+	Method SetAutoSizeMode(modeWidth:int = 0, modeHeight:int = 0)
+		autoSizeModeWidth = modeWidth
+		autoSizeModeHeight = modeHeight
+		Resize(-1,-1)
 	End Method
 
 

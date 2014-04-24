@@ -62,6 +62,10 @@ Type TScreenMainMenu extends TScreenMenuBase
 			slotList.SetItemToSlot( new TGUIListItem.Create(null, new TPoint.Init(130,20), "slottest "+i), i )
 		Next
 
+		'uncomment to have a simple image button
+		'local imageButton:TGUIButton = new TGUIButton.Create(new TPoint.Init(0,0), null, self.GetName())
+		'imageButton.spriteName = "gfx_startscreen_logo"
+		'imageButton.SetAutoSizeMode( TGUIButton.AUTO_SIZE_MODE_SPRITE )
 
 		'a simple window
 		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TPoint.Init(550,200), new TPoint.Init(200,150), self.GetName())

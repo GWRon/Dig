@@ -188,52 +188,63 @@ Type TRegistryLoader
 		endif
 
 		xmlHelper = TXmlHelper.Create(file)
-		LoadResourceFromXML(xmlHelper.root, forceDirectLoad)
+		LoadResourcesFromXML(xmlHelper.root, forceDirectLoad)
 
 		EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadXmlFromFinished", new TData.AddString("uri", file) ) )
 		Return TRUE
 	End Method
 
 
-	Method LoadResourceFromXML:int(node:TXmlNode, forceDirectLoad:int=FALSE)
+	Method LoadResourcesFromXML:int(node:TXmlNode, forceDirectLoad:int=FALSE)
 		For local resourceNode:TxmlNode = eachin TXmlHelper.GetNodeChildElements(node)
-			'get the name defined in:
-			'- type (<bla type="identifier" />) or
-			'- tagname ( <identifier x="1" />)
-			local resourceName:string = TXmlHelper.FindValue(resourceNode, "type", resourceNode.getName())
+			LoadSingleResourceFromXML(resourceNode, forceDirectLoad)
+		Next
+	End Method
 
-			'we handle "resource" on our own
-			if resourceName.ToUpper() = "RESOURCES"
-				local directLoad:int = TXmlHelper.findValueBool(resourceNode, "directload", forceDirectLoad)
-				LoadResourceFromXML(resourceNode, directLoad)
-			else
-				local loader:TRegistryBaseLoader = GetResourceLoader(resourceName)
-				if loader
-					'load config from XML
-					local conf:TData = loader.GetConfigFromXML(self, resourceNode)
 
-					'do nothing without a configuration (maybe it is a virtual group handled
-					'directly by the loader -> eg. "fonts" which only groups "font")
-					if conf
-						'directly load the objects or defer to a helper
-						if loader.directLoading or forceDirectLoad
-							loader.LoadFromConfig(conf, resourceName)
-						else
-							local name:String = loader.GetNameFromConfig(conf)
-							'add to "ToLoad"-list
-							TRegistryUnloadedResourceCollection.GetInstance().Add(..
-								new TRegistryUnloadedResource.Init(name, resourceName, conf)..
-							)
-						endif
+	Method LoadSingleResourceFromXML:int(node:TXmlNode, forceDirectLoad:int=FALSE, extras:TData = null)
+		'get the name defined in:
+		'- type (<bla type="identifier" />) or
+		'- tagname ( <identifier x="1" />)
+		local resourceName:string = TXmlHelper.FindValue(node, "type", node.getName())
+
+		'we handle "resource" on our own
+		if resourceName.ToUpper() = "RESOURCES"
+			local directLoad:int = TXmlHelper.findValueBool(node, "directload", forceDirectLoad)
+			LoadResourcesFromXML(node, directLoad)
+		else
+			local loader:TRegistryBaseLoader = GetResourceLoader(resourceName)
+			if loader
+				'load config from XML
+				local conf:TData = loader.GetConfigFromXML(self, node)
+
+				'do nothing without a configuration (maybe it is a virtual group handled
+				'directly by the loader -> eg. "fonts" which only groups "font")
+				if conf
+					'directly load the objects or defer to a helper
+					if loader.directLoading or forceDirectLoad
+						loader.LoadFromConfig(conf, resourceName)
+					else
+						'try to get a name for the resource:
+						'a) from TData "extras"
+						'b) from the config read from xml
+						local name:String = ""
+						if extras then name = extras.GetString("name")
+						if name = "" then name = loader.GetNameFromConfig(conf)
+
+						'add to "ToLoad"-list
+						TRegistryUnloadedResourceCollection.GetInstance().Add(..
+							new TRegistryUnloadedResource.Init(name, resourceName, conf)..
+						)
 					endif
 				endif
-			Endif
+			endif
+		Endif
 
-			'inform others about the to-load-element
-			'sender: self (the loader)
-			'target: resourceName in uppercases ("SPRITE") -> so listeners can filter on it
-			EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadResourceFromXML", new TData.AddString("resourceName", resourceName).Add("xmlNode", node), self, resourceName.ToUpper()))
-		Next
+		'inform others about the to-load-element
+		'sender: self (the loader)
+		'target: resourceName in uppercases ("SPRITE") -> so listeners can filter on it
+		EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadResourceFromXML", new TData.AddString("resourceName", resourceName).Add("xmlNode", node), self, resourceName.ToUpper()))
 	End Method
 End Type
 
