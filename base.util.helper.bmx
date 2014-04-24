@@ -58,4 +58,19 @@ Type THelper
 			Return 0
 		End If
 	End Function
+
+
+	Function GetTweenedValue:float(currentValue:float, oldValue:float, tween:Float, avoidShaking:int=TRUE)
+		local result:float = currentValue * tween + oldValue * (1.0 - tween)
+		if avoidShaking and Abs(result - currentValue) < 0.1 then return currentValue
+		return result
+	End Function
+
+
+	Function GetTweenedPoint:TPoint(currentPoint:TPoint, oldPoint:TPoint, tween:Float, avoidShaking:int=TRUE)
+		return new TPoint.Init(..
+	         GetTweenedValue(currentPoint.x, oldPoint.x, tween, avoidShaking),..
+	         GetTweenedValue(currentPoint.y, oldPoint.y, tween, avoidShaking)..
+	       )
+	End Function
 End Type
