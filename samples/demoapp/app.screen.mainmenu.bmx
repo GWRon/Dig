@@ -11,6 +11,7 @@ Import "../../base.gfx.gui.textbox.bmx"
 Import "../../base.gfx.gui.panel.bmx"
 Import "../../base.gfx.gui.list.base.bmx"
 Import "../../base.gfx.gui.list.selectlist.bmx"
+Import "../../base.gfx.gui.list.slotlist.bmx"
 Import "../../base.gfx.gui.dropdown.bmx"
 Import "../../base.gfx.gui.window.base.bmx"
 Import "../../base.gfx.gui.window.modal.bmx"
@@ -41,12 +42,26 @@ Type TScreenMainMenu extends TScreenMenuBase
 			baseList.AddItem( new TGUIListItem.Create(null, new TPoint.Init(100, 20), "basetest "+i) )
 		Next
 
+
 		local selectList:TGUISelectList = new TGUISelectList.Create(new TPoint.Init(200,450), new TPoint.Init(130,80), self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
 			selectList.AddItem( new TGUISelectListItem.Create(null, null, "selecttest "+i) )
 		Next
+
+
+		local slotList:TGUISlotList = new TGUISlotList.Create(new TPoint.Init(350,450), new TPoint.Init(130,120), self.GetName())
+		slotList.SetSlotMinDimension(130, 20)
+		'uncomment the following to make dropped items occupy the first
+		'free slot
+		'slotList.SetAutofillSlots(true)
+		slotList.SetItemLimit(5) 'max 5 items
+		'add some items to that list
+		for local i:int = 1 to 3
+			slotList.SetItemToSlot( new TGUIListItem.Create(null, new TPoint.Init(130,20), "slottest "+i), i )
+		Next
+
 
 		'a simple window
 		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TPoint.Init(550,200), new TPoint.Init(200,150), self.GetName())
@@ -57,18 +72,20 @@ Type TScreenMainMenu extends TScreenMenuBase
 		window.SetValue("content")
 
 
+		'a modal dialogue
 		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TPoint.Init(610,20), new TPoint.Init(180,-1), "create modal window", self.GetName())
 		'handle clicking on that button
 		EventManager.RegisterListenerFunction("guiobject.onclick", onClickCreateModalDialogue, createModalDialogueButton)
 
 
 
-		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(380,450), new TPoint.Init(130,80), self.GetName())
+		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(550,450), new TPoint.Init(130,80), self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
 			dropdown.AddItem( new TGUIDropDownItem.Create(null, null, "dropdown "+i) )
 		Next
+
 		'register demo click listener - only listen to click events of
 		'the "button" created above
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickMyButton, button)
