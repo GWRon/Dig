@@ -81,7 +81,6 @@ Type TGraphicalApp extends TApp
 	Method Render:Int()
 		if autoCls then Cls
 
-
 		'render current screen
 		local screen:TScreen = GetScreenManager().GetCurrent()
 		If screen
@@ -97,6 +96,9 @@ Type TGraphicalApp extends TApp
 			'draw debug on all (even fader)
 			screen.DebugRender()
 		EndIf
+
+		'render whatever
+		RenderContent()
 
 		'render debug info?
 		If debugLevel > 0 then RenderDebug()

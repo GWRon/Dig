@@ -77,12 +77,12 @@ Type TLocalization
 	'Returns the value for the specified key, or the given key if
 	'nothing was found
 	Function GetString:String(Key:String, group:String = Null)
-		Local ret:String = ""
+		Local ret:String = Key
 
 		For Local r:TLocalizationMemoryResource = EachIn resources
 			If r.language <> currentLanguage Then Continue
 			ret = r.GetString(Key, group)
-			If ret <> Null Then Return ret.replace("\n", Chr(13))
+			If ret Then Return ret.replace("\n", Chr(13))
 		Next
 
 		Return ret
@@ -227,8 +227,11 @@ Type TLocalizationMemoryResource
 
 		ret = map.ValueForKey( lower(key) )
 
-		If ret = Null Then Return Key else
-		Return String(ret)
+		If ret = Null
+			Return Key
+		Else
+			Return String(ret)
+		EndIf
 	End Method
 
 
