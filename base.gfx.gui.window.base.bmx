@@ -16,20 +16,21 @@ Type TGUIWindowBase Extends TGUIPanel
 		Super.CreateBase(pos, dimension, limitState)
 
 		'create background, setup text etc.
-		InitContent(dimension.GetX(), dimension.GetY())
+		InitContent(dimension)
 
 		GUIManager.Add(Self)
 		Return Self
 	End Method
 
 
-	Method InitContent(width:Int, height:Int)
+	Method InitContent(dimension:TPoint)
 		If Not guiBackground
 			SetBackground( new TGUIBackgroundBox.Create(null, null) )
 		Else
 			guiBackground.rect.position.SetXY(0,0)
-			guiBackground.resize(width, height)
+			guiBackground.resize(dimension.GetX(), dimension.GetY())
 		EndIf
+
 		'set another panel background
 		guiBackground.spriteBaseName = "gfx_gui_window"
 
@@ -44,18 +45,25 @@ Type TGUIWindowBase Extends TGUIPanel
 	'overwrite default to reapply caption/value to reposition them
 	Method onStatusAppearanceChange:int()
 		if guiCaptionTextBox
-			Local rect:TRectangle = Null
-			'if an area was defined - use this instead of an automatic area
+			Local rect:TRectangle = new TRectangle.Init(-1,-1,-1,-1)
+			'if an area was defined - use as much values of this as
+			'possible
 			If guiCaptionArea
-				rect = guiCaptionArea
-			Else
-				'automatic calculation: vertical center the caption between
-				'                       0 and the start of content
-				'                       but to make it visible in all cases
-				'                       use "max(...)".
-				Local padding:TRectangle = guiBackground.GetSprite().GetNinePatchContentBorder()
-				rect = new TRectangle.Init(padding.GetLeft(), 0, GetContentScreenWidth(), Max(25, padding.GetTop()))
+				if guiCaptionArea.position.x <> -1 then rect.position.x = guiCaptionArea.position.x
+				if guiCaptionArea.position.y <> -1 then rect.position.y = guiCaptionArea.position.y
+				if guiCaptionArea.dimension.x <> -1 then rect.dimension.x = guiCaptionArea.dimension.x
+				if guiCaptionArea.dimension.y <> -1 then rect.dimension.y = guiCaptionArea.dimension.y
 			EndIf
+
+			'calculation of undefined/automatic values
+			'vertical center the caption between 0 and the start of
+			'content but to make it visible in all cases use "max(...)".
+			Local padding:TRectangle = guiBackground.GetSprite().GetNinePatchContentBorder()
+			if rect.position.x = -1 then rect.position.x = padding.GetLeft()
+			if rect.position.y = -1 then rect.position.y = 0
+			if rect.dimension.x = -1 then rect.dimension.x = GetContentScreenWidth()
+			if rect.dimension.y = -1 then rect.dimension.y = Max(25, padding.GetTop())
+
 
 			'reposition in all cases
 			guiCaptionTextBox.rect.position.SetXY(rect.GetX(), rect.GetY())

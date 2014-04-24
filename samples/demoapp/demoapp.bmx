@@ -57,12 +57,12 @@ Type TMyApp extends TGraphicalApp
 		'fetch and cache mouse and keyboard states for this cycle
 		GUIManager.StartUpdates()
 
-		'run parental update (screen handling)
-		Super.Update()
-
 		'=== UPDATE GUI ===
 		'system wide gui elements
 		GuiManager.Update("SYSTEM")
+
+		'run parental update (screen handling)
+		Super.Update()
 
 		'check if new resources have to get loaded
 		TRegistryUnloadedResourceCollection.GetInstance().Update()
@@ -105,11 +105,6 @@ Type TMyApp extends TGraphicalApp
 		'=== DRAW RESOURCEL LOADING INFORMATION ===
 		'if there is a resource loading currently - display information
 		RenderLoadingResourcesInformation()
-
-		SetAlpha 0.2
-		DrawRect(200,100,100,20)
-		SetAlpha 1.0
-		GetBitmapFont("Default", 12).DrawBlock("Die Feuerzangenbowle", 200,100,100,20,null,null,0,1,1,false)
 
 		'=== DRAW MOUSE CURSOR ===
 		GetSpriteFromRegistry("gfx_mousecursor"+mouseCursorState).Draw(MouseManager.x, MouseManager.y, 0)

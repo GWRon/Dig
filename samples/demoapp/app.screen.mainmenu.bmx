@@ -13,11 +13,13 @@ Import "../../base.gfx.gui.list.base.bmx"
 Import "../../base.gfx.gui.list.selectlist.bmx"
 Import "../../base.gfx.gui.dropdown.bmx"
 Import "../../base.gfx.gui.window.base.bmx"
+Import "../../base.gfx.gui.window.modal.bmx"
 Import "app.screen.bmx"
 
 Type TScreenMainMenu extends TScreenMenuBase
 	Field LogoFadeInFirstCall:int = 0
-
+	'store it so we can check for existence later on
+	global modalDialogue:TGUIModalWindow
 
 	Method Setup:Int()
 		local button:TGUIButton = new TGUIButton.Create(new TPoint.Init(20,20), new TPoint.Init(130,-1), "Clickeriki?", self.GetName())
@@ -48,8 +50,17 @@ Type TScreenMainMenu extends TScreenMenuBase
 
 		'a simple window
 		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TPoint.Init(550,200), new TPoint.Init(200,150), self.GetName())
+		'as content area starts to late for automatic caption positioning
+		'we set a specific area to use
+		window.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
 		window.SetCaption("testwindow")
 		window.SetValue("content")
+
+
+		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TPoint.Init(610,20), new TPoint.Init(180,-1), "create modal window", self.GetName())
+		'handle clicking on that button
+		EventManager.RegisterListenerFunction("guiobject.onclick", onClickCreateModalDialogue, createModalDialogueButton)
+
 
 
 		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(380,450), new TPoint.Init(130,80), self.GetName())
@@ -64,6 +75,18 @@ Type TScreenMainMenu extends TScreenMenuBase
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement)
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickOnAButton, "tguibutton")
 	End Method
+
+
+	Function onClickCreateModalDialogue:Int(triggerEvent:TEventBase)
+		modalDialogue = new TGUIModalWindow.Create(new TPoint, new TPoint.Init(400,250), "SYSTEM")
+		modalDialogue.SetDialogueType(2)
+		'as content area starts to late for automatic caption positioning
+		'we set a specific area to use
+		modalDialogue.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
+		modalDialogue.SetCaptionAndValue("test modal window", "test content")
+
+		print "created modal dialogue"
+	End Function
 
 
 	Function onClickAGuiElement:Int(triggerEvent:TEventBase)
