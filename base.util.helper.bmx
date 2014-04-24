@@ -1,5 +1,6 @@
 SuperStrict
-Import brl.Reflection
+Import BRL.Reflection
+Import BRL.Retro
 Import "base.util.input.bmx" 		'Mousemanager
 Import "base.util.rectangle.bmx"	'TRectangle
 
@@ -47,6 +48,55 @@ Type THelper
 		' |--A--| .--B--.    or   .--B--. |--A--|
 		return  not (Max(startA,endA) < Min(startB,endB) or Min(startA,endA) > Max(startB, endB) )
 	End function
+
+
+	'returns whether the given x,y coordinate is within the given rectangle coords
+	Function IsIn:Int(x:Float, y:Float, rectx:Float, recty:Float, rectw:Float, recth:Float)
+		If x >= rectx And x<=rectx+rectw And..
+		   y >= recty And y<=recty+recth
+			Return 1
+		Else
+			Return 0
+		End If
+	End Function
+
+
+	'convert a float to a string
+	'float is rounded to the requested amount of digits after comma
+	Function floatToString:String(value:Float, digitsAfterDecimalPoint:int = 2)
+		Local s:String = RoundNumber(value, digitsAfterDecimalPoint + 1)
+
+		'calculate amount of digits before "."
+		'instead of just string(int(s))).length we use the "Abs"-value
+		'and compare the original value if it is negative
+		'- this is needed because "-0.1" would be "0" as int (one char less)
+		local lengthBeforeDecimalPoint:int = string(abs(int(s))).length
+		if value < 0 then lengthBeforeDecimalPoint:+1 'minus sign
+		'remove unneeded digits (length = BEFORE + . + AFTER)
+		s = Left(s, lengthBeforeDecimalPoint + 1 + digitsAfterDecimalPoint)
+
+		'add at as much zeros as requested by digitsAfterDecimalPoint
+		If s.EndsWith(".")
+			for local i:int = 0 until digitsAfterDecimalPoint
+				s :+ "0"
+			Next
+		endif
+
+		Return s
+	End Function
+
+
+	Function RoundInt:Int(f:Float)
+		'http://www.blitzbasic.com/Community/posts.php?topic=92064
+	    Return f + 0.5 * Sgn(f)
+	End Function
+
+
+	'round a number using weighted non-trucate rounding.
+	Function roundNumber:Double(number:Double, digitsAfterDecimalPoint:Byte = 2)
+		Local t:Long = 10 ^ digitsAfterDecimalPoint
+		Return Long(number * t + 0.5:double * Sgn(number)) / Double(t)
+	End Function
 
 
 	'returns whether the given x,y coordinate is within the given rectangle coords
