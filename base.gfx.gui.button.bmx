@@ -73,10 +73,14 @@ Type TGUIButton Extends TGUIobject
 		endif
 		if h = -1
 			if autoSizeModeHeight = AUTO_SIZE_MODE_TEXT
-				H = GetFont().GetMaxCharHeight() + 8
-			elseif autoSizeModeHeight = AUTO_SIZE_MODE_SPRITE
-				h = GetSpriteFromRegistry(spriteName).area.GetH()
+				h = GetFont().GetMaxCharHeight()
+			'elseif autoSizeModeHeight = AUTO_SIZE_MODE_SPRITE
+			'	h = GetSpriteFromRegistry(spriteName).area.GetH()
 			endif
+
+			'if height is less then sprite height (the "minimum")
+			'use this
+			h = Max(h, GetSpriteFromRegistry(spriteName).area.GetH())
 		endif
 
 

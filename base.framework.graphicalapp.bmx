@@ -49,7 +49,6 @@ Type TGraphicalApp extends TApp
 	Method Prepare:int()
 		local gm:TGraphicsManager = TGraphicsManager.GetInstance()
 		gm.SetResolution(800, 600)
-		gm.SetDesignedResolution(800, 600)
 		gm.SetVSync(true)
 		gm.SetHertz(0)
 

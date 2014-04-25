@@ -6,7 +6,6 @@ Import BRL.Random
 Import "base.util.event.bmx"
 Import "base.util.point.bmx"
 Import "base.gfx.imagehelper.bmx"
-Import "base.gfx.renderable.bmx"
 Import "base.gfx.sprite.frameanimation.bmx"
 
 
@@ -103,24 +102,29 @@ End Type
 
 
 
-Type TSprite extends TRenderable
+Type TSprite
 	Field offset:TRectangle = new TRectangle.Init(0,0,0,0)
 	Field area:TRectangle = new TRectangle.Init(0,0,0,0)
+	Field name:string
 	Field frameW:Int
 	Field frameH:Int
 	Field animCount:Int
-	Field frameAnimations:TSpriteFrameAnimationCollection
 	Field parent:TSpritePack
 	Field _pix:TPixmap = null
 
+	'=== NINE PATCH SECTION ===
 	Field ninePatchEnabled:int = FALSE
-	'NINE PATCH SECTION
-	Field ninePatch_centerDimension:TPoint				'size of the middle parts (width, height)
-	Field ninePatch_borderDimension:TRectangle			'size of TopLeft,TopRight,BottomLeft,BottomRight
-	Field ninePatch_contentBorder:TRectangle			'limits for displaying content
-	Field ninePatch_borderDimensionScale:float = 1.0	'the scale of "non-stretchable" borders - rest will scale automatically through bigger dimensions
-	CONST NINEPATCH_MARKER_WIDTH:int = 1				'subtract this amount of pixels on each side for markers
-	'---
+	'center: size of the middle parts (width, height)
+	Field ninePatch_centerDimension:TPoint
+	'border: size of TopLeft,TopRight,BottomLeft,BottomRight
+	Field ninePatch_borderDimension:TRectangle
+	'content: limits for displaying content
+	Field ninePatch_contentBorder:TRectangle
+	'the scale of "non-stretchable" borders - rest will scale
+	'automatically through bigger dimensions
+	Field ninePatch_borderDimensionScale:float = 1.0
+	'subtract this amount of pixels on each side for markers
+	CONST NINEPATCH_MARKER_WIDTH:int = 1
 
 
 
@@ -145,10 +149,10 @@ Type TSprite extends TRenderable
 	End Method
 
 
-	Method InitFromImage:TSprite(img:Timage, spriteName:string, spriteID:int =-1)
+	Method InitFromImage:TSprite(img:Timage, spriteName:string, frames:int = 1)
 		'create new spritepack
 		local spritepack:TSpritePack = new TSpritePack.init(img, spriteName+"_pack")
-		Init(spritepack, spriteName, new TRectangle.Init(0, 0, img.width, img.height), null, Len(img.frames))
+		Init(spritepack, spriteName, new TRectangle.Init(0, 0, img.width, img.height), null, frames)
 		spritepack.addSprite(self)
 		return self
 	End Method
@@ -289,13 +293,6 @@ Type TSprite extends TRenderable
 		Next
 
 		Return result
-	End Method
-
-
-	'sets (adds or overwrites) a given animation
-	Method SetFrameAnimation(name:string, animation:TSpriteFrameAnimation)
-		if not frameAnimations then frameAnimations = new TSpriteFrameAnimationCollection
-		frameAnimations.Set(name, animation)
 	End Method
 
 
@@ -463,10 +460,6 @@ Type TSprite extends TRenderable
 		'needed as "target" is a reference (changes original variable)
 		local targetCopy:TRectangle = target.Copy()
 
-		'if no frame was specified - try to get the current one
-		if frame = -1 and frameAnimations
-			frame = frameAnimations.GetCurrent().GetCurrentImageFrame()
-		endif
 		if drawCompleteImage then frame = -1
 
 		'we got a frame request - try to find it
@@ -583,10 +576,6 @@ Type TSprite extends TRenderable
 		x:- offset.GetLeft() * scale
 		y:- offset.GetTop() * scale
 
-		'if no frame was specified - try to get the current one
-		if frame = -1 and frameAnimations
-			frame = frameAnimations.GetCurrent().GetCurrentImageFrame()
-		endif
 		if drawCompleteImage then frame = -1
 
 		rem
@@ -620,22 +609,6 @@ Type TSprite extends TRenderable
 							 frameh,..
 							 0, 0, 0)
 		EndIf
-	End Method
-
-
-	Method Render:Int(xOffset:Float=0, yOffset:Float)
-		'default is "draw"
-		Draw(position.GetX() + xOffset, position.GetY() + yOffset)
-	End Method
-
-
-	Method Update:int()
-		Super.Update()
-
-		'=== UPDATE ANIMATION ===
-		if frameAnimations
-			frameAnimations.GetCurrent().Update()
-		endif
 	End Method
 End Type
 

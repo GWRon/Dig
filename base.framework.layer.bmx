@@ -34,7 +34,7 @@ Rem
 	====================================================================
 EndRem
 SuperStrict
-Import "base.gfx.renderable.bmx"
+Import "base.framework.entity.bmx"
 Import BRL.Map
 
 Type TLayerManager
@@ -72,16 +72,16 @@ End Type
 Type TLayer
 	Field name:String
 	Field zIndex:Int
-	Field objects:TMap = CreateMap()
+	Field entities:TMap = CreateMap()
 
 
-	Method AddObject:int(obj:TRenderable)
-		objects.insert(obj.name.ToUpper(), obj)
+	Method AddEntity:int(entity:TEntity)
+		entities.insert(entity.name.ToUpper(), entity)
 	End Method
 
 
-	Method GetObject:TRenderable(name:string)
-		return TRenderable(objects.ValueForKey(name.ToUpper()))
+	Method GetEntity:TEntity(name:string)
+		return TEntity(entities.ValueForKey(name.ToUpper()))
 	End Method
 
 
@@ -100,11 +100,11 @@ Type TLayer
 
 
 	Method Render:Int(xOffset:Float=0, yOffset:Float=0)
-		For Local obj:TRenderable = Eachin objects
+		For Local entity:TEntity = Eachin entities
 			'skip invisble objects
-			If not obj.visible Then continue
+			If not entity.visible Then continue
 
-			obj.Render(xOffset, yOffset)
+			entity.Render(xOffset, yOffset)
 		Next
 	End Method
 End Type

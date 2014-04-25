@@ -3,18 +3,18 @@ Import "base.util.point.bmx"
 Import "base.util.deltatimer.bmx"
 
 
-Type TStaticRenderable
+Type TStaticEntity
 	Field position:TPoint = new TPoint
 	Field name:string
 	Field visible:int = True
 
 
 	Method New()
-		name = "TStaticRenderable"
+		name = "TStaticEntity"
 	End Method
 
 
-	Method Render:Int(xOffset:Float=0, yOffset:Float) abstract
+	Method Render:Int(xOffset:Float=0, yOffset:Float=0) abstract
 
 
 	Method Update:Int()
@@ -34,12 +34,15 @@ End Type
 
 
 
-Type TRenderable extends TStaticRenderable
-	Field oldPosition:TPoint = new TPoint 	'for tweening
+Type TEntity extends TStaticEntity
+	'for tweening
+	Field oldPosition:TPoint = new TPoint
+	'moving direction
 	Field velocity:TPoint = new TPoint
 
+
 	Method New()
-		name = "TRenderable"
+		name = "TEntity"
 	End Method
 
 

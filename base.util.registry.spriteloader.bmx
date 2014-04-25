@@ -23,7 +23,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 		local img:TImage = TImage(GetRegistry().GetDefault("image"))
 		if not img then return FALSE
 
-		local sprite:TSprite = new TSprite.InitFromImage(img, "defaultsprite", -1)
+		local sprite:TSprite = new TSprite.InitFromImage(img, "defaultsprite")
 		'try to find a nine patch pattern
 		sprite.EnableNinePatch()
 

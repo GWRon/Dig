@@ -415,7 +415,7 @@ Type TGUISlotList Extends TGUIListBase
 
 	Method Draw()
 		Local atPoint:TPoint = GetScreenPos()
-		If _debugMode or 1=1
+		If _debugMode
 			'restrict by scrollable panel - if not possible, there is no "space left"
 			If guiEntriesPanel.RestrictViewPort()
 				Local pos:TPoint = Null

@@ -84,7 +84,6 @@ Type TGUIModalWindow Extends TGUIWindowBase
 
 	Method Resize:Int(w:Float=Null,h:Float=Null)
 		Super.Resize(w, h)
-		if guiBackground then print GetScreenHeight() + " vs " + guiBackground.rect.GetH()
 		'move button
 		If buttons.length = 1
 			buttons[0].rect.position.setXY(rect.GetW()/2 - buttons[0].rect.GetW()/2, GetScreenHeight() - 50)

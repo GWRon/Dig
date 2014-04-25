@@ -14,8 +14,8 @@ Type TGraphicsManager
 	Field colorDepth:int	= 16
 	Field realWidth:int		= 800
 	Field realHeight:int	= 600
-	Field designedWidth:int	= 800
-	Field designedHeight:int= 600
+	Field designedWidth:int	= -1
+	Field designedHeight:int= -1
 	Field hertz:int			= 60
 	Field vsync:int			= TRUE
 	Field flags:Int			= 0 'GRAPHICS_BACKBUFFER | GRAPHICS_ALPHABUFFER '& GRAPHICS_ACCUMBUFFER & GRAPHICS_DEPTHBUFFER
@@ -79,11 +79,13 @@ Type TGraphicsManager
 
 
 	Method GetHeight:int()
+		if designedHeight = -1 then return realHeight
 		return designedHeight
 	End Method
 
 
 	Method GetWidth:int()
+		if designedWidth = -1 then return realWidth
 		return designedWidth
 	End Method
 
@@ -130,7 +132,7 @@ Type TGraphicsManager
 		HideMouse()
 
 		'virtual resolution
-		SetVirtualGraphics(designedWidth, designedHeight, False)
+		SetVirtualGraphics(GetWidth(), GetHeight(), False)
 	End Method
 
 

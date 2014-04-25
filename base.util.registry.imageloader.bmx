@@ -139,7 +139,7 @@ Type TRegistryImageLoader extends TRegistryBaseLoader
 		GetRegistry().SetDefault("pixmap", pix)
 		GetRegistry().SetDefault("image", img)
 		'as default "image" fields are loaded as same named sprites too
-		local sprite:TSprite = new TSprite.InitFromImage(img, "defaultsprite", -1)
+		local sprite:TSprite = new TSprite.InitFromImage(img, "defaultsprite")
 
 		GetRegistry().SetDefault("sprite", sprite)
 
