@@ -46,7 +46,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 			'load child config into a new data
 			local childData:TData = new TData
 			local fieldNames:String[]
-			fieldNames :+ ["name"]
+			fieldNames :+ ["name", "id"]
 			fieldNames :+ ["x", "y", "w", "h"]
 			fieldNames :+ ["offsetLeft", "offsetTop", "offsetRight", "offsetBottom"]
 			fieldNames :+ ["frames|f"]
@@ -86,6 +86,9 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 
 		'add to registry
 		GetRegistry().Set(data.GetString("name"), sprite)
+
+		'indicate that the loading was successful
+		return True
 	End Method
 
 
@@ -120,7 +123,9 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 					childData.GetInt("offsetBottom"), ..
 					childData.GetInt("offsetRight") ..
 				), ..
-				childData.GetInt("frames") ..
+				childData.GetInt("frames"), ..
+				null, ..
+				childData.GetInt("id", 0) ..
 			)
 			'search for ninepatch
 			if childData.GetBool("ninepatch")
@@ -135,6 +140,9 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 			spritePack.addSprite(sprite)
 			GetRegistry().Set(childData.GetString("name"), sprite)
 		Next
+
+		'indicate that the loading was successful
+		return True
 	End Method
 End Type
 

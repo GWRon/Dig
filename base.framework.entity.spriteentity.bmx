@@ -63,7 +63,21 @@ Type TSpriteEntity extends TEntity
 		if frameAnimations
 			frame = frameAnimations.GetCurrent().GetCurrentImageFrame()
 		endif
-		sprite.Draw(position.GetX(), position.GetY(), frame)
+		sprite.Draw(area.position.GetX(), area.position.GetY(), frame)
+	End Method
+
+
+	Method RenderAt:Int(x:Float = 0, y:Float = 0, animationName:string="")
+		'=== DRAW SPRITE ===
+		local frame:int = -1
+		if frameAnimations
+			if animationName = ""
+				frame = frameAnimations.GetCurrent().GetCurrentImageFrame()
+			else
+				frame = frameAnimations.Get(animationName).GetCurrentImageFrame()
+			endif
+		endif
+		sprite.Draw(x, y, frame)
 	End Method
 
 

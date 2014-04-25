@@ -86,6 +86,9 @@ Type TRegistryImageLoader extends TRegistryBaseLoader
 		else
 			GetRegistry().Set(data.GetString("name"), pixmap)
 		endif
+
+		'indicate that the loading was successful
+		return True
 	End Method
 
 

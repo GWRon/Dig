@@ -83,6 +83,15 @@ Type TSpriteFrameAnimation
 	End Function
 
 
+	Function CreateSimple:TSpriteFrameAnimation(frameAmount:int, frameTime:int, repeatTimes:int=0, paused:int=0, randomness:int = 0)
+		local f:int[][]
+		For local i:int = 0 until frameAmount
+			f :+ [[i,frameTime]]
+		Next
+		return Create(f, repeatTimes, paused, randomness)
+	End Function
+
+
 	Method Update:int()
 		'skip update if only 1 frame is set
 		'skip if paused

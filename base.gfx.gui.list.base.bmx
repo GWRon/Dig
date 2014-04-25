@@ -729,7 +729,7 @@ Type TGUIListItem Extends TGUIobject
 
 
 	Method SetValueColor:Int(color:TColor=Null)
-		valueCOlor = color
+		valueColor = color
 	End Method
 
 

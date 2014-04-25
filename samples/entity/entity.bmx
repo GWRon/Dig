@@ -34,11 +34,11 @@ Global updateCount:int = 0
 
 Function WorldUpdate:int()
 	myEntity.Update()
-	if myEntity.position.x > 200
+	if myEntity.area.position.x > 200
 		myEntity.SetVelocity(-30,0)
 		myEntity.GetFrameAnimations().SetCurrent("walkLeft")
 	endif
-	if myEntity.position.x <= 0
+	if myEntity.area.position.x <= 0
 		myEntity.SetVelocity(30,0)
 		myEntity.GetFrameAnimations().SetCurrent("walkRight")
 	endif

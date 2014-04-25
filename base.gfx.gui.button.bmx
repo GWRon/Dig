@@ -47,8 +47,9 @@ Type TGUIButton Extends TGUIobject
 			'use parent values
 			if newX = -1 then newX = 0
 			if newY = -1 then newY = 0
-			if newDimX = -1 then newDimX = rect.dimension.GetX()
-			if newDimX = -1 then newDimY = rect.dimension.GetY()
+			'take all the space left
+			if newDimX = -1 then newDimX = rect.dimension.GetX() - newX
+			if newDimX = -1 then newDimY = rect.dimension.GetY() - newY
 
 			caption.rect.position.SetX(newX)
 			caption.rect.position.SetX(newY)
@@ -126,6 +127,13 @@ Type TGUIButton Extends TGUIobject
 
 		If color Then caption.color = color
 	End Method
+
+
+	Method SetCaptionOffset:Int(x:int = -1, y:int = -1)
+		if not captionArea then captionArea = new TRectangle
+		captionArea.position.SetXY(x,y)
+	End Method
+
 
 
 	Function SetTypeFont:Int(font:TBitmapFont)

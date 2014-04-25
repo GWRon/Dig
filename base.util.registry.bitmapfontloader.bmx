@@ -36,13 +36,14 @@ Type TRegistryBitmapFontLoader extends TRegistryBaseLoader
 	Method GetConfigFromXML:TData(loader:TRegistryLoader, node:TxmlNode)
 		local data:TData = new TData
 
-		'=== HANDLE "<FONTS>" ===
+		'=== HANDLE "<BITMAPFONTS>" ===
 		Local nodeTypeName:String = TXmlHelper.FindValue(node, "name", node.GetName())
-		if nodeTypeName.toLower() = "bitmapfonts"
-			Local childrenNode:TxmlNode = TXmlHelper.FindChild(node, "bitmapfont")
-			if not childrenNode then return data
 
-			For Local childNode:TxmlNode = EachIn TXmlHelper.GetNodeChildElements(childrenNode)
+		if nodeTypeName.toLower() = "bitmapfonts"
+			For Local childNode:TxmlNode = EachIn TXmlHelper.GetNodeChildElements(node)
+				'skip other elements
+				if childNode.GetName().ToLower() <> "bitmapfont" then continue
+
 				local childData:TData = GetConfigFromXML(loader, childNode)
 				'skip invalid configurations
 				if not childData then continue
@@ -56,7 +57,7 @@ Type TRegistryBitmapFontLoader extends TRegistryBaseLoader
 			return Null
 		endif
 
-		'=== HANDLE "<FONT>" ===
+		'=== HANDLE "<BITMAPFONT>" ===
 		local fieldNames:String[] = ["name", "url", "size", "default", "flags"]
 		TXmlHelper.LoadValuesToData(node, data, fieldNames)
 		'process given relative-url
@@ -72,6 +73,7 @@ Type TRegistryBitmapFontLoader extends TRegistryBaseLoader
 
 
 	Method LoadFromConfig:int(data:TData, resourceName:string)
+
 		Local name:String = data.GetString("name", "").ToLower()
 		Local url:String = data.GetString("url", "")
 		Local flagsString:String = data.GetString("flags", "")
@@ -106,5 +108,8 @@ Type TRegistryBitmapFontLoader extends TRegistryBaseLoader
 				GetBitmapFontManager().baseFont = font
 			EndIf
 		EndIf
+
+		'indicate that the loading was successful
+		return True
 	End Method
 End Type

@@ -1,10 +1,10 @@
 SuperStrict
-Import "base.util.point.bmx"
+Import "base.util.rectangle.bmx"
 Import "base.util.deltatimer.bmx"
 
 
 Type TStaticEntity
-	Field position:TPoint = new TPoint
+	Field area:TRectangle = new TRectangle
 	Field name:string
 	Field visible:int = True
 
@@ -56,8 +56,8 @@ Type TEntity extends TStaticEntity
 
 		'=== UPDATE MOVEMENT ===
 		'backup for tweening
-		oldPosition.SetXY(position.x, position.y)
+		oldPosition.SetXY(area.position.x, area.position.y)
 		'set new position
-		position.MoveXY( deltaTime * velocity.x, deltaTime * velocity.y )
+		area.position.MoveXY( deltaTime * velocity.x, deltaTime * velocity.y )
 	End Method
 End Type

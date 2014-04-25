@@ -45,8 +45,27 @@ Type TSpritePack
 	End Method
 
 
+	'returns the sprite from array position
+	'if no sprite was found, the first in the pack is returned to avoid errors
+	Method GetSpriteByPosition:TSprite(position:int=0)
+		if len(sprites) >= position then return sprites[0]
+		return sprites[position]
+	End Method
+
+
+	'returns the sprite with a specified id
+	'if no sprite was found, the first in the pack is returned to avoid errors
+	Method GetSpriteByID:TSprite(id:int=0)
+		For Local i:Int = 0 until sprites.length
+			'skip missing
+			If not sprites[i] then continue
+			if sprites[i].id <> id then return sprites[i]
+		Next
+		Return sprites[0]
+	End Method
+
+
 	Method HasSprite:int(sprite:TSprite)
-		'skip if already existing
 		For Local i:Int = 0 until sprites.length
 			'skip missing
 			If not sprites[i] then continue
@@ -105,6 +124,9 @@ End Type
 Type TSprite
 	Field offset:TRectangle = new TRectangle.Init(0,0,0,0)
 	Field area:TRectangle = new TRectangle.Init(0,0,0,0)
+	'the id is NOT globally unique but a value to make it selectable
+	'from a TSpritePack without knowing the name
+	Field id:int = 0
 	Field name:string
 	Field frameW:Int
 	Field frameH:Int
@@ -128,9 +150,10 @@ Type TSprite
 
 
 
-	Method Init:TSprite(spritepack:TSpritePack=null, name:String, area:TRectangle, offset:TRectangle, animcount:Int = 0, spriteDimension:TPoint=null)
+	Method Init:TSprite(spritepack:TSpritePack=null, name:String, area:TRectangle, offset:TRectangle, animcount:Int = 0, spriteDimension:TPoint=null, id:int=0)
 		self.name = name
 		self.area = area.copy()
+		self.id = id
 		parent = spritepack
 		if offset then self.offset = offset.copy()
 		frameW = area.GetW()
@@ -167,6 +190,7 @@ Type TSprite
 		local animCount:int = data.GetInt("animCount", 0)
 		local frameW:int = data.GetInt("frameW", 0)
 		local frameH:int = data.GetInt("frameH", 0)
+		local id:int = data.GetInt("id", 0)
 		local ninePatch:int = data.GetBool("ninePatch", FALSE)
 		local parent:TSpritePack = TSpritePack(data.Get("parent", null))
 
@@ -191,7 +215,7 @@ Type TSprite
 		endif
 
 		'create sprite
-		local sprite:TSprite = new TSprite.Init(parent, name, new TRectangle.Init(0,0, ImageWidth(parent.image), ImageHeight(parent.image)), null, animCount, new TPoint.Init(frameW, frameH))
+		local sprite:TSprite = new TSprite.Init(parent, name, new TRectangle.Init(0,0, ImageWidth(parent.image), ImageHeight(parent.image)), null, animCount, new TPoint.Init(frameW, frameH), id)
 
 		'enable nine patch if wanted
 		if ninePatch then sprite.EnableNinePatch()

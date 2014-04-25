@@ -87,5 +87,8 @@ Type TRegistrySoundLoader extends TRegistryBaseLoader
 					GetSoundManager().AddSound(name, sound, playlists)
 				EndIf
 		End Select
+
+		'indicate that the loading was successful
+		return True
 	End Method
 End Type

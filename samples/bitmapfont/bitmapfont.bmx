@@ -14,7 +14,7 @@ local lastCycleTime:Double = -1
 local direction:int = 1
 local x:float = 0.0
 
-local f:TBitmapFont = GetFontManager().Get("Default", 12)
+local f:TBitmapFont = GetBitmapFontManager().Get("Default", 12)
 
 While not KeyHit(KEY_ESCAPE)
 	'compute cycle time

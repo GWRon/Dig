@@ -95,7 +95,7 @@ End Function
 
 '===== CONVENIENCE ACCESSORS =====
 'not really needed - but for convenience to avoid direct call to the
-'instance getter GetFontManager()
+'instance getter GetBitmapFontManager()
 Function GetBitmapFont:TBitmapfont(name:string, size:Int=-1, style:Int=-1)
 	Return TBitmapFontManager.GetInstance().Get(name, size, style)
 End Function

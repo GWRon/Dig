@@ -145,7 +145,7 @@ rem
 
 		'check new hovered or clicked items
 		For Local Entry:TGUIEntry = EachIn Self.EntryList 'Liste hier global
-			If TFunctions.MouseIn( Self.GetScreenX(), Self.GetScreenY() + currentAddY, Self.GetScreenWidth(), lineHeight)
+			If THelper.MouseIn( Self.GetScreenX(), Self.GetScreenY() + currentAddY, Self.GetScreenWidth(), lineHeight)
 				If MOUSEMANAGER.IsHit(1)
 					value			= Entry.getValue()
 					clickedEntryID	= Entry.id

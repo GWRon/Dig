@@ -401,7 +401,6 @@ Type TRegistryUnloadedResourceCollection
 
 		local toLoad:TRegistryUnloadedResource = PopFirstUnloadedResource()
 		if not toLoad then return TRUE
-
 		'try to load the resource
 		if toLoad.Load()
 			AddToLoadedLog(toLoad.name)
@@ -410,9 +409,9 @@ Type TRegistryUnloadedResourceCollection
 			if toLoad.loadAttempts > 0 then failedResourceLoaded = TRUE
 			return TRUE
 		endif
-
 		'loading failed
 		toLoad.loadAttempts :+1
+print "loading failed : "+ toLoad.name + " | "+ toLoad.loadAttempts
 		'add to the list of failed resources
 		AddFailed(toLoad)
 		return FALSE
