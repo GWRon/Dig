@@ -29,6 +29,8 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 
 		GetRegistry().SetDefault("sprite", sprite)
 		GetRegistry().SetDefault("spritepack", sprite.parent)
+
+		_createdDefaults = TRUE
 	End Method
 
 
@@ -36,24 +38,33 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 	Method GetConfigFromXML:TData(loader:TRegistryLoader, node:TxmlNode)
 		local data:TData = Super.GetConfigFromXML(loader, node)
 
+
+		local fieldNames:String[]
+		fieldNames :+ ["name", "id"]
+		fieldNames :+ ["x", "y", "w", "h"]
+		fieldNames :+ ["offsetLeft", "offsetTop", "offsetRight", "offsetBottom"]
+		fieldNames :+ ["frames|f"]
+		fieldNames :+ ["ninepatch"]
+		TXmlHelper.LoadValuesToData(node, data, fieldNames)
+
+
 		'are there sprites defined ("children")
 		Local childrenNode:TxmlNode = TXmlHelper.FindChild(node, "children")
 		If not childrenNode then return data
 
 		local childrenData:TData[]
-
 		For Local childNode:TxmlNode = EachIn TXmlHelper.GetNodeChildElements(childrenNode)
 			'load child config into a new data
 			local childData:TData = new TData
-			local fieldNames:String[]
-			fieldNames :+ ["name", "id"]
-			fieldNames :+ ["x", "y", "w", "h"]
-			fieldNames :+ ["offsetLeft", "offsetTop", "offsetRight", "offsetBottom"]
-			fieldNames :+ ["frames|f"]
-			fieldNames :+ ["ninepatch"]
-			TXmlHelper.LoadValuesToData(childNode, childData, fieldNames)
+			local childFieldNames:String[]
+			childFieldNames :+ ["name", "id"]
+			childFieldNames :+ ["x", "y", "w", "h"]
+			childFieldNames :+ ["offsetLeft", "offsetTop", "offsetRight", "offsetBottom"]
+			childFieldNames :+ ["frames|f"]
+			childFieldNames :+ ["ninepatch"]
+			TXmlHelper.LoadValuesToData(childNode, childData, childFieldNames)
 
-			'add script data
+			'add child data
 			childrenData :+ [childData]
 		Next
 		if len(childrenData)>0 then data.Add("childrenData", childrenData)
@@ -74,6 +85,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 	End Method
 
 
+
 	Method LoadSpriteFromConfig:Int(data:TData)
 		'create spritepack (name+"_pack") and sprite (name)
 		local sprite:TSprite = new TSprite.InitFromConfig(data)
@@ -85,11 +97,16 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 		Endif
 
 		'add to registry
-		GetRegistry().Set(data.GetString("name"), sprite)
+		GetRegistry().Set(GetNameFromConfig(data), sprite)
+
+		'load potential new sprites from scripts
+		LoadScriptResults(data, sprite)
+
 
 		'indicate that the loading was successful
 		return True
 	End Method
+
 
 
 	Method LoadSpritePackFromConfig:Int(data:TData)
@@ -108,7 +125,8 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 
 		For local childData:TData = eachin childrenData
 			Local sprite:TSprite = new TSprite
-			sprite.Init( ..
+
+		sprite.Init( ..
 				spritePack, ..
 				childData.GetString("name"), ..
 				new TRectangle.Init( ..
@@ -141,9 +159,90 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 			GetRegistry().Set(childData.GetString("name"), sprite)
 		Next
 
+		'load potential new sprites from scripts
+		LoadScriptResults(data, spritePack)
+
 		'indicate that the loading was successful
 		return True
 	End Method
+
+
+	'OVERWRITTEN to add support for TSprite and TSpritepack
+	'running a script configured with values contained in a data-object
+	'objects are directly created within the function and added to
+	'the registry
+	Function RunScriptData:int(data:TData, parent:object)
+		local dest:String = data.GetString("dest").toLower()
+		local src:String = data.GetString("src")
+		local color:TColor = TColor.Create(data.GetInt("r"), data.GetInt("g"), data.GetInt("b"))
+
+		Select data.GetString("do").toUpper()
+			'Create a colorized copy of the given image
+			case "COLORIZECOPY"
+				local parentImage:TImage
+				If TImage(parent) then parentImage = TImage(parent)
+				If TSpritePack(parent) then parentImage = TSpritePack(parent).image
+				If TSprite(parent) then parentImage = TSprite(parent).GetImage()
+
+				'check prerequisites
+				If dest = "" or not parentImage then return FALSE
+
+				local img:Timage = ColorizeImageCopy(parentImage, color)
+				if not img then return FALSE
+				'add to registry
+				if TImage(parent)
+					GetRegistry().Set(dest, img)
+				elseif TSpritePack(parent)
+					GetRegistry().Set(dest, new TSpritePack.Init(img, dest))
+				elseif TSprite(parent)
+					GetRegistry().Set(dest, new TSprite.InitFromImage(img, dest))
+				endif
+
+
+			'Copy the given Sprite on the spritesheet (spritepack image)
+			case "COPYSPRITE"
+				'check prerequisites
+				If dest = "" Or src = "" then return FALSE
+				if not TSpritepack(parent) then return FALSE
+				TSpritepack(parent).CopySprite(src, dest, color)
+
+
+			'Create a new sprite copied from another one
+			case "ADDCOPYSPRITE"
+				'check prerequisites
+				If dest = "" Or src = "" then return FALSE
+				If not TSpritepack(parent) then return FALSE
+
+				Local srcSprite:TSprite = TSpritepack(parent).GetSprite(src)
+
+				Local x:Int = data.GetInt("x", srcSprite.area.GetX())
+				Local y:Int = data.GetInt("y", srcSprite.area.GetY())
+				Local w:Int = data.GetInt("w", srcSprite.area.GetW())
+				Local h:Int = data.GetInt("h", srcSprite.area.GetH())
+
+				Local offsetTop:Int = data.GetInt("offsetTop", srcSprite.offset.GetTop())
+				Local offsetLeft:Int = data.GetInt("offsetLeft", srcSprite.offset.GetLeft())
+				Local offsetBottom:Int = data.GetInt("offsetBottom", srcSprite.offset.GetBottom())
+				Local offsetRight:Int = data.GetInt("offsetRight", srcSprite.offset.GetRight())
+				Local frames:Int = data.GetInt("frames", srcSprite.animcount)
+
+				'add to registry
+				local sprite:TSprite
+				sprite = TSpritepack(parent).AddSpritecopy(..
+							src,..
+							dest,..
+							new TRectangle.Init(x,y,w,h),..
+							new TRectangle.Init(offsetTop, offsetLeft, offsetBottom, offsetRight),..
+							frames,..
+							color..
+						  )
+				GetRegistry().Set(dest, sprite)
+
+
+			Default
+				Throw "sprite script contains unknown command: ~q"+data.GetString("do")+"~q"
+		End Select
+	End Function
 End Type
 
 

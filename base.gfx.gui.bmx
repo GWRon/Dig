@@ -154,22 +154,30 @@ Type TGUIManager
 		Local coord:TPoint = TPoint(triggerEvent.GetData().get("coord"))
 		If Not coord Then Return False
 		Local potentialDropTargets:TGuiObject[] = GUIManager.GetObjectsByPos(coord, GUIManager.currentState, True, GUI_OBJECT_ACCEPTS_DROP)
-		Local dropTarget:TGuiObject = Null
+		Local dropTarget:TGuiObject = TGUIObject(triggerEvent.GetReceiver())
 
-		For Local potentialDropTarget:TGUIobject = EachIn potentialDropTargets
-			'do not ask other targets if there was already one handling that drop
-			If triggerEvent.isAccepted() Then Continue
-			'do not ask other targets if one object already aborted the event
-			If triggerEvent.isVeto() Then Continue
 
-			'inform about drag and ask object if it wants to handle the drop
-			potentialDropTarget.onDrop(triggerEvent)
+		if not triggerEvent.isAccepted()
+			For Local potentialDropTarget:TGUIobject = EachIn potentialDropTargets
+				'do not ask other targets if there was already one handling that drop
+				If triggerEvent.isAccepted() Then Continue
+				'do not ask other targets if one object already aborted the event
+				If triggerEvent.isVeto() Then Continue
 
-			If triggerEvent.isAccepted() Then dropTarget = potentialDropTarget
-		Next
+				'inform about drag and ask object if it wants to handle the drop
+				potentialDropTarget.onDrop(triggerEvent)
 
-		'if we haven't found a dropTarget stop processing that event
-		If Not dropTarget
+				If triggerEvent.isAccepted()
+					dropTarget = potentialDropTarget
+					'modify event to hold dropTarget now
+					triggerEvent.GetData().Add("dropTarget", dropTarget)
+				endif
+			Next
+		endif
+
+		'if we haven't found a dropTarget and nobody already cares for it
+		'stop processing that event
+		If Not dropTarget and not triggerEvent.isAccepted()
 			triggerEvent.setVeto()
 			Return False
 		EndIf
@@ -193,6 +201,7 @@ Type TGUIManager
 		Else
 			'inform others: we successfully dropped the object to a target
 			EventManager.triggerEvent( TEventSimple.Create("guiobject.onDropOnTargetAccepted", new TData.Add("coord", coord) , guiobject, dropTarget ))
+
 			'also add this drop target as receiver of the original-drop-event
 			triggerEvent._receiver = dropTarget
 			Return True
@@ -1005,9 +1014,9 @@ Type TGUIobject
 		EventManager.triggerEvent( event )
 		'if there is no problem ...just start dropping
 		If Not event.isVeto()
-
 			'fire an event - if the event has a veto afterwards, do not drop!
 			'exception is, if the action is forced
+
 			Local event:TEventSimple = TEventSimple.Create("guiobject.onDrop", new TData.Add("coord", coord), Self)
 			EventManager.triggerEvent( event )
 			If Not force And event.isVeto() Then Return False

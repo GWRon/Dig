@@ -221,6 +221,9 @@ Type TRegistryLoader
 				'do nothing without a configuration (maybe it is a virtual group handled
 				'directly by the loader -> eg. "fonts" which only groups "font")
 				if conf
+					'merge in the extras (eg. overwrite "names")
+					if extras then conf.Merge(extras)
+
 					'directly load the objects or defer to a helper
 					if loader.directLoading or forceDirectLoad
 						loader.LoadFromConfig(conf, resourceName)
@@ -228,8 +231,7 @@ Type TRegistryLoader
 						'try to get a name for the resource:
 						'a) from TData "extras"
 						'b) from the config read from xml
-						local name:String = ""
-						if extras then name = extras.GetString("name")
+						local name:String = conf.GetString("name")
 						if name = "" then name = loader.GetNameFromConfig(conf)
 
 						'add to "ToLoad"-list
@@ -244,6 +246,7 @@ Type TRegistryLoader
 		'inform others about the to-load-element
 		'sender: self (the loader)
 		'target: resourceName in uppercases ("SPRITE") -> so listeners can filter on it
+		'print "RegistryLoader.onLoadResourceFromXML: self + "+ resourceName.ToUpper()
 		EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadResourceFromXML", new TData.AddString("resourceName", resourceName).Add("xmlNode", node), self, resourceName.ToUpper()))
 	End Method
 End Type
@@ -411,6 +414,7 @@ Type TRegistryUnloadedResourceCollection
 		endif
 		'loading failed
 		toLoad.loadAttempts :+1
+'RONNY
 print "loading failed : "+ toLoad.name + " | "+ toLoad.loadAttempts
 		'add to the list of failed resources
 		AddFailed(toLoad)
@@ -580,6 +584,9 @@ Type TRegistryFileLoader extends TRegistryBaseLoader
 		'take over baseURI
 		newLoader.baseURI = data.GetString("baseURI")
 		newLoader.LoadFromXML(data.GetString("url"))
+
+		'indicate that the loading was successful
+		return True
 	End Method
 End Type
 
@@ -596,25 +603,25 @@ Type TRegistryDataLoader extends TRegistryBaseLoader
 
 
 	Method GetConfigFromXML:TData(loader:TRegistryLoader, node:TxmlNode)
-		local dataName:String = TXmlHelper.FindValue(node, "name", node.GetName())
+		local name:String = TXmlHelper.FindValue(node, "name", node.GetName())
 		'skip unnamed data (no name="x" or <namee type="data">)
-		if dataName = "" or dataName.ToUpper() = "DATA"
+		if name = "" or name.ToUpper() = "DATA"
 			TLogger.Log("TRegistryDataLoader.LoadFromXML", "Node ~q<"+node.GetName()+">~q contained no or invalid name field. Skipped.", LOG_WARNING)
 			return NULL
 		endif
 
 		local data:TData = new TData
-		data.AddString("dataName", dataName)
-		data.AddNumber("dataMerge", TXmlHelper.FindValueBool(node, "merge", TRUE))
+		data.AddString("name", name)
+		data.AddNumber("merge", TXmlHelper.FindValueBool(node, "merge", TRUE))
 		local values:TData = new TData
 
 
 		For local child:TxmlNode = eachin TXmlHelper.GetNodeChildElements(node)
-			local name:String = TXmlHelper.FindValue(child, "type", child.getName())
-			if name = "" then continue
-			local value:String = TXmlHelper.FindValue(child, "value", child.getcontent())
+			local childName:String = TXmlHelper.FindValue(child, "name", child.getName())
+			if childName = "" then continue
 
-			values.Add(name, value)
+			local childValue:String = TXmlHelper.FindValue(child, "value", child.getcontent())
+			values.Add(childName, childValue)
 		Next
 
 		data.Add("values", values)
@@ -623,22 +630,25 @@ Type TRegistryDataLoader extends TRegistryBaseLoader
 
 
 	Method GetNameFromConfig:String(data:TData)
-		return data.GetString("dataName","unknown data block")
+		return data.GetString("name","unknown data block")
 	End Method
 
 
 	'load the xml file (content of file)
 	Method LoadFromConfig:int(data:TData, resourceName:string)
-		local dataMerge:int = data.GetInt("dataMerge", FALSE)
-		local dataName:string = data.GetString("dataName", "")
-		local dataBlock:TData = new TData
+		local merge:int = data.GetInt("merge", FALSE)
+		local name:string = GetNameFromConfig(data)
+		local values:TData = new TData
 		'if merging - we load the previously stored data (if there is some)
-		if dataMerge then dataBlock = TData(GetRegistry().Get(dataName, new TData))
+		if merge then values = TData(GetRegistry().Get(name, new TData))
 
 		'merge in the new values (to an empty - or the old tdata)
-		dataBlock.Merge(TData(data.Get("values")))
+		values.Merge(TData(data.Get("values")))
 
 		'add to registry
-		GetRegistry().Set(dataName, dataBlock)
+		GetRegistry().Set(name, values)
+
+		'indicate that the loading was successful
+		return True
 	End Method
 End Type

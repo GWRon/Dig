@@ -455,7 +455,6 @@ endrem
 	'override default
 	Method onDrop:Int(triggerEvent:TEventBase)
 		'we could check for dragged element here
-
 		triggerEvent.setAccepted(True)
 		Return True
 	End Method

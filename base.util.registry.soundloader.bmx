@@ -56,7 +56,7 @@ Type TRegistrySoundLoader extends TRegistryBaseLoader
 
 
 	Method LoadFromConfig:int(data:TData, resourceName:string)
-		Local name:String = data.GetString("name", "").ToLower()
+		Local name:String = GetNameFromConfig(data).ToLower()
 		Local url:String = data.GetString("url", "")
 		Local loop:Int = data.GetBool("loop", False)
 		Local playlists:String = data.GetString("playlists", "")

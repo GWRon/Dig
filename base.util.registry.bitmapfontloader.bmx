@@ -74,7 +74,7 @@ Type TRegistryBitmapFontLoader extends TRegistryBaseLoader
 
 	Method LoadFromConfig:int(data:TData, resourceName:string)
 
-		Local name:String = data.GetString("name", "").ToLower()
+		Local name:String = GetNameFromConfig(data).ToLower()
 		Local url:String = data.GetString("url", "")
 		Local flagsString:String = data.GetString("flags", "")
 		Local size:Int = data.GetInt("size", 10)

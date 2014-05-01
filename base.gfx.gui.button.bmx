@@ -13,14 +13,17 @@ Import "base.util.registry.spriteloader.bmx"
 Type TGUIButton Extends TGUIobject
 	Field manualState:Int = 0
 	Field spriteName:String = "gfx_gui_button.default"
+	Field _sprite:TSprite 'private
 	Field caption:TGUILabel	= Null
 	Field captionArea:TRectangle = null
 	Field autoSizeModeWidth:int = 0
 	Field autoSizeModeHeight:int = 0
 
-	Global AUTO_SIZE_MODE_TEXT:int = 0
-	Global AUTO_SIZE_MODE_SPRITE:int = 1
+	Global AUTO_SIZE_MODE_NONE:int = 0
+	Global AUTO_SIZE_MODE_TEXT:int = 1
+	Global AUTO_SIZE_MODE_SPRITE:int = 2
 	Global _typeDefaultFont:TBitmapFont
+	Global _typeDefaultCaptionColor:TColor
 
 
 	Method Create:TGUIButton(pos:TPoint, dimension:TPoint, value:String, State:String = "")
@@ -63,40 +66,64 @@ Type TGUIButton Extends TGUIobject
 
 
 	'override resize to add autocalculation and caption handling
-	Method Resize(w:Float=Null,h:Float=Null)
+	Method Resize(w:Float=-1, h:Float=-1)
 		'autocalculate width/height
 		if w = -1
 			if autoSizeModeWidth = AUTO_SIZE_MODE_TEXT
 				w = GetFont().getWidth(self.value) + 8
 			elseif autoSizeModeWidth = AUTO_SIZE_MODE_SPRITE
-				w = GetSpriteFromRegistry(spriteName).area.GetW()
+				w = GetSprite().area.GetW()
 			endif
 		endif
 		if h = -1
-			if autoSizeModeHeight = AUTO_SIZE_MODE_TEXT
-				h = GetFont().GetMaxCharHeight()
-			'elseif autoSizeModeHeight = AUTO_SIZE_MODE_SPRITE
-			'	h = GetSpriteFromRegistry(spriteName).area.GetH()
-			endif
+			h = rect.GetH()
+			if autoSizeModeHeight <> AUTO_SIZE_MODE_NONE or h = -1
 
-			'if height is less then sprite height (the "minimum")
-			'use this
-			h = Max(h, GetSpriteFromRegistry(spriteName).area.GetH())
+				if autoSizeModeHeight = AUTO_SIZE_MODE_TEXT
+					h = GetFont().GetMaxCharHeight()
+				endif
+
+				'if height is less then sprite height (the "minimum")
+				'use this
+				h = Max(h, GetSprite().area.GetH())
+			endif
 		endif
 
 
-		If w Then rect.dimension.setX(w)
-		If h Then rect.dimension.setY(h)
+		If w>0 Then rect.dimension.setX(w)
+		If h>0 Then rect.dimension.setY(h)
 
 		'move caption according to its rules
 		RepositionCaption()
 	End Method
 
 
-	Method SetAutoSizeMode(modeWidth:int = 0, modeHeight:int = 0)
+	Method SetAutoSizeMode(modeWidth:int = 1, modeHeight:int = 1)
 		autoSizeModeWidth = modeWidth
 		autoSizeModeHeight = modeHeight
 		Resize(-1,-1)
+	End Method
+
+
+
+	'acts as cache
+	Method GetSprite:TSprite()
+		'refresh cache if not set or wrong sprite name
+		if not _sprite or _sprite.GetName() <> spriteName
+			_sprite = GetSpriteFromRegistry(spriteName)
+			'new -non default- sprite: adjust appearance
+			if _sprite.GetName() <> "defaultsprite"
+				SetAppearanceChanged(TRUE)
+			endif
+		endif
+		return _sprite
+	End Method
+
+
+	'override default to handle image changes
+	Method onStatusAppearanceChange:int()
+		'if background changed we have to resize
+		resize(-1, -1)
 	End Method
 
 
@@ -125,7 +152,11 @@ Type TGUIButton Extends TGUIobject
 			caption.SetValue(text)
 		endif
 
-		If color Then caption.color = color
+		If color
+			caption.color = color
+		Elseif _typeDefaultCaptionColor
+			caption.color = _typeDefaultCaptionColor
+		Endif
 	End Method
 
 
@@ -134,6 +165,10 @@ Type TGUIButton Extends TGUIobject
 		captionArea.position.SetXY(x,y)
 	End Method
 
+
+	Function SetTypeCaptionColor:Int(color:TColor)
+		_typeDefaultCaptionColor = color.Copy()
+	End Function
 
 
 	Function SetTypeFont:Int(font:TBitmapFont)
@@ -184,7 +219,8 @@ Type TGUIButton Extends TGUIobject
 		SetColor 255, 255, 255
 		SetAlpha oldCol.a * alpha
 
-		Local sprite:TSprite = GetSpriteFromRegistry(GetSpriteName() + state, spriteName)
+		Local sprite:TSprite = GetSprite()
+		if state <> "" then sprite = GetSpriteFromRegistry(GetSpriteName() + state, sprite)
 		if sprite
 			'no active image available (when "mousedown" over widget)
 			if state = ".active" and (sprite.name = spriteName or sprite.name="defaultsprite")

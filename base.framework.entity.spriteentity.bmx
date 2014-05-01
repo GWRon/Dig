@@ -63,7 +63,7 @@ Type TSpriteEntity extends TEntity
 		if frameAnimations
 			frame = frameAnimations.GetCurrent().GetCurrentImageFrame()
 		endif
-		sprite.Draw(area.position.GetX(), area.position.GetY(), frame)
+		sprite.Draw(area.position.GetX() + xOffset, area.position.GetY() + yOffset, frame)
 	End Method
 
 

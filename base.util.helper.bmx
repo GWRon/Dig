@@ -17,6 +17,11 @@ Type THelper
 		'same object
 		if checkedObject = limit then return TRUE
 
+		'check if both are strings
+		if string(limit) and string(checkedObject)
+			return string(limit) = string(checkedObject)
+		endif
+
 		'check if classname / type is the same (type-name given as limit )
 		if string(limit)<>null
 			local typeId:TTypeId = TTypeId.ForName(string(limit))

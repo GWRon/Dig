@@ -187,7 +187,7 @@ Type TSprite
 		local flags:int = data.GetInt("flags", 0)
 		local url:string = data.GetString("url", "")
 		local name:string = data.GetString("name", "unknownSprite")
-		local animCount:int = data.GetInt("animCount", 0)
+		local animCount:int = data.GetInt("frames", 0)
 		local frameW:int = data.GetInt("frameW", 0)
 		local frameH:int = data.GetInt("frameH", 0)
 		local id:int = data.GetInt("id", 0)
@@ -203,7 +203,6 @@ Type TSprite
 				Throw "image null : "+name + " (url: "+url+" )"
 				Return Null
 			endif
-
 			'load img to find out celldimensions
 			if animCount > 0 AND (frameW = 0 OR frameW = 0)
 				frameW = ImageWidth(img) / animCount
@@ -452,7 +451,7 @@ Type TSprite
 
 		'normal sprites draw their image stretched to area
 		if not ninePatchEnabled
-			DrawResized(new TRectangle.Init(x, y, width, height), area, frame)
+			DrawResized(new TRectangle.Init(x, y, width, height), new TRectangle, frame)
 		else
 			'minimal dimension has to be same or bigger than all 4 borders + 0.5 of the stretch portion
 			width = Max(width, 0.5 + ninePatch_borderDimensionScale*(ninePatch_borderDimension.GetLeft()+ninePatch_borderDimension.GetRight()))
@@ -480,9 +479,17 @@ Type TSprite
 	End Method
 
 
-	Method DrawResized(target:TRectangle, source:TRectangle, frame:int=-1, drawCompleteImage:Int=FALSE)
+	'draw the sprite resized/stretched
+	'source is a rectangle within sprite.area
+	Method DrawResized(target:TRectangle, source:TRectangle = null, frame:int=-1, drawCompleteImage:Int=FALSE)
 		'needed as "target" is a reference (changes original variable)
 		local targetCopy:TRectangle = target.Copy()
+		local sourceCopy:TRectangle
+		if source
+			sourceCopy = source.Copy()
+		else
+			sourceCopy = new TRectangle
+		endif
 
 		if drawCompleteImage then frame = -1
 
@@ -493,19 +500,20 @@ Type TSprite
 			local frameInRow:int = floor(frame / MaxFramesInCol)	'0based
 			local frameInCol:int = frame mod MaxFramesInCol			'0based
 			'move the source rect accordingly
-			source.position.SetXY(frameInCol*frameW, frameinRow*frameH)
+			sourceCopy.position.SetXY(frameInCol*frameW, frameinRow*frameH)
 
 			'if no source dimension was given - use frame dimension
-			if source.GetW() <= 0 then source.dimension.setX(frameW)
-			if source.GetH() <= 0 then source.dimension.setY(frameH)
+			if sourceCopy.GetW() <= 0 then sourceCopy.dimension.setX(frameW)
+			if sourceCopy.GetH() <= 0 then sourceCopy.dimension.setY(frameH)
 		else
 			'if no source dimension was given - use image dimension
-			if source.GetW() <= 0 then source.dimension.setX(area.GetW())
-			if source.GetH() <= 0 then source.dimension.setY(area.GetH())
+			if sourceCopy.GetW() <= 0 then sourceCopy.dimension.setX(area.GetW())
+			if sourceCopy.GetH() <= 0 then sourceCopy.dimension.setY(area.GetH())
 		endif
+
 		'receive source rect so it stays within the sprite's limits
-		source.dimension.SetX(Min(area.GetW(), source.GetW()))
-		source.dimension.SetY(Min(area.GetH(), source.GetH()))
+		sourceCopy.dimension.SetX(Min(area.GetW(), sourceCopy.GetW()))
+		sourceCopy.dimension.SetY(Min(area.GetH(), sourceCopy.GetH()))
 
 		'if no target dimension was given - use source dimension
 		if targetCopy.GetW() <= 0 then targetCopy.dimension.SetX(source.GetW())
@@ -516,33 +524,33 @@ Type TSprite
 		if offset and (offset.position.x<>0 or offset.position.y<>0 or offset.dimension.x<>0 or offset.dimension.y<>0)
 			'top and left border also modify position to draw
 			'starting at the top border - so include that offset
-			if source.GetY() = 0
+			if sourceCopy.GetY() = 0
 				targetCopy.position.MoveY(-offset.GetTop())
 				targetCopy.dimension.MoveY(offset.GetTop())
-				source.dimension.MoveY(offset.GetTop())
+				sourceCopy.dimension.MoveY(offset.GetTop())
 			else
-				source.position.MoveY(offset.GetTop())
+				sourceCopy.position.MoveY(offset.GetTop())
 			endif
-			if source.GetX() = 0
+			if sourceCopy.GetX() = 0
 				targetCopy.position.MoveX(-offset.GetLeft())
 				targetCopy.dimension.MoveX(offset.GetLeft())
-				source.dimension.MoveX(offset.GetLeft())
+				sourceCopy.dimension.MoveX(offset.GetLeft())
 			else
-				source.position.MoveX(offset.GetLeft())
+				sourceCopy.position.MoveX(offset.GetLeft())
 			endif
 
 			'hitting bottom border - draw bottom offset
-			if (source.GetY() + source.GetH()) >= (area.GetH() - offset.GetBottom())
-				source.dimension.MoveY(offset.GetBottom())
+			if (sourceCopy.GetY() + sourceCopy.GetH()) >= (area.GetH() - offset.GetBottom())
+				sourceCopy.dimension.MoveY(offset.GetBottom())
 				targetCopy.dimension.MoveY(offset.GetBottom())
 			endif
 			'hitting right border - draw right offset
-'			if (source.GetX() + source.GetW()) >= (area.GetW() - offset.GetRight())
-'				source.dimension.MoveX(offset.GetRight())
+'			if (sourceCopy.GetX() + sourceCopy.GetW()) >= (area.GetW() - offset.GetRight())
+'				sourceCopy.dimension.MoveX(offset.GetRight())
 '			endif
 		endif
 
-		DrawSubImageRect(parent.image, targetCopy.GetX(), targetCopy.GetY(), targetCopy.GetW(), targetCopy.GetH(), area.GetX() + source.GetX(), area.GetY() + source.GetY(), source.GetW(), source.GetH())
+		DrawSubImageRect(parent.image, targetCopy.GetX(), targetCopy.GetY(), targetCopy.GetW(), targetCopy.GetH(), area.GetX() + sourceCopy.GetX(), area.GetY() + sourceCopy.GetY(), sourceCopy.GetW(), sourceCopy.GetH())
 	End Method
 
 

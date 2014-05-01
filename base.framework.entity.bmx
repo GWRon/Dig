@@ -22,6 +22,11 @@ Type TStaticEntity
 	End Method
 
 
+	Method SetVisible:int(bool:int=True)
+		visible = bool
+	End Method
+
+
 	Method IsVisible:int()
 		return visible
 	End Method
@@ -51,6 +56,11 @@ Type TEntity extends TStaticEntity
 	End Method
 
 
+	Method GetVelocity:TPoint()
+		return velocity
+	End Method
+
+
 	Method Update:Int()
 		local deltaTime:Float = GetDeltaTimer().GetDelta()
 
@@ -58,6 +68,6 @@ Type TEntity extends TStaticEntity
 		'backup for tweening
 		oldPosition.SetXY(area.position.x, area.position.y)
 		'set new position
-		area.position.MoveXY( deltaTime * velocity.x, deltaTime * velocity.y )
+		area.position.MoveXY( deltaTime * GetVelocity().x, deltaTime * GetVelocity().y )
 	End Method
 End Type
