@@ -29,6 +29,8 @@ Const GUI_OBJECT_IGNORE_PARENTPADDING:Int		= 2^8
 Const GUI_OBJECT_ACCEPTS_DROP:Int				= 2^9
 Const GUI_OBJECT_CAN_RECEIVE_KEYSTROKES:Int		= 2^10
 Const GUI_OBJECT_DRAWMODE_GHOST:Int				= 2^11
+'defines what GetFont() tries to get at first: parents or types font
+Const GUI_OBJECT_FONT_PREFER_PARENT_TO_TYPE:Int	= 2^12
 
 '===== GUI STATUS CONSTANTS =====
 CONST GUI_OBJECT_STATUS_APPEARANCE_CHANGED:Int	= 2^0
@@ -79,7 +81,6 @@ Type TGUIManager
 
 	Method New()
 		if not _instance then self.Init()
-		_instance = self
 	End Method
 
 
@@ -105,8 +106,13 @@ Type TGUIManager
 	End Method
 
 
+	Method SetDefaultFont:int(font:TBitmapFont)
+		_defaultFont = font
+	End Method
+
+
 	Method GetDefaultFont:TBitmapFont()
-		If Not _defaultFont Then _defaultFont = GetBitmapFontManager().Get("Default", 12)
+		If Not _defaultFont then _defaultFont = GetBitmapFontManager().GetDefaultFont()
 		Return _defaultFont
 	End Method
 
@@ -206,7 +212,7 @@ Type TGUIManager
 			EventManager.triggerEvent( TEventSimple.Create("guiobject.onDropOnTargetDeclined", new TData.Add("coord", coord) , guiobject, dropTarget ))
 			Return False
 		Else
-			'inform others: we successfully dropped the object to a target
+			'inform others: we successfully dropped the object to a target#
 			EventManager.triggerEvent( TEventSimple.Create("guiobject.onDropOnTargetAccepted", new TData.Add("coord", coord) , guiobject, dropTarget ))
 
 			'also add this drop target as receiver of the original-drop-event
@@ -557,6 +563,8 @@ Type TGUIobject
 	Field _status:int = 0
 	'the font used to display text in the widget
 	Field _font:TBitmapFont
+	'the font used in the last display call
+	Field _lastFont:TBitmapFont
 	'time when item got dragged, maybe find a better name
 	Field _timeDragged:Int = 0
 	Field _parent:TGUIobject = Null
@@ -623,11 +631,36 @@ Type TGUIobject
 
 
 	Method GetFont:TBitmapFont()
+		local newFont:TBitmapFont
 		if not _font
-			if GetTypeFont() then return GetTypeFont()
-			return GUIManager.GetDefaultFont()
+			if hasOption(GUI_OBJECT_FONT_PREFER_PARENT_TO_TYPE)
+				if _parent
+					newFont = _parent.GetFont()
+				elseif GetTypeFont()
+					newFont = GetTypeFont()
+				else
+					newFont = GUIManager.GetDefaultFont()
+				endif
+			else
+				if GetTypeFont()
+					newFont = GetTypeFont()
+				elseif _parent
+					newFont = _parent.GetFont()
+				else
+					newFont = GUIManager.GetDefaultFont()
+				endif
+			endif
+		else
+			newFont = _font
 		endif
-		return _font
+
+		'font differs - inform gui object
+		if newfont <> _lastFont
+			_lastFont = newFont
+			if not isAppearanceChanged() then SetAppearanceChanged(true)
+		endif
+
+		return newFont
 	End Method
 
 
@@ -864,7 +897,22 @@ Type TGUIobject
 
 	Method SetAppearanceChanged:Int(bool:int)
 		SetStatus(GUI_OBJECT_STATUS_APPEARANCE_CHANGED, bool)
+
+		If bool = true
+			'inform parent (and its grandparent and...)
+			If _parent and not _parent.IsAppearanceChanged()
+				_parent.SetAppearanceChanged(bool)
+			Endif
+			'inform children
+			If children
+				For local child:TGUIobject = EachIn children
+					if child.IsAppearanceChanged() then continue
+					child.SetAppearanceChanged(bool)
+				Next
+			Endif
+		endif
 	End Method
+
 
 	'called when appearance changes - override in widgets to react
 	'to it
@@ -1478,17 +1526,17 @@ endrem
 		'charCode is < 0 for me when umlauts are pressed
 		if charCode < 0
 			?Win32
-			If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
-			If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
-			If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
+			If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
+			If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
+			If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
 			?Mac
-			If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
-			If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
-			If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
+			If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
+			If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
+			If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
 			?Linux
-			If KEYWRAPPER.pressedKey(252) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
-			If KEYWRAPPER.pressedKey(246) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
-			If KEYWRAPPER.pressedKey(163) Then If shiftPressed Then value:+ "ï¿½" Else value :+ "ï¿½"
+			If KEYWRAPPER.pressedKey(252) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
+			If KEYWRAPPER.pressedKey(246) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
+			If KEYWRAPPER.pressedKey(163) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
 			?
 		elseif charCode > 0
 			'handle normal "keys" (excluding umlauts)

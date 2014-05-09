@@ -11,13 +11,15 @@ Import "base.util.registry.spriteloader.bmx"
 
 
 
-Type TGUICheckBox  Extends TGUIObject
+Type TGUICheckBox Extends TGUIObject
     Field _checked:Int=False
     Field _showValue:Int=True
     Field checkSprite:TSprite
 	Field buttonSprite:TSprite
 	Field spriteBaseName:String	= "gfx_gui_icon_check"
 	Field spriteButtonBaseName:String = "gfx_gui_button.round"
+
+	Global _typeDefaultFont:TBitmapFont
 
 
 	Method Create:TGUICheckbox(pos:TPoint, dimension:TPoint, checked:Int=False, labelValue:String, limitState:String="")
@@ -48,6 +50,18 @@ Type TGUICheckBox  Extends TGUIObject
 	Method SetShowValue:Int(bool:Int=True)
 		_showValue = bool
 	End Method
+
+
+	'override to use custom global
+	Function SetTypeFont:Int(font:TBitmapFont)
+		_typeDefaultFont = font
+	End Function
+
+
+	'override to use custom global
+	Function GetTypeFont:TBitmapFont()
+		return _typeDefaultFont
+	End Function
 
 
 	'private getter

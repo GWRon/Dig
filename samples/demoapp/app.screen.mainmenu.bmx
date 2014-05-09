@@ -15,6 +15,7 @@ Import "../../base.gfx.gui.list.slotlist.bmx"
 Import "../../base.gfx.gui.dropdown.bmx"
 Import "../../base.gfx.gui.window.base.bmx"
 Import "../../base.gfx.gui.window.modal.bmx"
+Import "../../base.util.interpolation.bmx"
 Import "app.screen.bmx"
 
 Type TScreenMainMenu extends TScreenMenuBase
@@ -155,17 +156,27 @@ Type TScreenMainMenu extends TScreenMenuBase
 	End Method
 
 
+	Field logoAnimStart:int = 0
+	Field logoAnimTime:int = 1500
+	Field logoScale:float = 0.0
+
 	Method Render:int()
 		Super.Render()
 
 		local logo:TSprite = GetSpriteFromRegistry("gfx_startscreen_logo")
 		if logo
+			if logoAnimStart = 0 then logoAnimStart = Millisecs()
+			logoScale = TInterpolation.BackOut(0.0, 1.0, Min(logoAnimTime, Millisecs() - logoAnimStart), logoAnimTime)
+			logoScale :* TInterpolation.BounceOut(0.0, 1.0, Min(logoAnimTime, Millisecs() - logoAnimStart), logoAnimTime)
+
 			local oldAlpha:float = GetAlpha()
-			If LogoFadeInFirstCall = 0 Then LogoFadeInFirstCall = MilliSecs()
-			SetAlpha oldAlpha * ((MilliSecs() - LogoFadeInFirstCall) / 750.0)
-			logo.Draw( GraphicsWidth()/2 - logo.area.GetW() / 2, 100)
+			SetAlpha TInterpolation.RegularOut(0.0, 1.0, Min(0.5*logoAnimTime, Millisecs() - logoAnimStart), 0.5*logoAnimTime)
+
+			logo.Draw( GraphicsWidth()/2, 150, -1, new TPoint.Init(0.5, 0.5), logoScale)
 			SetAlpha oldAlpha
 		Endif
+
+
 
 		GuiManager.Draw(self.name)
 	End Method

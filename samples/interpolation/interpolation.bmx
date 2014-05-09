@@ -67,7 +67,7 @@ While not KeyHit(KEY_ESCAPE)
 	DrawRect(540, 140, 1, 60)
 
 	DrawText("ESC to quit | current mode: "+t, 20, 20)
-	DrawText("[1] linear  [2] quad   [3] bounce  [4] strong  [5] back  [6] elastic", 20, 35)
+	DrawText("[1] linear  [2] bounce [3] regular [4] strong  [5] back  [6] elastic", 20, 35)
 	DrawText("[7] circ    [8] cubic  [9] expo    [0] quart", 20, 47)
 
 	if KeyHit(Key_1) then effectMode = 1

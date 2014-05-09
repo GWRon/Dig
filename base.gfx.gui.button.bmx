@@ -43,21 +43,19 @@ Type TGUIButton Extends TGUIobject
 
 		'resize to button dimension
 		if captionArea
-			local newX:Float = captionArea.position.GetX()
-			local newY:Float = captionArea.position.GetY()
-			local newDimX:Float = captionArea.dimension.GetX()
-			local newDimY:Float = captionArea.dimension.GetX()
+			local newX:Float = captionArea.GetX()
+			local newY:Float = captionArea.GetY()
+			local newDimX:Float = captionArea.GetW()
+			local newDimY:Float = captionArea.GetH()
 			'use parent values
 			if newX = -1 then newX = 0
 			if newY = -1 then newY = 0
 			'take all the space left
-			if newDimX = -1 then newDimX = rect.dimension.GetX() - newX
-			if newDimX = -1 then newDimY = rect.dimension.GetY() - newY
+			if newDimX <= 0 then newDimX = rect.GetW() - newX
+			if newDimY <= 0 then newDimY = rect.GetH() - newY
 
-			caption.rect.position.SetX(newX)
-			caption.rect.position.SetX(newY)
-			caption.rect.dimension.SetX(newDimX)
-			caption.rect.dimension.SetY(newDimY)
+			caption.rect.position.SetXY(newX, newY)
+			caption.rect.dimension.SetXY(newDimX, newDimY)
 		else
 			caption.rect.position.SetXY(0, 0)
 			caption.rect.dimension.CopyFrom(rect.dimension)
@@ -105,6 +103,16 @@ Type TGUIButton Extends TGUIobject
 	End Method
 
 
+	'override to inform other elements too
+	Method SetAppearanceChanged:Int(bool:int)
+		Super.SetAppearanceChanged(bool)
+		'only inform if changed
+		if bool = true
+			if caption then caption.SetAppearanceChanged(bool)
+		endif
+	End Method
+
+
 
 	'acts as cache
 	Method GetSprite:TSprite()
@@ -138,14 +146,17 @@ Type TGUIButton Extends TGUIobject
 			'caption area starts at top left of button
 			caption = New TGUILabel.Create(null, text, color, null)
 			caption.SetContentPosition(ALIGN_CENTER, ALIGN_CENTER)
+			'we want the caption to use the buttons font
+			caption.SetOption(GUI_OBJECT_FONT_PREFER_PARENT_TO_TYPE, TRUE)
 			'we want to manage it...
 			GUIManager.Remove(caption)
 
 			'reposition the caption
 			RepositionCaption()
 
+			'no longer needed - caption uses parents font if none was set
 			'set to use the buttons font
-			caption.SetFont(GetFont())
+			'caption.SetFont(GetFont())
 			'assign button as parent of caption
 			caption.SetParent(self)
 		elseif caption.value <> text
@@ -199,8 +210,16 @@ Type TGUIButton Extends TGUIobject
 	End Method
 
 
+	'override to update caption
+	Method Update:int()
+		Super.Update()
+		if caption then caption.Update()
+	End Method
+
+
 	Method DrawContent:Int(position:TPoint)
-		if not caption then return FALSE
+		if not caption then return False
+		if not caption.IsVisible() then return False
 
 		'move caption
 		if state = ".active" then caption.rect.position.MoveXY(1,1)

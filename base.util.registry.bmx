@@ -38,11 +38,6 @@ Type TRegistry
 	Global _instance:TRegistry
 
 
-	Method New()
-		_instance = self
-	End Method
-
-
 	Function GetInstance:TRegistry()
 		if not _instance then _instance = new TRegistry
 		return _instance
@@ -190,6 +185,14 @@ Type TRegistryLoader
 		xmlHelper = TXmlHelper.Create(file)
 		LoadResourcesFromXML(xmlHelper.root, forceDirectLoad)
 
+		'load everything until everything from that file was loaded
+		if forceDirectLoad
+			repeat
+				TRegistryUnloadedResourceCollection.GetInstance().Update()
+			until TRegistryUnloadedResourceCollection.GetInstance().FinishedLoading()
+		endif
+
+
 		EventManager.triggerEvent( TEventSimple.Create("RegistryLoader.onLoadXmlFromFinished", new TData.AddString("uri", file) ) )
 		Return TRUE
 	End Method
@@ -274,11 +277,6 @@ Type TRegistryUnloadedResourceCollection
 	Field _loaderThread:TThread
 	?
 	Global _instance:TRegistryUnloadedResourceCollection
-
-
-	Method New()
-		_instance = self
-	End Method
 
 
 	Function GetInstance:TRegistryUnloadedResourceCollection()
