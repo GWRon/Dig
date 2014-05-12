@@ -41,7 +41,7 @@ Type TGUIModalWindow Extends TGUIWindowBase
 
 
 		'we want to know if one clicks on a windows buttons
-		EventManager.registerListenerMethod("guiobject.onClick", Self, "onButtonClick")
+		AddEventListener(EventManager.registerListenerMethod("guiobject.onClick", Self, "onButtonClick"))
 
 		'fire event so others know that the window is created
 		EventManager.triggerEvent(TEventSimple.Create("guiModalWindow.onCreate", Self))

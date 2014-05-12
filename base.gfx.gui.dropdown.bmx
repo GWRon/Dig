@@ -36,59 +36,121 @@ Rem
 End Rem
 SuperStrict
 Import "base.gfx.gui.input.bmx"
+'Import "base.gfx.gui.button.bmx"
 Import "base.gfx.gui.list.selectlist.bmx"
 
 
 
-
-Type TGUIDropDown Extends TGUIObject
+Type TGUIDropDown Extends TGUIInput
 	'height of the opened drop down
 	Field openHeight:int = 100
 	Field open:int = FALSE
-	Field selectButton:TGUIInput
 	Field list:TGUISelectList
-	'use another sprite than the default button
-	'global selectButtonSpriteNameDefault:String = "gfx_gui_input.default"
 
 
-    Method Create:TGUIDropDown(position:TPoint = null, dimension:TPoint = null, limitState:String = "")
-		'setup base widget
-		Super.CreateBase(position, dimension, State)
+    Method Create:TGUIDropDown(position:TPoint = null, dimension:TPoint = null, value:string="", maxLength:Int=128, limitState:String = "")
+		'setup base widget (button)
+		Super.Create(position, dimension, value, maxLength, State)
 
-		'elements added with "addChild" have their position as "offset",
-		'so "0,0" means right at the top left spot of the dropdown
+		'=== STYLE BUTTON ===
+		'use another sprite than the default button
+		spriteName = "gfx_gui_input.default"
+		SetOverlayPosition("right")
+		SetOverlay("gfx_gui_icon_arrowDown")
+		SetEditable(False)
 
-		'create and style button
-		selectButton = new TGUIInput.Create(new TPoint.Init(0,0), new TPoint.Init(dimension.GetX(), -1), "", -1, "")
-		selectButton.SetOverlayPosition("right")
-		selectbutton.SetEditable(False)
-		selectButton.SetOverlay("gfx_gui_icon_arrowDown")
 
-		'selectButton.spriteName = self.selectButtonSpriteNameDefault
-		self.AddChild(selectButton)
-
+		'=== ENTRY LIST ===
 		'create and style list
-		list = new TGUISelectList.Create(new TPoint.Init(0, selectButton.rect.GetH()), new TPoint.Init(rect.GetW(), 80), "")
-		self.AddChild(list)
+		list = new TGUISelectList.Create(new TPoint.Init(0, self.rect.GetH()), new TPoint.Init(rect.GetW(), 80), "")
+		'do not add as child - we position it on our own when updating
 		'hide list to begin
 		SetOpen(false)
 
-		'set self not clickable so mouse can reach child elements
-		SetOption(GUI_OBJECT_CLICKABLE, False)
+		'set the list to ignore focus requests (avoids onRemoveFocus-events)
+		list.setOption(GUI_OBJECT_CAN_GAIN_FOCUS, False)
 
 
-		'register to get informed about clicks on the selectbutton
-		EventManager.RegisterListenerMethod("guiobject.onclick", self, "onClickSelectButton", selectButton)
+		'=== REGISTER EVENTS ===
+		'to close the list automatically if the budget looses focus
+		AddEventListener(EventManager.registerListenerMethod("guiobject.onRemoveFocus", Self, "onRemoveFocus", self ))
+		'listen to clicks to dropdown-items
+		AddEventListener(EventManager.registerListenerMethod( "guiobject.onClick",	Self.list, "onClickOnEntry", "TGUIDropDownItem" ))
 
-		GUIManager.Add(Self)
+		'to register if an item was selected
+		AddEventListener(EventManager.registerListenerMethod("guiselectlist.onSelectEntry", self, "onSelectEntry", self.list ))
+
 		Return Self
 	End Method
 
 
-	Method onClickSelectButton:int(triggerEvent:TEventBase)
-		'not interested in other than my button
-		if selectButton <> triggerEvent.GetSender() then return FALSE
+	'check if the drop down has to close
+	Method onRemoveFocus:int(triggerEvent:TEventBase)
+		'skip indeep checks if already closed
+		if not IsOpen() then return False
 
+		local sender:TGuiObject = TGUIObject(triggerEvent.GetSender())
+		local receiver:TGuiObject = TGUIObject(triggerEvent.GetReceiver())
+		if not sender then return False
+
+		Rem
+		'if the receiver is an entry of the list - close and "click"
+		if self.list.HasItem(receiver)
+			SetOpen(False)
+			print "clicked"
+		endif
+		EndRem
+
+		'close on click on a list item
+		if receiver and list.HasItem(receiver)
+			SetValue(receiver.GetValue())
+			SetOpen(False)
+		endif
+
+
+		'skip when loosing focus to self->list or list->self
+		if receiver
+			local senderBelongsToWidget:int = False
+			local receiverBelongsToWidget:int = False
+
+			if sender = self
+				senderBelongsToWidget = True
+			elseif sender.HasParent(self.list)
+				senderBelongsToWidget = True
+			endif
+
+			if senderBelongsToWidget and receiver
+				if receiver = self
+					receiverBelongsToWidget = True
+				elseif receiver.HasParent(self.list)
+					receiverBelongsToWidget = True
+				endif
+			endif
+
+			'keep the widgets list "open" if ne focus is now at a sub element
+			'of the widget
+			if senderBelongsToWidget and receiverBelongsToWidget then return False
+		endif
+
+
+		SetOpen(False)
+	End Method
+
+
+	Method onSelectEntry:int(triggerEvent:TEventBase)
+		local guiobj:TGUIObject = TGUIObject(triggerEvent.GetData().Get("entry"))
+		if guiobj then print guiObj.GetClassName()
+
+		local item:TGUIDropDownItem = TGUIDropDownItem(triggerEvent.GetData().Get("entry"))
+		'clicked item is of a different type
+		if not item then return False
+
+		SetValue(item.GetValue())
+	EndMethod
+
+
+	'override onClick to add open/close toggle
+	Method onClick:int(triggerEvent:TEventBase)
 		SetOpen(1- IsOpen())
 	End Method
 
@@ -96,8 +158,10 @@ Type TGUIDropDown Extends TGUIObject
 	Method SetOpen:Int(bool:int)
 		open = bool
 		if open
+			print "show list"
 			list.Show()
 		else
+			print "hide list"
 			list.Hide()
 		endif
 	End Method
@@ -115,67 +179,19 @@ Type TGUIDropDown Extends TGUIObject
 	End Method
 
 
-	'overwrite default method
-	Method GetScreenHeight:Float()
-		if open then Return openHeight
-		return Super.GetScreenHeight()
-	End Method
-
-
 	'override default update-method
 	Method Update:Int()
 		Super.Update()
+
+		'move list to our position
+		list.rect.position.SetXY( rect.GetX(), rect.GetY() + GetScreenHeight() )
+
 		UpdateChildren()
 	End Method
 
-rem
-	'override default update-method
-	Method Update:Int()
-		Super.Update()
-
-        If Not(Self._flags & GUI_OBJECT_ENABLED) Then Self.mouseIsClicked = Null
-
-		If Not Self.hasFocus() Or Not Self.mouseIsDown Then Return False
-
-		Local currentAddY:Int = Self.rect.GetH() 'ignore "if open"
-		Local lineHeight:Float = Assets.GetSprite("gfx_gui_dropdown_list_entry.L").area.GetH()*Self.scale
-
-		'reset hovered item id ...
-		Self.hoveredEntryID = -1
-
-		'check new hovered or clicked items
-		For Local Entry:TGUIEntry = EachIn Self.EntryList 'Liste hier global
-			If THelper.MouseIn( Self.GetScreenX(), Self.GetScreenY() + currentAddY, Self.GetScreenWidth(), lineHeight)
-				If MOUSEMANAGER.IsHit(1)
-					value			= Entry.getValue()
-					clickedEntryID	= Entry.id
-		'			GUIManager.setActive(0)
-					EventManager.registerEvent( TEventSimple.Create( "guiobject.OnChange", new TData.AddNumber("entryID", entry.id), Self ) )
-					'threadsafe?
-					MOUSEMANAGER.ResetKey(1)
-					Exit
-				Else
-					hoveredEntryID	= Entry.id
-				EndIf
-			EndIf
-			currentAddY:+ lineHeight
-		Next
-		'store height if opened
-		Self.heightIfOpen = Self.rect.GetH() + currentAddY
-
-
-		If hoveredEntryID > 0
-			Self.setState("hover")
-		Else
-			'clicked outside of list
-			'Print "RONFOCUS: clicked outside of list, remove focus from "+Self._id
-			If MOUSEMANAGER.IsHit(1) Then GUIManager.setFocus(Null)
-		EndIf
-	End Method
-endrem
-
 
 	Method Draw()
+		Super.Draw()
 		DrawChildren()
 	End Method
 End Type
@@ -223,7 +239,6 @@ Type TGUIDropDownItem Extends TGUISelectListItem
 			SetColor 255,255,255
 			SetAlpha GetAlpha()*2.0
 		EndIf
-
 		'draw value
 		GetFont().draw(value, Int(GetScreenX() + 5), Int(GetScreenY() + 2 + 0.5*(rect.getH()- GetFont().getHeight(Self.value))), valueColor)
 

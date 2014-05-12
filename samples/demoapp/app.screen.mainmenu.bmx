@@ -84,7 +84,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 
 
 
-		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(550,450), new TPoint.Init(130,80), self.GetName())
+		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(550,450), new TPoint.Init(130,-1), self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
