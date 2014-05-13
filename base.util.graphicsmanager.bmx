@@ -52,6 +52,10 @@ Type TGraphicsManager
 		fullscreen = bool
 	End Method
 
+	Method GetFullscreen:Int()
+		return (fullscreen = true)
+	End Method
+
 
 	Method SetVSync:Int(bool:int = TRUE)
 		vsync = bool
@@ -60,6 +64,11 @@ Type TGraphicsManager
 
 	Method SetHertz:Int(value:int=0)
 		hertz = value
+	End Method
+
+
+	Method SetColordepth:Int(value:int=0)
+		colorDepth = value
 	End Method
 
 
@@ -82,6 +91,17 @@ Type TGraphicsManager
 	Method GetWidth:int()
 		if designedWidth = -1 then return realWidth
 		return designedWidth
+	End Method
+
+
+	'switch between fullscreen or windowed mode
+	'ATTENTION: there is no guarantee that it works flawless on
+	'all computers (graphics context/images might have to be
+	'initialized again)
+	Method SwitchFullscreen:int()
+		SetFullscreen(1 - GetGraphicsManager().GetFullscreen())
+		'create a new graphics object
+		InitGraphics()
 	End Method
 
 

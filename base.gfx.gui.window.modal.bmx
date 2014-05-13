@@ -217,16 +217,16 @@ Type TGUIModalWindow Extends TGUIWindowBase
 		local tween:Float = GetDeltaTimer().GetTween()
 
 		'move to tweened move-position
-		Self.recenter( THelper.GetTweenedPoint(move, moveOld, tween, True))
+		Self.recenter( THelper.GetTweenedPoint(move, moveOld, tween))
 
-		SetAlpha Max(0, 0.5 * THelper.GetTweenedValue(fadeValue, fadeValueOld, tween, True))
+		SetAlpha Max(0, 0.5 * MathHelper.SteadyTween(fadeValueOld, fadeValue, tween))
 		SetColor 0,0,0
 		If Not DarkenedArea
 			DrawRect(0,0,GraphicsWidth(), GraphicsHeight())
 		Else
 			DrawRect(DarkenedArea.getX(),DarkenedArea.getY(),DarkenedArea.getW(), DarkenedArea.getH())
 		EndIf
-		SetAlpha Max(0, 1.0 * THelper.GetTweenedValue(fadeValue, fadeValueOld, tween, True))
+		SetAlpha Max(0, 1.0 * MathHelper.SteadyTween(fadeValueOld, fadeValue, tween))
 		SetColor 255,255,255
 
 		DrawChildren()
