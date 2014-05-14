@@ -1527,20 +1527,6 @@ Type TGUIobject
 	End Method
 
 
-'VERALTET !!!!!
-REM
-	'eg. for buttons/inputfields/dropdownbase...
-	Method DrawBaseForm(identifier:String, x:Float, y:Float)
-		SetScale scale, scale
-		local spriteL:TSprite = TSprite(GetRegistry().Get(identifier+".L"))
-		local spriteR:TSprite = TSprite(GetRegistry().Get(identifier+".R"))
-		spriteL.Draw(x,y)
-		TSprite(GetRegistry().Get(identifier+".M")).TileDrawHorizontal(x + spriteL.area.GetW()*scale, y, GetScreenWidth() - ( spriteL.area.GetW() + spriteR.area.GetW())*scale, scale)
-		spriteR.Draw(x + GetScreenWidth(), y, -1, new TPoint.Init(ALIGN_LEFT, ALIGN_BOTTOM), scale)
-		SetScale 1.0,1.0
-	End Method
-endrem
-
 	Method DrawBaseFormText:Object(_value:String, x:Float, y:Float)
 		Local col:TColor = TColor.Create(100,100,100)
 		If mouseover Then col = TColor.Create(50,50,50)

@@ -9,7 +9,10 @@ Rem
 
 
 	====================================================================
-	LICENCE
+	If not otherwise stated, the following code is available under the
+	following licence:
+
+	LICENCE: zlib/libpng
 
 	Copyright (C) 2002-2014 Ronny Otto, digidea.de
 
