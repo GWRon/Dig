@@ -38,7 +38,7 @@ Type TGUIinput Extends TGUIobject
 		'setup base widget
 		Super.CreateBase(pos, dimension, State)
 
-		SetZindex(20)
+'		SetZindex(20)
 		SetValue(value)
 		if maxLength >= 0
 			SetMaxLength(maxLength)

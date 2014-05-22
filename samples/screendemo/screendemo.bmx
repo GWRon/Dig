@@ -6,7 +6,7 @@ Import "../../base.framework.graphicalapp.bmx"
 Import "../../base.util.registry.bmx"
 Import "../../base.util.registry.imageloader.bmx"
 Import "../../base.gfx.bitmapfont.bmx"
-
+Import "../../base.gfx.sprite.particle.bmx"
 
 Global MyApp:TMyApp = new TMyApp
 MyApp.debugLevel = 1
@@ -78,7 +78,7 @@ Type TScreenInGame extends TScreen
 		SetClsColor col,col,col
 		Cls
 		SetClsColor 0,0,0
-		
+
 		DrawText("Ingame screen: " +self.name, 50,50)
 		if name = "screen1"
 			DrawText("Key ~q2~q to go to screen2", 50, 70)
@@ -119,7 +119,7 @@ Type TScreenInGame extends TScreen
 		DrawRect(100, GraphicsHeight()-50, Graphicswidth()-200, 50)
 		col.SetRGBA()
 	End Method
-	
+
 End Type
 
 
@@ -140,10 +140,41 @@ End Type
 
 
 Type TScreenMainMenu extends TScreenMenuBase
+	Field smokeEmitter:TSpriteParticleEmitter
+
+	Method Init:TScreenMainMenu(name:string)
+		Super.Init(name)
+
+		local smokeConfig:TData = new TData
+'		smokeConfig.Add("sprite", GetSpriteFromRegistry("gfx_tex_smoke"))
+		smokeConfig.AddNumber("velocityMin", 5.0)
+		smokeConfig.AddNumber("velocityMax", 35.0)
+		smokeConfig.AddNumber("lifeMin", 0.30)
+		smokeConfig.AddNumber("lifeMax", 2.75)
+		smokeConfig.AddNumber("scaleMin", 0.1)
+		smokeConfig.AddNumber("scaleMax", 0.1)
+		smokeConfig.AddNumber("angleMin", 176)
+		smokeConfig.AddNumber("angleMax", 184)
+		smokeConfig.AddNumber("xRange", 2)
+		smokeConfig.AddNumber("yRange", 2)
+
+		local emitterConfig:TData = new TData
+		emitterConfig.Add("area", new TRectangle.Init(69, 335, 0, 0))
+		emitterConfig.AddNumber("particleLimit", 100)
+		emitterConfig.AddNumber("spawnEveryMin", 0.35)
+		emitterConfig.AddNumber("spawnEveryMax", 0.60)
+
+		smokeEmitter = new TSpriteParticleEmitter.Init(emitterConfig, smokeConfig)
+
+		return self
+	End Method
+
 
 	Method Render:int()
 		'also call the render-function of TScreenMenuBase
 		Super.Render()
+
+		smokeEmitter.Draw()
 
 		DrawText("Welcome", 50, 50)
 		DrawText("Key ~q1~q to go to screen1", 50, 70)
@@ -153,6 +184,8 @@ Type TScreenMainMenu extends TScreenMenuBase
 		If Keymanager.IsHit(KEY_1)
 			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("screen1") )
 		EndIf
+
+		smokeEmitter.Update()
 	End Method
 End Type
 

@@ -23,7 +23,7 @@ Type TGUIArrowButton Extends TGUIObject
 		Super.CreateBase(pos, dimension, limitState)
 
 		SetDirection(direction)
-		setZindex(40)
+'		setZindex(40)
 		value = ""
 
 		'let the guimanager manage the button
