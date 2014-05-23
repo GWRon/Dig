@@ -43,9 +43,10 @@ Import "base.gfx.gui.list.selectlist.bmx"
 
 Type TGUIDropDown Extends TGUIInput
 	'height of the opened drop down
-	Field openHeight:int = 100
 	Field open:int = FALSE
 	Field list:TGUISelectList
+	Field listHeight:int = 100
+	
 
 
     Method Create:TGUIDropDown(position:TPoint = null, dimension:TPoint = null, value:string="", maxLength:Int=128, limitState:String = "")
@@ -62,7 +63,7 @@ Type TGUIDropDown Extends TGUIInput
 
 		'=== ENTRY LIST ===
 		'create and style list
-		list = new TGUISelectList.Create(new TPoint.Init(0, self.rect.GetH()), new TPoint.Init(rect.GetW(), 80), "")
+		list = new TGUISelectList.Create(new TPoint.Init(0, self.rect.GetH()), new TPoint.Init(rect.GetW(), listHeight), "")
 		'do not add as child - we position it on our own when updating
 		'hide list to begin
 		SetOpen(false)
@@ -172,6 +173,12 @@ Type TGUIDropDown Extends TGUIInput
 	End Method
 
 
+	'sets the height of the lists content area (ignoring padding)
+	Method SetListContentHeight:int(height:Float)
+		list.Resize(list.rect.GetW(), height + list.GetPadding().GetTop() + list.GetPadding().GetBottom())
+	End Method
+
+
 	Method SetOpen:Int(bool:int)
 		open = bool
 		if open
@@ -199,7 +206,14 @@ Type TGUIDropDown Extends TGUIInput
 		Super.Update()
 
 		'move list to our position
-		list.rect.position.SetXY( GetScreenX(), GetScreenY() + GetScreenHeight() )
+		local listPosY:int = GetScreenY() + GetScreenHeight()
+		'if list ends below screen end we might move it above the button
+		if listPosY + list.GetScreenHeight() > GraphicsHeight()
+			if list.GetScreenHeight() < GetScreenY()
+				listPosY = GetScreenY() - list.GetScreenHeight()
+			endif
+		endif
+		list.rect.position.SetXY( GetScreenX(), listPosY )
 'RON
 '		UpdateChildren()
 	End Method
