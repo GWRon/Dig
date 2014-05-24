@@ -147,14 +147,10 @@ Type TGUIPanel Extends TGUIObject
 			onStatusAppearanceChange()
 			SetAppearanceChanged(false)
 		Endif
-
-
-		'Super.Update()
-'		UpdateChildren()
 	End Method
 
 
 	Method Draw()
-'		DrawChildren()
+		'
 	End Method
 End Type
