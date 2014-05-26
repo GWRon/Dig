@@ -29,7 +29,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 		input.SetOverlay("gfx_gui_icon_arrowRight")
 
 		local arrow:TGUIArrowButton = new TGUIArrowButton.Create(new TPoint.Init(155,20), null, "left", self.GetName())
-		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TPoint.Init(155,55), null, "checkbox", self.GetName())
+		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TPoint.Init(155,55), new TPoint.Init(120, -1), "checkbox", self.GetName())
 
 		local text:TGUITextbox = new TGUITextbox.Create(new TPoint.Init(20,90), new TPoint.Init(100,100), "I am a multiline textbox. Not pretty but nice to have.", self.GetName())
 		local panel:TGUIPanel = new TGUIPanel.Create(new TPoint.Init(20,250), new TPoint.Init(120, 150), self.GetName())

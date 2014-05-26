@@ -709,8 +709,14 @@ Type TGUIobject
 		'maybe our parent takes care of us...
 		If _parent Then _parent.RemoveChild(Self)
 
+		'remove children (so they might inform their children and so on)
+		If children
+			For local child:TGUIObject = eachin children
+				child.Remove()
+			Next
+		EndIf
+		
 		'just in case we have a managed one
-		'if _flags & GUI_OBJECT_MANAGED then
 		GUIManager.remove(Self)
 
 		Return True
@@ -1200,6 +1206,13 @@ endrem
 
 	Method GetScreenWidth:Float()
 		Return rect.GetW()
+	End Method
+
+
+	'takes parent alpha into consideration
+	Method GetScreenAlpha:Float()
+		if _parent then return alpha * _parent.GetScreenAlpha()
+		return alpha
 	End Method
 
 

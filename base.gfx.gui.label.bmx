@@ -106,6 +106,11 @@ Type TGUILabel Extends TGUIobject
 
 
 	Method Draw:Int()
+		local oldCol:TColor = new TColor.Get()
+		SetAlpha oldCol.a * GetScreenAlpha()
+
 		GetFont().drawBlock(value, GetScreenX() + contentDisplacement.GetX(), GetScreenY() + contentDisplacement.GetY(), GetScreenWidth() - 2*contentDisplacement.GetX(), GetScreenHeight() - 2*contentDisplacement.GetY(), new TPoint.Init(contentPosition.x, contentPosition.y), color, valueEffectType, true, valueEffectSpecial)
+
+		oldCol.SetRGBA()
 	End Method
 End Type

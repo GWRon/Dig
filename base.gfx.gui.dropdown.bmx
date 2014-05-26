@@ -44,6 +44,7 @@ Import "base.gfx.gui.list.selectlist.bmx"
 Type TGUIDropDown Extends TGUIInput
 	'height of the opened drop down
 	Field open:int = FALSE
+	Field selectedEntry:TGUIObject
 	Field list:TGUISelectList
 	Field listHeight:int = 100
 	
@@ -115,7 +116,7 @@ Type TGUIDropDown Extends TGUIInput
 
 		'close on click on a list item
 		if receiver and list.HasItem(receiver)
-			SetValue(receiver.GetValue())
+			SetSelectedEntry(receiver)
 
 			'reset mouse button to avoid clicks below
 			MouseManager.ResetKey(1)
@@ -160,7 +161,7 @@ Type TGUIDropDown Extends TGUIInput
 		'clicked item is of a different type
 		if not item then return False
 
-		SetValue(item.GetValue())
+		SetSelectedEntry(item)
 	EndMethod
 
 
@@ -172,6 +173,12 @@ Type TGUIDropDown Extends TGUIInput
 		SetOpen(1- IsOpen())
 	End Method
 
+
+	Method SetSelectedEntry(item:TGUIObject)
+		selectedEntry = item
+		SetValue(item.GetValue())
+	End Method
+	
 
 	'sets the height of the lists content area (ignoring padding)
 	Method SetListContentHeight:int(height:Float)
@@ -216,23 +223,6 @@ Type TGUIDropDown Extends TGUIInput
 		list.rect.position.SetXY( GetScreenX(), listPosY )
 'RON
 '		UpdateChildren()
-	End Method
-
-
-	Method Draw()
-		Super.Draw()
-rem
-		if open
-			SetAlpha 1.0
-			SetColor 100,0,0
-			DrawRect(list.GetContentScreenX(),list.GetContentScreenY()+100,list.GetContentScreenWidth(), list.GetContentScreenHeight())
-			SetColor 255,255,255
-			DrawRect(list.guiEntriesPanel.GetContentScreenX(),list.guiEntriesPanel.GetContentScreenY()+150,list.guiEntriesPanel.GetContentScreenWidth(), list.guiEntriesPanel.GetContentScreenHeight())
-			SetAlpha 1.0
-		endif
-endrem
-'RON
-'		DrawChildren()
 	End Method
 End Type
 
@@ -292,6 +282,8 @@ Type TGUIDropDownItem Extends TGUISelectListItem
 
 	Method Draw:Int()
 		local oldCol:TColor = new TColor.Get()
+		SetAlpha oldCol.a * GetScreenAlpha()
+
 		local upperParent:TGUIObject = GetParent("TGUIListBase")
 		upperParent.RestrictContentViewPort()
 

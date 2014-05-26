@@ -21,10 +21,15 @@ Type TGraphicsManager
 	Field flags:Int			= 0 'GRAPHICS_BACKBUFFER | GRAPHICS_ALPHABUFFER '& GRAPHICS_ACCUMBUFFER & GRAPHICS_DEPTHBUFFER
 	Global _instance:TGraphicsManager
 	Global _g:TGraphics
-	CONST RENDERER_BUFFEREDOPENGL:int   =-1
+	Global RENDERER_NAMES:string[] = [	"OpenGL",..
+										"DirectX 7", ..
+										"DirectX 9", ..
+										"Buffered OpenGL" ..
+									 ]
 	CONST RENDERER_OPENGL:int   		= 0
 	CONST RENDERER_DIRECTX7:int 		= 1
 	CONST RENDERER_DIRECTX9:int 		= 2
+	CONST RENDERER_BUFFEREDOPENGL:int   = 3
 
 
 	Function GetInstance:TGraphicsManager()
@@ -71,9 +76,25 @@ Type TGraphicsManager
 		colorDepth = value
 	End Method
 
+	Method GetColordepth:Int()
+		return colorDepth
+	End Method
 
 	Method SetRenderer:Int(value:int = 0)
 		renderer = value
+	End Method
+
+	Method GetRenderer:Int()
+		return renderer
+	End Method
+
+	Method GetRendererName:String(forRenderer:int=-1)
+		if forRenderer = -1 then forRenderer = self.renderer
+		if forRenderer < 0 or forRenderer > RENDERER_NAMES.length
+			return "UNKNOWN"
+		else
+			return RENDERER_NAMES[forRenderer]
+		endif
 	End Method
 
 

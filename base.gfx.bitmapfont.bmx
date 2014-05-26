@@ -181,7 +181,7 @@ Type TBitmapFont
 	'more sprites 
 	Field MaxSigns:Int = 256
 	Field glyphCount:int = 0
-	Field ExtraChars:String = "€…"
+	Field ExtraChars:String = ""
 	Field gfx:TMax2dGraphics
 	Field uniqueID:string =""
 	Field displaceY:float=100.0
@@ -204,6 +204,7 @@ Type TBitmapFont
 
 	Function Create:TBitmapFont(name:String, url:String, size:Int, style:Int)
 		Local obj:TBitmapFont = New TBitmapFont
+
 		obj.FName = name
 		obj.FFile = url
 		obj.FSize = size
@@ -296,6 +297,11 @@ Type TBitmapFont
 		Local n:int
 		Local loadMaxGlyphs:int = glyphCount
 		if MaxSigns <> -1 then loadMaxGlyphs = MaxSigns
+
+		if extraChars = ""
+			extraChars :+ chr(8364) '€
+			extraChars :+ chr(8230) '…
+		endif
 
 		self.glyphCount = glyphCount
 
@@ -727,8 +733,8 @@ Type TBitmapFont
 		local currentControlCommandPayload:string = ""
 
 		local lineHeight:int = 0
-		local char:string = ""
-		local displayChar:string = "" 'if char is not found
+		local charCode:int
+		local displayCharCode:int 'if char is not found
 		local charBefore:int
 		local font:TBitmapFont = self 'by default this font is responsible
 		local colorOriginal:TColor = null
@@ -745,10 +751,10 @@ Type TBitmapFont
 			local lineWidth:int = 0
 
 			For Local i:Int = 0 Until text.length
-				char = text[i]
+				charCode = int(text[i])
 
 				'reload with utf8?
-				If char > 256 and MaxSigns = 256 and glyphCount > 256 and extraChars.find(chr(int(char))) = -1
+				If charCode > 256 and MaxSigns = 256 and glyphCount > 256 and extraChars.find(chr(charCode)) = -1
 					LoadExtendedCharacters()
 				EndIf
 					
@@ -756,8 +762,8 @@ Type TBitmapFont
 				'check for controls
 				if controlCharStarted
 					'receiving command
-					if char <> controlChar
-						currentControlCommand:+ chr(int(char))
+					if charCode <> controlChar
+						currentControlCommand:+ chr(charCode)
 					'receive stopper
 					else
 						controlCharStarted = FALSE
@@ -776,25 +782,25 @@ Type TBitmapFont
 				endif
 
 				'someone wants style the font
-				if char = controlChar and charBefore <> controlCharEscape
+				if charCode = controlChar and charBefore <> controlCharEscape
 					controlCharStarted = 1 - controlCharStarted
 					'skip char
-					charBefore = int(char)
+					charBefore = charCode
 					continue
 				endif
 				'skip drawing the escape char if we are escaping the
 				'command char
-				if char = controlCharEscape and i < text.length-1 and text[i+1] = controlChar
-					charBefore = int(char)
+				if charCode = controlCharEscape and i < text.length-1 and text[i+1] = controlChar
+					charBefore = charCode
 					continue
 				endif
 
-				Local bm:TBitmapFontChar = TBitmapFontChar( font.chars.ValueForKey(char) )
+				Local bm:TBitmapFontChar = TBitmapFontChar( font.chars.ValueForKey(string(charCode)) )
 				if bm
-					displayChar = char
+					displayCharCode = charCode
 				else
-					displayChar = Asc("?")
-					bm = TBitmapFontChar( font.chars.ValueForKey(displayChar) )
+					displayCharCode = Asc("?")
+					bm = TBitmapFontChar( font.chars.ValueForKey(string(displayCharCode)) )
 				endif
 				if bm <> null
 					Local tx:Float = bm.area.GetX() * gfx.tform_ix + bm.area.GetY() * gfx.tform_iy
@@ -803,7 +809,7 @@ Type TBitmapFont
 					if text[i] > 32
 						lineHeight = MAX(lineHeight, bm.area.GetH())
 						if doDraw
-							sprite = TSprite(font.charsSprites.ValueForKey(displayChar))
+							sprite = TSprite(font.charsSprites.ValueForKey(string(displayCharCode)))
 							if sprite
 								if drawToPixmap
 									sprite.DrawOnImage(drawToPixmap, x+lineWidth+tx,y+height+ty+styleDisplaceY - font.displaceY, color)
@@ -824,10 +830,10 @@ Type TBitmapFont
 					endif
 				EndIf
 
-				charBefore = int(char)
+				charBefore = charCode
 			Next
 			width = max(width, lineWidth)
-			height:+lineHeight
+			height :+ lineHeight
 			'add extra spacing _between_ lines
 			'not done when only 1 line available or on last line
 			if currentLine < textLines.length

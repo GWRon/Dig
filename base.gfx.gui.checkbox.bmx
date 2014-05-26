@@ -201,7 +201,7 @@ Type TGUICheckBox Extends TGUIButton
 		Local oldCol:TColor = new TColor.Get()
 
 		SetColor 255, 255, 255
-		SetAlpha oldCol.a * alpha
+		SetAlpha oldCol.a * GetScreenAlpha()
 
 		Local sprite:TSprite = GetSprite()
 		if state <> "" then sprite = GetSpriteFromRegistry(GetSpriteName() + state, sprite)
