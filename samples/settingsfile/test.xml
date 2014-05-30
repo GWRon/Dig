@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+	<fullscreen>True</fullscreen>
+	<!-- comment on
+	multiple lines -->
+	<sound value="True" />
+	<sfx value="False" />
+</config>
+
