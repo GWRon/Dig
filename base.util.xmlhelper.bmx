@@ -7,17 +7,17 @@ Import Brl.Retro 'for filesize
 
 Type TXmlHelper
 	Field filename:String =""
-	Field file:TxmlDoc
+	Field xmlDoc:TxmlDoc
 
 
 	Function Create:TXmlHelper(filename:String, rootNode:String="")
 		Local obj:TXmlHelper = New TXmlHelper
 		if filesize(filename) >= 0
 			obj.filename = filename
-			obj.file = TxmlDoc.parseFile(filename)
+			obj.xmlDoc = TxmlDoc.parseFile(filename)
 		else
 			obj.filename = filename
-			obj.file = TxmlDoc.newDoc("1.0")
+			obj.xmlDoc = TxmlDoc.newDoc("1.0")
 			if rootNode <> "" then obj.CreateRootNode(rootNode)
 		endif
 		Return obj
@@ -25,14 +25,14 @@ Type TXmlHelper
 
 
 	Method GetRootNode:TxmlNode()
-		return file.getRootElement()
+		return xmlDoc.getRootElement()
 	End Method
 
 
 	Method CreateRootNode:TxmlNode(key:string)
 		if key = "" then key = "root"
 		local result:TxmlNode = TxmlNode.newNode(key)
-		file.setRootElement(result)
+		xmlDoc.setRootElement(result)
 		'add a new line within <key></key>" so children get added on
 		'the next line
 		GetRootNode().AddContent("~n")
