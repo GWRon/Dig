@@ -1,4 +1,4 @@
+*.exe
 *.bak
-*.o
-*.s
-*.i
+*.app
+*.bmx/
