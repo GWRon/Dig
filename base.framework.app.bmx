@@ -125,12 +125,20 @@ Type TApp
 	End Method
 
 
+	'called as soon as preparation finished
+	Method Start:Int()
+		'
+	End Method
+
+
 	Method Run:Int()
 		Prepare()
 
 		'Init EventManager
 		'could also be done during update ("if not initDone...")
 		EventManager.Init()
+
+		Start()
 
 		Repeat
 			'run the deltatimer's loop

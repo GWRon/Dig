@@ -180,6 +180,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 		DrawText("Key ~q1~q to go to screen1", 50, 70)
 	EndMethod
 
+
 	Method Update:int()
 		If Keymanager.IsHit(KEY_1)
 			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("screen1") )

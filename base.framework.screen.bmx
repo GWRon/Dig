@@ -163,10 +163,7 @@ Type TScreen abstract
 		TScreenManager.GetInstance().Set(Self)
 		TScreenManager.GetInstance().SetCurrent(Self)
 
-		If autoFadeIn
-			autoFadeIn = False
-			fadeInEffect.Start(autoFadeDuration, False, fadeInEffect.allowScreenUpdate)
-		EndIf
+		If autoFadeIn then FadeIn()
 	End Method
 
 
@@ -269,6 +266,13 @@ End Rem
 		if fadeInEffect and fadeInEffect.active then return True
 		if fadeOutEffect and fadeOutEffect.active then return True
 		return False
+	End Method
+
+
+	Method FadeIn:int(duration:float = -1)
+		if duration < 0 then duration = autoFadeDuration
+		if autoFadeIn then autoFadeIn = False
+		fadeInEffect.Start(duration, False, fadeInEffect.allowScreenUpdate)
 	End Method
 
 
