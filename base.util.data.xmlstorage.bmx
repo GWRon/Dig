@@ -64,6 +64,8 @@ Type TDataXmlStorage
 
 	'overwrites a storage or creates a new one
 	Method Save:int(file:string, settingsData:TData)
+		'make sure we get a new file
+		deleteFile(file)
 		local helper:TXmlHelper = TXmlHelper.Create(file, rootNodeKey)
 
 		helper.GetRootNode().SetAttribute("saved", Time.GetSystemTime("%d.%m.%Y %H:%M"))
@@ -71,7 +73,7 @@ Type TDataXmlStorage
 		'kick off the recursive saving
 		_SaveValueToXml(helper, null, rootNodeKey, settingsData, 0)
 
-		helper.file.saveFile(file)
+		helper.xmlDoc.saveFile(file)
 	End Method
 
 

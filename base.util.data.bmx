@@ -87,6 +87,7 @@ Type TData
 
 	Function JoinData:int(dataSource:TData, dataTarget:TData)
 		if not dataSource then return False
+		if not dataTarget then return False
 		For local key:string = eachin dataSource.data.Keys()
 			key = key.ToLower()
 			dataTarget.Add(key, dataSource.data.ValueForKey(key))
@@ -149,12 +150,14 @@ Type TData
 			'both contain a value for the given key
 			'only add the key->value if original and custom differ
 			if newValue <> original.Get(key)
+				if string(newValue) = string(original.Get(key)) then continue
+
 				'if it is another dataset, try to get their
 				'difference too
 				if TData(newValue)
 					newValue = GetDataDifference(TData(original.Get(key)), TData(newValue))
 				endif
-					
+				
 				result.Add(key, newValue)
 			endif
 		Next
@@ -182,6 +185,17 @@ Type TData
 
 	Method AddNumber:TData(key:string, data:float)
 		Add( key, object( string(data) ) )
+		return self
+	End Method
+
+
+	Method AddBoolString:TData(key:string, data:string)
+		Select data.toLower()
+			case "1", "true", "yes"
+				Add( key, "TRUE")
+			default
+				Add( key, "FALSE")
+		End Select
 		return self
 	End Method
 

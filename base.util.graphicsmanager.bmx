@@ -53,9 +53,17 @@ Type TGraphicsManager
 	End Method
 
 
+	'ATTENTION: there is no guarantee that it works flawless on
+	'all computers (graphics context/images might have to be
+	'initialized again)
 	Method SetFullscreen:Int(bool:int = TRUE)
-		fullscreen = bool
+		if fullscreen <> bool
+			fullscreen = bool
+			'create a new graphics object
+			InitGraphics()
+		endif
 	End Method
+	
 
 	Method GetFullscreen:Int()
 		return (fullscreen = true)
@@ -75,18 +83,22 @@ Type TGraphicsManager
 	Method SetColordepth:Int(value:int=0)
 		colorDepth = value
 	End Method
+	
 
 	Method GetColordepth:Int()
 		return colorDepth
 	End Method
 
+
 	Method SetRenderer:Int(value:int = 0)
 		renderer = value
 	End Method
 
+
 	Method GetRenderer:Int()
 		return renderer
 	End Method
+	
 
 	Method GetRendererName:String(forRenderer:int=-1)
 		if forRenderer = -1 then forRenderer = self.renderer
@@ -116,13 +128,8 @@ Type TGraphicsManager
 
 
 	'switch between fullscreen or windowed mode
-	'ATTENTION: there is no guarantee that it works flawless on
-	'all computers (graphics context/images might have to be
-	'initialized again)
 	Method SwitchFullscreen:int()
 		SetFullscreen(1 - GetGraphicsManager().GetFullscreen())
-		'create a new graphics object
-		InitGraphics()
 	End Method
 
 
