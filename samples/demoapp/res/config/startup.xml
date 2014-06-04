@@ -2,13 +2,13 @@
 <tvt>
 	<!-- files needed to display something at all (to avoid "image holder") -->
 	<resources directload="true">
-		<image name="gfx_startscreen"				url="res/gfx/start_bg.jpg" />
-		<image name="gfx_startscreen_logo"			url="res/gfx/start_logo.png" />
-		<bitmapfont name="default" url="res/font/Vera.ttf" size="11" default="TRUE" />
+		<image name="gfx_startscreen"				url="../__res/gfx/start_bg.jpg" />
+		<image name="gfx_startscreen_logo"			url="../__res/gfx/start_logo.png" />
+		<bitmapfont name="default" url="../__res/font/Vera.ttf" size="11" default="TRUE" />
 
 		<resource name="gfx_mousecursor_pack">
 			<type>SpritePack</type>
- 			<url>res/gfx/interface/cursor.png</url>
+ 			<url>../__res/gfx/interface/cursor.png</url>
  			<filter>FILTEREDIMAGE,MIPMAPPED</filter>
 			<children>
 				<child name="gfx_mousecursor0"  x="0"  y="0"  w="32"  h="32" offsetLeft="9" offsetTop="2" />

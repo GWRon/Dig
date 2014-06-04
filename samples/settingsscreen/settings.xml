@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<config version="2.0">
+	<language>de</language>
+
+	<username>Player</username>
+	<channelname>My Channel</channelname>
+	<startyear>1985</startyear>
+	<database>res/database.xml</database>
+	<stationmap>germany.xml</stationmap>
+
+	<gamename>New Game</gamename>
+	<onlineport>4544</onlineport>
+	<fallbacklocalip>192.168.0.3</fallbacklocalip>
+
+	<fullscreen>FALSE</fullscreen>
+	<directx>0</directx>
+	<colordepth>16</colordepth>
+
+	<sound_effects>TRUE</sound_effects>
+	<sound_music>TRUE</sound_music>
+
+	<!-- possible values:
+		all:     AUTOMATIC
+		linux:   LINUX_ALSA, LINUX_OSS, LINUX_PULSE, UNIX_JACK
+		mac:     MACOSX_CORE
+		windows: WINDOWS_ASIO, WINDOWS_DS
+
+		attention: program might crash with invalid settings, which
+				   enforces you to adjust this file by hand!
+	-->
+	<sound_engine>AUTOMATIC</sound_engine>
+</config>

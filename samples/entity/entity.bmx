@@ -6,7 +6,7 @@ Import BRL.StandardIO
 
 'create sprite for entity, do not use "LoadAnimImage" as this is handled
 'by the sprite class already
-local image:TImage = LoadImage("spielfigur_hausmeister.png", DYNAMICIMAGE)
+local image:TImage = LoadImage("../__res/gfx/spielfigur_hausmeister.png", DYNAMICIMAGE)
 'that image contains 15 frames
 Global mySprite:TSprite = new TSprite.InitFromImage(image, "figure", 15)
 'create the entity

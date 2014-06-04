@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config saved="03.06.2014 20:07">
+	<DEV_KEYS value="true"/>
+	<DEV_OSD value="true"/>
+	<fullscreen value="TRUE"/>
+	<playername value="Ronny"/>
+	<sound_effects value="FALSE"/>
+	<sound_music value="FALSE"/>
+</config>

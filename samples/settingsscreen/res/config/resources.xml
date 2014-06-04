@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tvt>
+	<!-- files to load at all -->
+	<resources>
+		<file name="resource_gui" url="../__res/config/gui.xml" />
+
+		<sprite name="flag_de"	url="../__res/gfx/flags/de.png" />
+		<sprite name="flag_en"	url="../__res/gfx/flags/en.png" />
+		<sprite name="flag_it"	url="../__res/gfx/flags/it.png" />
+		<sprite name="flag_ru"	url="../__res/gfx/flags/ru.png" />
+		<sprite name="flag_tr"	url="../__res/gfx/flags/tr.png" />
+		<sprite name="flag_cz"	url="../__res/gfx/flags/cz.png" />
+		<sprite name="flag_fr"	url="../__res/gfx/flags/fr.png" />
+	</resources>
+</tvt>

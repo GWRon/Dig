@@ -2,7 +2,7 @@
 <tvt>
 	<!-- files to load at all -->
 	<resources>
-		<file name="resource_gui" url="res/config/gui.xml" />
+		<file name="resource_gui" url="../__res/config/gui.xml" />
 		<!--
 		<file name="resource_gfx" url="res/config/gfx.xml" />
 		<file name="resource_gfx2" url="res/config/gfx2.xml" />
