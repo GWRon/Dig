@@ -183,7 +183,7 @@ Type TData
 	End Method
 
 
-	Method AddNumber:TData(key:string, data:float)
+	Method AddNumber:TData(key:string, data:Double)
 		Add( key, object( string(data) ) )
 		return self
 	End Method
@@ -245,7 +245,7 @@ Type TData
 
 	Method GetInt:int(key:string, defaultValue:int = null)
 		local result:object = Get(key)
-		if result then return Int( float( String( result ) ) )
+		if result then return Int( String( result ) )
 		return defaultValue
 	End Method
 End Type
