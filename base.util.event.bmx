@@ -308,7 +308,7 @@ End Type
 
 
 Type TEventListenerRunFunction Extends TEventListenerBase
-	Field _function(triggeredByEvent:TEventBase)
+	Field _function:int(triggeredByEvent:TEventBase)
 
 
 	Function Create:TEventListenerRunFunction(_function(triggeredByEvent:TEventBase), limitToSender:Object=Null, limitToReceiver:Object=Null )
@@ -419,6 +419,18 @@ Type TEventBase
 	'returns wether trigger is the same
 	Method isTrigger:Int(trigger:String)
 		Return _trigger = Lower(trigger)
+	End Method
+
+
+	Method Trigger:TEventBase()
+		EventManager.triggerEvent(self)
+		return self
+	End Method
+
+
+	Method Register:TEventBase()
+		EventManager.registerEvent(self)
+		return self
 	End Method
 
 
