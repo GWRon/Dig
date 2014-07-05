@@ -35,6 +35,7 @@ EndRem
 SuperStrict
 Import "base.framework.entity.bmx"
 Import "base.gfx.sprite.bmx"
+Import "base.gfx.sprite.frameanimation.bmx"
 
 
 Type TSpriteEntity extends TEntity
@@ -67,7 +68,7 @@ Type TSpriteEntity extends TEntity
 	End Method
 
 
-	Method RenderAt:Int(x:Float = 0, y:Float = 0, animationName:string="")
+	Method RenderAt:Int(x:Float = 0, y:Float = 0, animationName:string="", alignment:TPoint = null)
 		'=== DRAW SPRITE ===
 		local frame:int = -1
 		if frameAnimations
@@ -77,7 +78,7 @@ Type TSpriteEntity extends TEntity
 				frame = frameAnimations.Get(animationName).GetCurrentImageFrame()
 			endif
 		endif
-		sprite.Draw(x, y, frame)
+		sprite.Draw(x, y, frame, alignment)
 	End Method
 
 
@@ -86,7 +87,8 @@ Type TSpriteEntity extends TEntity
 		Super.Update()
 
 		'=== UPDATE ANIMATION ===
-		if frameAnimations then frameAnimations.GetCurrent().Update()
+		local deltaTime:Float = GetDeltaTimer().GetDelta() * GetWorldSpeedFactor()
+		if frameAnimations then frameAnimations.GetCurrent().Update(deltaTime)
 	End Method
 
 
