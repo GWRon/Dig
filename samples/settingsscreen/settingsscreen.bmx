@@ -124,14 +124,14 @@ End Type
 
 Type TGUISpriteDropDown extends TGUIDropDown
 
-	Method Create:TGUISpriteDropDown(position:TPoint = null, dimension:TPoint = null, value:string="", maxLength:Int=128, limitState:String = "")
+	Method Create:TGUISpriteDropDown(position:TVec2D = null, dimension:TVec2D = null, value:string="", maxLength:Int=128, limitState:String = "")
 		Super.Create(position, dimension, value, maxLength, limitState)
 		Return self
 	End Method
 	
 
 	'override to add sprite next to value
-	Method DrawContent:Int(position:TPoint)
+	Method DrawContent:Int(position:TVec2D)
 		'position is already a copy, so we can reuse it without
 		'copying it first
 
@@ -144,7 +144,7 @@ Type TGUISpriteDropDown extends TGUIDropDown
 			if item and sprite.GetName() <> "defaultSprite"
 				local displaceY:int = -1 + 0.5 * (labelHeight - (item.GetSpriteDimension().y * scaleSprite))
 				sprite.DrawArea(position.x, position.y + displaceY, item.GetSpriteDimension().x * scaleSprite, item.GetSpriteDimension().y * scaleSprite)
-				position.MoveXY(item.GetSpriteDimension().x * scaleSprite + 3, 0)
+				position.AddXY(item.GetSpriteDimension().x * scaleSprite + 3, 0)
 			endif
 		endif
 
@@ -155,13 +155,13 @@ End Type
 
 
 Type TGUISpriteDropDownItem Extends TGUIDropDownItem
-	Global spriteDimension:TPoint
-	Global defaultSpriteDimension:TPoint = new TPoint.Init(24, 24)
+	Global spriteDimension:TVec2D
+	Global defaultSpriteDimension:TVec2D = new TVec2D.Init(24, 24)
 	
 
-    Method Create:TGUISpriteDropDownItem(position:TPoint=null, dimension:TPoint=null, value:String="")
+    Method Create:TGUISpriteDropDownItem(position:TVec2D=null, dimension:TVec2D=null, value:String="")
 		if not dimension
-			dimension = new TPoint.Init(-1, GetSpriteDimension().y + 2)
+			dimension = new TVec2D.Init(-1, GetSpriteDimension().y + 2)
 		else
 			dimension.x = Max(dimension.x, GetSpriteDimension().x)
 			dimension.y = Max(dimension.y, GetSpriteDimension().y)
@@ -171,13 +171,13 @@ Type TGUISpriteDropDownItem Extends TGUIDropDownItem
     End Method
 
 
-    Method GetSpriteDimension:TPoint()
+    Method GetSpriteDimension:TVec2D()
 		if not spriteDimension then return defaultSpriteDimension
 		return spriteDimension
     End Method
 
 
-	Method SetSpriteDimension:int(dimension:TPoint)
+	Method SetSpriteDimension:int(dimension:TVec2D)
 		spriteDimension = dimension.copy()
 
 		Resize(..
@@ -266,7 +266,7 @@ Type TSettingsWindow
 		local windowW:int = 670
 		local windowH:int = 380
 
-		modalDialogue = new TGUIModalWindow.Create(new TPoint, new TPoint.Init(windowW, windowH), "SYSTEM")
+		modalDialogue = new TGUIModalWindow.Create(new TVec2D, new TVec2D.Init(windowW, windowH), "SYSTEM")
 
 		modalDialogue.SetDialogueType(2)
 		modalDialogue.buttons[0].SetCaption(GetLocale("SAVE_AND_APPLY"))
@@ -280,39 +280,39 @@ Type TSettingsWindow
 
 		local canvas:TGUIObject = modalDialogue.GetGuiContent()
 				
-		local labelTitleGameDefaults:TGUILabel = New TGUILabel.Create(new TPoint.Init(0, nextY), "Vorgaben ~qNeues Spiel~q")
+		local labelTitleGameDefaults:TGUILabel = New TGUILabel.Create(new TVec2D.Init(0, nextY), "Vorgaben ~qNeues Spiel~q")
 		labelTitleGameDefaults.SetFont(GetBitmapFont("default", 11, BOLDFONT))
 		canvas.AddChild(labelTitleGameDefaults)
 		nextY :+ 25
 
-		local labelPlayerName:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Spielername:")
-		inputPlayerName = New TGUIInput.Create(new TPoint.Init(nextX, nextY + labelH), new TPoint.Init(inputWidth,-1), "", 128)
+		local labelPlayerName:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Spielername:")
+		inputPlayerName = New TGUIInput.Create(new TVec2D.Init(nextX, nextY + labelH), new TVec2D.Init(inputWidth,-1), "", 128)
 		canvas.AddChild(labelPlayerName)
 		canvas.AddChild(inputPlayerName)
 		inputH = inputPlayerName.GetScreenHeight()
 		nextY :+ inputH + labelH * 1.5
 
-		local labelChannelName:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Sendername:")
-		inputChannelName = New TGUIInput.Create(new TPoint.Init(nextX, nextY + labelH), new TPoint.Init(inputWidth,-1), "", 128)
+		local labelChannelName:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Sendername:")
+		inputChannelName = New TGUIInput.Create(new TVec2D.Init(nextX, nextY + labelH), new TVec2D.Init(inputWidth,-1), "", 128)
 		canvas.AddChild(labelChannelName)
 		canvas.AddChild(inputChannelName)
 		nextY :+ inputH + labelH * 1.5
 
-		local labelStartYear:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Startjahr:")
-		inputStartYear = New TGUIInput.Create(new TPoint.Init(nextX, nextY + labelH), new TPoint.Init(50,-1), "", 4)
+		local labelStartYear:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Startjahr:")
+		inputStartYear = New TGUIInput.Create(new TVec2D.Init(nextX, nextY + labelH), new TVec2D.Init(50,-1), "", 4)
 		canvas.AddChild(labelStartYear)
 		canvas.AddChild(inputStartYear)
 		nextY :+ inputH + labelH * 1.5
 
-		local labelStationmap:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Ausstrahlungsland:")
-		inputStationmap = New TGUIDropDown.Create(new TPoint.Init(nextX, nextY + labelH), new TPoint.Init(inputWidth,-1), "germany.xml", 128)
+		local labelStationmap:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Ausstrahlungsland:")
+		inputStationmap = New TGUIDropDown.Create(new TVec2D.Init(nextX, nextY + labelH), new TVec2D.Init(inputWidth,-1), "germany.xml", 128)
 		inputStationmap.disable()
 		canvas.AddChild(labelStationmap)
 		canvas.AddChild(inputStationmap)
 		nextY :+ inputH + labelH * 1.5
 
-		local labelDatabase:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Datenbank:")
-		inputDatabase = New TGUIDropDown.Create(new TPoint.Init(nextX, nextY + labelH), new TPoint.Init(inputWidth,-1), "database.xml", 128)
+		local labelDatabase:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Datenbank:")
+		inputDatabase = New TGUIDropDown.Create(new TVec2D.Init(nextX, nextY + labelH), new TVec2D.Init(inputWidth,-1), "database.xml", 128)
 		inputDatabase.disable()
 		canvas.AddChild(labelDatabase)
 		canvas.AddChild(inputDatabase)
@@ -322,17 +322,17 @@ Type TSettingsWindow
 		nextY = 0
 		nextX = 1*rowWidth
 		'SOUND
-		local labelTitleSound:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Soundausgabe")
+		local labelTitleSound:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Soundausgabe")
 		labelTitleSound.SetFont(GetBitmapFont("default", 11, BOLDFONT))
 		canvas.AddChild(labelTitleSound)
 		nextY :+ 25
 
-		checkMusic = New TGUICheckbox.Create(new TPoint.Init(nextX, nextY), new TPoint.Init(checkboxWidth,-1), "")
+		checkMusic = New TGUICheckbox.Create(new TVec2D.Init(nextX, nextY), new TVec2D.Init(checkboxWidth,-1), "")
 		checkMusic.SetCaptionValues("An, Musik wird abgespielt.", "Aus, es wird keine Musik abgespielt." )
 		canvas.AddChild(checkMusic)
 		nextY :+ Max(inputH, checkMusic.GetScreenHeight())
 
-		checkSfx = New TGUICheckbox.Create(new TPoint.Init(nextX, nextY), new TPoint.Init(checkboxWidth,-1), "")
+		checkSfx = New TGUICheckbox.Create(new TVec2D.Init(nextX, nextY), new TVec2D.Init(checkboxWidth,-1), "")
 		checkSfx.SetCaptionValues("An, Soundeffekte werden abgespielt.", "Aus, es werden keine Soundeffekte abgespielt." )
 		canvas.AddChild(checkSfx)
 		nextY :+ Max(inputH, checkSfx.GetScreenHeight())
@@ -340,13 +340,13 @@ Type TSettingsWindow
 
 
 		'GRAPHICS
-		local labelTitleGraphics:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Grafik")
+		local labelTitleGraphics:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Grafik")
 		labelTitleGraphics.SetFont(GetBitmapFont("default", 11, BOLDFONT))
 		canvas.AddChild(labelTitleGraphics)
 		nextY :+ 25
 
-		local labelRenderer:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Renderer:")
-		dropdownRenderer = New TGUIDropDown.Create(new TPoint.Init(nextX, nextY + 12), new TPoint.Init(inputWidth,-1), "Automatisch", 128)
+		local labelRenderer:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Renderer:")
+		dropdownRenderer = New TGUIDropDown.Create(new TVec2D.Init(nextX, nextY + 12), new TVec2D.Init(inputWidth,-1), "Automatisch", 128)
 		local rendererValues:string[] = ["0", "3"]
 		local rendererTexts:string[] = ["OpenGL", "Buffered OpenGL"]
 		?Win32
@@ -368,7 +368,7 @@ Type TSettingsWindow
 '		GuiManager.SortLists()
 		nextY :+ inputH + labelH * 1.5
 
-		checkFullscreen = New TGUICheckbox.Create(new TPoint.Init(nextX, nextY), new TPoint.Init(checkboxWidth,-1), "")
+		checkFullscreen = New TGUICheckbox.Create(new TVec2D.Init(nextX, nextY), new TVec2D.Init(checkboxWidth,-1), "")
 		checkFullscreen.SetCaptionValues("Vollbildmodus aktiviert", "Vollbildmodus deaktiviert" )
 		canvas.AddChild(checkFullscreen)
 		nextY :+ Max(inputH, checkFullscreen.GetScreenHeight()) + labelH * 1.5
@@ -377,20 +377,20 @@ Type TSettingsWindow
 		'MULTIPLAYER
 		nextY = 0
 		nextX = 2*rowWidth
-		local labelTitleMultiplayer:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Mehrspieler")
+		local labelTitleMultiplayer:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Mehrspieler")
 		labelTitleMultiplayer.SetFont(GetBitmapFont("default", 11, BOLDFONT))
 		canvas.AddChild(labelTitleMultiplayer)
 		nextY :+ 25
 
-		local labelGameName:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Spieltitel:")
-		inputGameName = New TGUIInput.Create(new TPoint.Init(nextX, nextY + labelH), new TPoint.Init(inputWidth,-1), "", 128)
+		local labelGameName:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Spieltitel:")
+		inputGameName = New TGUIInput.Create(new TVec2D.Init(nextX, nextY + labelH), new TVec2D.Init(inputWidth,-1), "", 128)
 		canvas.AddChild(labelGameName)
 		canvas.AddChild(inputGameName)
 		nextY :+ inputH + labelH * 1.5
 
 	
-		local labelOnlinePort:TGUILabel = New TGUILabel.Create(new TPoint.Init(nextX, nextY), "Port fuer Onlinespiele:")
-		inputOnlinePort = New TGUIInput.Create(new TPoint.Init(nextX, nextY + 12), new TPoint.Init(50,-1), "", 4)
+		local labelOnlinePort:TGUILabel = New TGUILabel.Create(new TVec2D.Init(nextX, nextY), "Port fuer Onlinespiele:")
+		inputOnlinePort = New TGUIInput.Create(new TVec2D.Init(nextX, nextY + 12), new TVec2D.Init(50,-1), "", 4)
 		canvas.AddChild(labelOnlinePort)
 		canvas.AddChild(inputOnlinePort)
 		nextY :+ inputH + 5
@@ -408,9 +408,9 @@ Type TSettingsScreen extends TScreen
 	global settingsWindow:TSettingsWindow
 
 	Method Setup:Int()
-		local button:TGUIButton = new TGUIButton.Create(new TPoint.Init(20,20), new TPoint.Init(130,-1), "Open Settings", self.GetName())
+		local button:TGUIButton = new TGUIButton.Create(new TVec2D.Init(20,20), new TVec2D.Init(130,-1), "Open Settings", self.GetName())
 
-		local dropdownLanguage:TGUISpriteDropDown = New TGUISpriteDropDown.Create(new TPoint.Init(620, 560), new TPoint.Init(170,-1), "Sprache", 128, self.GetName())
+		local dropdownLanguage:TGUISpriteDropDown = New TGUISpriteDropDown.Create(new TVec2D.Init(620, 560), new TVec2D.Init(170,-1), "Sprache", 128, self.GetName())
 		local languageValue:string[] = ["de", "en", "it", "ru", "fr", "cz", "tr"]
 		local languageText:string[] = ["Deutsch", "English", "Italiano", "Русский", "Français", "Čeština", "Türkçe"]
 		local itemHeight:int = 0

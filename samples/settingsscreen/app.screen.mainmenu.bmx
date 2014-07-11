@@ -24,27 +24,27 @@ Type TScreenMainMenu extends TScreenMenuBase
 	global modalDialogue:TGUIModalWindow
 
 	Method Setup:Int()
-		local button:TGUIButton = new TGUIButton.Create(new TPoint.Init(20,20), new TPoint.Init(130,-1), "Clickeriki?", self.GetName())
-		local input:TGUIInput = new TGUIInput.Create(new TPoint.Init(20,55), new TPoint.Init(130,-1), "empty", 20, self.GetName())
+		local button:TGUIButton = new TGUIButton.Create(new TVec2D.Init(20,20), new TVec2D.Init(130,-1), "Clickeriki?", self.GetName())
+		local input:TGUIInput = new TGUIInput.Create(new TVec2D.Init(20,55), new TVec2D.Init(130,-1), "empty", 20, self.GetName())
 		input.SetOverlay("gfx_gui_icon_arrowRight")
 
-		local arrow:TGUIArrowButton = new TGUIArrowButton.Create(new TPoint.Init(155,20), null, "left", self.GetName())
-		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TPoint.Init(155,55), null, true, "checkbox", self.GetName())
+		local arrow:TGUIArrowButton = new TGUIArrowButton.Create(new TVec2D.Init(155,20), null, "left", self.GetName())
+		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TVec2D.Init(155,55), null, true, "checkbox", self.GetName())
 
-		local text:TGUITextbox = new TGUITextbox.Create(new TPoint.Init(20,90), new TPoint.Init(100,100), "I am a multiline textbox. Not pretty but nice to have.", self.GetName())
-		local panel:TGUIPanel = new TGUIPanel.Create(new TPoint.Init(20,250), new TPoint.Init(120, 150), self.GetName())
+		local text:TGUITextbox = new TGUITextbox.Create(new TVec2D.Init(20,90), new TVec2D.Init(100,100), "I am a multiline textbox. Not pretty but nice to have.", self.GetName())
+		local panel:TGUIPanel = new TGUIPanel.Create(new TVec2D.Init(20,250), new TVec2D.Init(120, 150), self.GetName())
 		panel.SetBackground( new TGUIBackgroundBox.Create(null, null) )
 		panel.SetValue("press ~qspace~q to go to next screen")
 
-		local baseList:TGUIListBase = new TGUIListBase.Create(new TPoint.Init(20,450), new TPoint.Init(130,80), self.GetName())
+		local baseList:TGUIListBase = new TGUIListBase.Create(new TVec2D.Init(20,450), new TVec2D.Init(130,80), self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
-			baseList.AddItem( new TGUIListItem.Create(null, new TPoint.Init(100, 20), "basetest "+i) )
+			baseList.AddItem( new TGUIListItem.Create(null, new TVec2D.Init(100, 20), "basetest "+i) )
 		Next
 
 
-		local selectList:TGUISelectList = new TGUISelectList.Create(new TPoint.Init(200,450), new TPoint.Init(130,80), self.GetName())
+		local selectList:TGUISelectList = new TGUISelectList.Create(new TVec2D.Init(200,450), new TVec2D.Init(130,80), self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
@@ -52,7 +52,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 		Next
 
 
-		local slotList:TGUISlotList = new TGUISlotList.Create(new TPoint.Init(350,450), new TPoint.Init(130,120), self.GetName())
+		local slotList:TGUISlotList = new TGUISlotList.Create(new TVec2D.Init(350,450), new TVec2D.Init(130,120), self.GetName())
 		slotList.SetSlotMinDimension(130, 20)
 		'uncomment the following to make dropped items occupy the first
 		'free slot
@@ -60,16 +60,16 @@ Type TScreenMainMenu extends TScreenMenuBase
 		slotList.SetItemLimit(5) 'max 5 items
 		'add some items to that list
 		for local i:int = 1 to 3
-			slotList.SetItemToSlot( new TGUIListItem.Create(null, new TPoint.Init(130,20), "slottest "+i), i )
+			slotList.SetItemToSlot( new TGUIListItem.Create(null, new TVec2D.Init(130,20), "slottest "+i), i )
 		Next
 
 		'uncomment to have a simple image button
-		'local imageButton:TGUIButton = new TGUIButton.Create(new TPoint.Init(0,0), null, self.GetName())
+		'local imageButton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(0,0), null, self.GetName())
 		'imageButton.spriteName = "gfx_startscreen_logo"
 		'imageButton.SetAutoSizeMode( TGUIButton.AUTO_SIZE_MODE_SPRITE )
 
 		'a simple window
-		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TPoint.Init(550,200), new TPoint.Init(200,150), self.GetName())
+		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(550,200), new TVec2D.Init(200,150), self.GetName())
 		'as content area starts to late for automatic caption positioning
 		'we set a specific area to use
 		window.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
@@ -78,13 +78,13 @@ Type TScreenMainMenu extends TScreenMenuBase
 
 
 		'a modal dialogue
-		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TPoint.Init(610,20), new TPoint.Init(180,-1), "create modal window", self.GetName())
+		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(610,20), new TVec2D.Init(180,-1), "create modal window", self.GetName())
 		'handle clicking on that button
 		EventManager.RegisterListenerFunction("guiobject.onclick", onClickCreateModalDialogue, createModalDialogueButton)
 
 
 
-		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TPoint.Init(550,450), new TPoint.Init(130,-1), self.GetName())
+		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TVec2D.Init(550,450), new TVec2D.Init(130,-1), self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
@@ -100,7 +100,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 
 
 	Function onClickCreateModalDialogue:Int(triggerEvent:TEventBase)
-		modalDialogue = new TGUIModalWindow.Create(new TPoint, new TPoint.Init(400,250), "SYSTEM")
+		modalDialogue = new TGUIModalWindow.Create(new TVec2D, new TVec2D.Init(400,250), "SYSTEM")
 		modalDialogue.SetDialogueType(2)
 		'as content area starts to late for automatic caption positioning
 		'we set a specific area to use
@@ -172,7 +172,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 			local oldAlpha:float = GetAlpha()
 			SetAlpha TInterpolation.RegularOut(0.0, 1.0, Min(0.5*logoAnimTime, Millisecs() - logoAnimStart), 0.5*logoAnimTime)
 
-			logo.Draw( GraphicsWidth()/2, 150, -1, new TPoint.Init(0.5, 0.5), logoScale)
+			logo.Draw( GraphicsWidth()/2, 150, -1, new TVec2D.Init(0.5, 0.5), logoScale)
 			SetAlpha oldAlpha
 		Endif
 

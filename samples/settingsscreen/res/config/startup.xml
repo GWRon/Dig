@@ -4,7 +4,7 @@
 	<resources directload="true">
 		<image name="gfx_startscreen" url="../__res/gfx/start_bg.jpg" />
 		<bitmapfont name="default" url="../__res/font/DejaVuSans.ttf" size="11" default="TRUE" />
-		<bitmapfont name="default" url="../__res/font/VeraBD.ttf" size="11" " flags="BOLDFONT" />
+		<bitmapfont name="default" url="../__res/font/VeraBD.ttf" size="11" flags="BOLDFONT" />
 
 		<resource name="gfx_mousecursor_pack">
 			<type>SpritePack</type>

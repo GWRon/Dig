@@ -12,43 +12,43 @@ Import "../../base.util.registry.bitmapfontloader.bmx"
 Import "app.screen.mainmenu.bmx"
 Import "app.screen.room.bmx"
 
-Global MyApp:TMyApp = new TMyApp
+Global MyApp:TMyApp = New TMyApp
 MyApp.debugLevel = 1
 
-Type TMyApp extends TGraphicalApp
-	Field mouseCursorState:int = 0
+Type TMyApp Extends TGraphicalApp
+	Field mouseCursorState:Int = 0
 
 
-	Method Prepare:int()
-		super.Prepare()
+	Method Prepare:Int()
+		Super.Prepare()
 
-		local gm:TGraphicsManager = TGraphicsManager.GetInstance()
+		Local gm:TGraphicsManager = TGraphicsManager.GetInstance()
 		'scale everything from 800x600 to 1024x768
 	'	gm.SetResolution(1024, 768)
 	'	gm.SetDesignedResolution(800, 600)
 	'	gm.InitGraphics()
 
 		'we use a full screen background - so no cls needed
-		autoCls = False
+		autoCls = True
 
 		'=== LOAD RESOURCES ===
-		local registryLoader:TRegistryLoader = new TRegistryLoader
+		Local registryLoader:TRegistryLoader = New TRegistryLoader
 		'if loading from a "parent directory" - state this here
 		'-> all resources can get loaded with "relative paths"
 		'registryLoader.baseURI = "../"
 
 		'afterwards we can display background images and cursors
 		'"TRUE" indicates that the content has to get loaded immediately
-		registryLoader.LoadFromXML("res/config/startup.xml", TRUE)
+		registryLoader.LoadFromXML("res/config/startup.xml", True)
 		registryLoader.LoadFromXML("res/config/resources.xml")
 
 		'set a basic font ?
 		'SetImageFont(LoadImageFont("../res/fonts/Vera.ttf", 12))
 
 		'=== CREATE DEMO SCREENS ===
-		GetScreenManager().Set(new TScreenMainMenu.Init("mainmenu"))
-		GetScreenManager().Set(new TScreenRoomBase.Init("room1"))
-		GetScreenManager().Set(new TScreenRoomBase.Init("room2"))
+		GetScreenManager().Set(New TScreenMainMenu.Init("mainmenu"))
+		GetScreenManager().Set(New TScreenRoomBase.Init("room1"))
+		GetScreenManager().Set(New TScreenRoomBase.Init("room2"))
 		GetScreenManager().SetCurrent( GetScreenManager().Get("mainmenu") )
 	End Method
 
@@ -64,6 +64,10 @@ Type TMyApp extends TGraphicalApp
 		'run parental update (screen handling)
 		Super.Update()
 
+		If Keymanager.Ishit(KEY_Y)
+			EventManager.triggerEvent( TEventSimple.Create( "chat.onAddEntry", New TData.AddNumber("senderID", 1).AddNumber("channels", 1).AddString("text", "Test"+Time.GetTimeGone()) ) )
+		EndIf
+
 		'check if new resources have to get loaded
 		TRegistryUnloadedResourceCollection.GetInstance().Update()
 
@@ -72,7 +76,7 @@ Type TMyApp extends TGraphicalApp
 	End Method
 
 
-	Method Render:int()
+	Method Render:Int()
 		Super.Render()
 	End Method
 
@@ -86,10 +90,10 @@ Type TMyApp extends TGraphicalApp
 
 	Method RenderLoadingResourcesInformation:Int()
 		'do nothing if there is nothing to load
-		if TRegistryUnloadedResourceCollection.GetInstance().FinishedLoading() then return TRUE
+		If TRegistryUnloadedResourceCollection.GetInstance().FinishedLoading() Then Return True
 
 		'reduce instance requests
-		local RURC:TRegistryUnloadedResourceCollection = TRegistryUnloadedResourceCollection.GetInstance()
+		Local RURC:TRegistryUnloadedResourceCollection = TRegistryUnloadedResourceCollection.GetInstance()
 
 
 		SetAlpha 0.2
