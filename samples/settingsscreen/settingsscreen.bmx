@@ -131,7 +131,7 @@ Type TGUISpriteDropDown extends TGUIDropDown
 	
 
 	'override to add sprite next to value
-	Method DrawContent:Int(position:TVec2D)
+	Method DrawInputContent:Int(position:TVec2D)
 		'position is already a copy, so we can reuse it without
 		'copying it first
 
@@ -149,7 +149,7 @@ Type TGUISpriteDropDown extends TGUIDropDown
 		endif
 
 		'draw value
-		Super.DrawContent(position)
+		Super.DrawInputContent(position)
 	End Method
 End Type
 

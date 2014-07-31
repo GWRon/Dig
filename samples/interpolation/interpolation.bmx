@@ -10,8 +10,6 @@ Framework Brl.StandardIO
 Import Brl.GLMax2D
 Import "../../base.util.interpolation.bmx"
 
-
-
 Graphics 640,480,0, 60
 SetBlend(ALPHABLEND)
 
