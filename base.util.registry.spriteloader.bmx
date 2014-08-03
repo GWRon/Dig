@@ -224,7 +224,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 				Local offsetLeft:Int = data.GetInt("offsetLeft", srcSprite.offset.GetLeft())
 				Local offsetBottom:Int = data.GetInt("offsetBottom", srcSprite.offset.GetBottom())
 				Local offsetRight:Int = data.GetInt("offsetRight", srcSprite.offset.GetRight())
-				Local frames:Int = data.GetInt("frames", srcSprite.animcount)
+				Local frames:Int = data.GetInt("frames", srcSprite.frames)
 
 				'add to registry
 				local sprite:TSprite
