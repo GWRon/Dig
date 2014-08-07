@@ -22,23 +22,11 @@ Type TScreenMainMenu extends TScreenMenuBase
 	Field LogoFadeInFirstCall:int = 0
 	'store it so we can check for existence later on
 	global modalDialogue:TGUIModalWindow
-	global stationList:TGUISelectList
 
 	Method Setup:Int()
 		local button:TGUIButton = new TGUIButton.Create(new TVec2D.Init(20,20), new TVec2D.Init(130,-1), "Clickeriki?", self.GetName())
 		local input:TGUIInput = new TGUIInput.Create(new TVec2D.Init(20,55), new TVec2D.Init(130,-1), "empty", 20, self.GetName())
 		input.SetOverlay("gfx_gui_icon_arrowRight")
-
-		stationList = new TGUISelectList.Create(new TVec2D.Init(595,200), new TVec2D.Init(185,100), GetName())
-		local stationbutton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(595,310), new TVec2D.Init(130,-1), "add", self.GetName())
-		EventManager.RegisterListenerMethod("guiobject.onclick", self, "onAddButton", stationButton)
-
-		local item:TGUISelectListItem = new TGUISelectListItem.Create(new TVec2D, new TVec2D.Init(100,18), "Station (" + rand(0,20000) + ")")
-		stationList.AddItem( item )
-rem
-		guiNewsListAvailable.Resize(guiNewsListAvailable.rect.GetW() + guiNewsListAvailable.guiScrollerV.rect.GetW() + 3,guiNewsListAvailable.rect.GetH())
-		guiNewsListAvailable.guiEntriesPanel.minSize.SetXY(GetSpriteFromRegistry("gfx_news_sheet0").area.GetW(),356)
-endrem
 
 
 		local arrow:TGUIArrowButton = new TGUIArrowButton.Create(new TVec2D.Init(155,20), null, "left", self.GetName())
@@ -89,7 +77,16 @@ endrem
 		window.SetCaption("testwindow")
 		window.SetValue("content")
 
-
+rem
+		'a simple window
+		local window2:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(50,50), new TVec2D.Init(500,300), self.GetName())
+		'as content area starts to late for automatic caption positioning
+		'we set a specific area to use
+		window2.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
+		window2.SetCaption("testwindow")
+		window2.SetValue(LoadText("anleitung.txt"))
+endrem
+		
 		'a modal dialogue
 		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(610,20), new TVec2D.Init(180,-1), "create modal window", self.GetName())
 		'handle clicking on that button
@@ -112,15 +109,6 @@ endrem
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickMyButton, button)
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement)
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickOnAButton, "tguibutton")
-	End Method
-
-
-	Method onAddButton:Int(triggerEvent:TEventBase)
-'		for local i:int = 0 until 3
-			local item:TGUISelectListItem = new TGUISelectListItem.Create(new TVec2D, new TVec2D.Init(100,18), "Station (" + rand(0,20000) + ")")
-'			item._customDrawValue = DrawMapStationListEntry
-			stationList.AddItem( item )
-'		Next
 	End Method
 
 
@@ -404,8 +392,8 @@ Type TGUIChat Extends TGUIPanel
 
 
 	'override resize and add minSize-support
-	Method Resize(w:Float=Null,h:Float=Null)
-		Super.Resize(w,h)
+	Method Resize(w:Float = 0, h:Float = 0)
+		Super.Resize(w, h)
 
 		'background covers whole area, so resize it
 		If guiBackground Then guiBackground.resize(rect.getW(), rect.getH())
@@ -529,7 +517,7 @@ Type TGUIChatEntry Extends TGUIListItem
 	End Method
 
 
-	Method Draw:Int()
+	Method DrawContent()
 		Self.getParent("tguilistbase").RestrictViewPort()
 
 		If Self.showtime <> Null Then SetAlpha Float(Self.showtime - Time.GetTimeGone())/500.0
