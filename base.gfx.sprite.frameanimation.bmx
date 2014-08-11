@@ -56,12 +56,17 @@ End Type
 
 
 Type TSpriteFrameAnimation
-	Field repeatTimes:int = 0			'how many times animation should repeat until finished
-	Field currentImageFrame:int = 0		'frame of sprite/image
-	Field currentFrame:int = 0			'position in frames-array
+	'how many times animation should repeat until finished
+	Field repeatTimes:int = 0
+	'frame of sprite/image
+	Field currentImageFrame:int = 0
+	'position in frames-array
+	Field currentFrame:int = 0
 	Field frames:int[]
-	Field framesTime:float[]			'duration for each frame
-	Field paused:Int = FALSE			'stay with currentFrame or cycle through frames?
+	'duration for each frame
+	Field framesTime:float[]
+	'stay with currentFrame or cycle through frames?
+	Field paused:Int = FALSE
 	Field frameTimer:float = null
 	Field randomness:int = 0
 

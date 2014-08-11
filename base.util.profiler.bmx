@@ -65,9 +65,9 @@ Type TProfiler
 		'somehow adding to a tmap bugs out (think numbering sorting with
 		'prepended "0" in a string is buggy)
 		'so we just create an array from 0-maxID and add all calls to it
-		local idSortedCalls:TProfilerCall[] = new TProfilerCall[TProfilerCall.callID]
+		local idSortedCalls:TProfilerCall[] = new TProfilerCall[TProfilerCall.callID+1]
 		For Local c:TProfilerCall = EachIn calls.Values()
-			if idSortedCalls.length < c.id then idSortedCalls = idSortedCalls[.. c.id +1]
+			if idSortedCalls.length <= c.id then idSortedCalls = idSortedCalls[.. c.id +1]
 			idSortedCalls[c.id] = c
 		Next
 
@@ -165,17 +165,22 @@ Type TProfiler
 			LockMutex(accessMutex)
 		?
 
-		'try to fetch call from list
-		local funcKey:String = GetCallPath(func)
-		Local call:TProfilerCall = TProfilerCall(calls.ValueForKey(funcKey))
+		'just move 1 upwards
+		if func = ""
+			if TProfiler.lastCall then TProfiler.lastCall = TProfiler.lastCall.parent
+		else
+			'try to fetch call from list
+			local funcKey:String = GetCallPath(func)
+			Local call:TProfilerCall = TProfilerCall(calls.ValueForKey(funcKey))
 
-		If call <> null
-			'save time call took
-			call.timeTotal :+ (Time.GetTimeGone() - call.start)
+			If call <> null
+				'save time call took
+				call.timeTotal :+ (Time.GetTimeGone() - call.start)
 
-			'set last call to parent (if there is one)
-			TProfiler.lastCall = call.parent
-		EndIf
+				'set last call to parent (if there is one)
+				TProfiler.lastCall = call.parent
+			EndIf
+		endif
 
 		?Threaded
 			'wait for the mutex to get access to child variables

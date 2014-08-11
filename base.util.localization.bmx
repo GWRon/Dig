@@ -11,6 +11,7 @@ Import BRL.Map
 Type TLocalization
 	Global currentLanguage:TLocalizationLanguage
 	Global languages:TMap = CreateMap()
+	Global languagesCount:int = 0
 
 
 	Function GetStringWithParams:string(Key:string, group:string = Null, params:string[] = null)
@@ -39,6 +40,9 @@ Type TLocalization
 
 
 	Function AddLanguage:int(language:TLocalizationLanguage)
+		if not languages.ValueForKey(language.languageCode)
+			languagesCount :+ 1
+		endif
 		languages.insert(language.languageCode, language)
 	End Function
 
