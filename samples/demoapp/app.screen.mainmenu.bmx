@@ -24,6 +24,11 @@ Type TScreenMainMenu extends TScreenMenuBase
 	global modalDialogue:TGUIModalWindow
 
 	Method Setup:Int()
+		GuiManager.SetDefaultFont( GetBitmapFontManager().Get("Default", 14) )
+		'buttons get a bold font
+		TGUIButton.SetTypeFont( GetBitmapFontManager().Get("Default", 14, BOLDFONT) )
+
+
 		local button:TGUIButton = new TGUIButton.Create(new TVec2D.Init(20,20), new TVec2D.Init(130,-1), "Clickeriki?", self.GetName())
 		local input:TGUIInput = new TGUIInput.Create(new TVec2D.Init(20,55), new TVec2D.Init(130,-1), "empty", 20, self.GetName())
 		input.SetOverlay("gfx_gui_icon_arrowRight")
@@ -33,9 +38,9 @@ Type TScreenMainMenu extends TScreenMenuBase
 		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TVec2D.Init(155,55), new TVec2D.Init(120, -1), "checkbox", self.GetName())
 
 		local text:TGUITextbox = new TGUITextbox.Create(new TVec2D.Init(20,90), new TVec2D.Init(100,100), "I am a multiline textbox. Not pretty but nice to have.", self.GetName())
-		local panel:TGUIPanel = new TGUIPanel.Create(new TVec2D.Init(20,250), new TVec2D.Init(120, 150), self.GetName())
+		local panel:TGUIPanel = new TGUIPanel.Create(new TVec2D.Init(20,250), new TVec2D.Init(150, 180), self.GetName())
 		panel.SetBackground( new TGUIBackgroundBox.Create(null, null) )
-		panel.SetValue("press ~qspace~q to go to next screen")
+		panel.SetValue("press |b|space|/b| to go to next screen.~n~npress |b|T|/b| to add a toastmessage.")
 
 		local baseList:TGUIListBase = new TGUIListBase.Create(new TVec2D.Init(20,450), new TVec2D.Init(130,80), self.GetName())
 		'add some items to that list
@@ -94,7 +99,7 @@ endrem
 
 
 
-		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TVec2D.Init(550,450), new TVec2D.Init(130,-1), self.GetName())
+		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TVec2D.Init(550,450), new TVec2D.Init(130,-1), "Sprache", 128, self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one

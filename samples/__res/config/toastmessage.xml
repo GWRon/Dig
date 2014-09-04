@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<tvt>
+	<resources>
+		<resource name="gfx_toastmessage">
+			<type>SpritePack</type>
+ 			<url>../__res/gfx/interface/toastmessage.png</url>
+ 			<filter>FILTEREDIMAGE,MIPMAPPED</filter>
+			<children>
+				<child name="gfx_toastmessage.attention"	x="0" y="0" w="32" h="41" ninePatch="True" />
+				<child name="gfx_toastmessage.info"			x="32" y="0" w="32" h="41" ninePatch="True" />
+				<child name="gfx_toastmessage.negative"		x="64" y="0" w="32" h="41" ninePatch="True" />
+				<child name="gfx_toastmessage.positive"		x="96" y="0" w="32" h="41" ninePatch="True" />
+			</children>
+		</resource>
+	</resources>
+</tvt>

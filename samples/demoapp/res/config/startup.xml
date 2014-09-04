@@ -4,7 +4,8 @@
 	<resources directload="true">
 		<image name="gfx_startscreen"				url="../__res/gfx/start_bg.jpg" />
 		<image name="gfx_startscreen_logo"			url="../__res/gfx/start_logo.png" />
-		<bitmapfont name="default" url="../__res/font/Vera.ttf" size="11" default="TRUE" />
+		<bitmapfont name="default" url="../__res/font/sourcesans/SourceSansPro-Regular.ttf" size="11" default="TRUE" />
+		<bitmapfont name="default" url="../__res/font/sourcesans/SourceSansPro-Bold.ttf" size="11" flags="BOLDFONT" default="TRUE" />
 
 		<resource name="gfx_mousecursor_pack">
 			<type>SpritePack</type>
