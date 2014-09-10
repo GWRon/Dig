@@ -187,14 +187,16 @@ Type TToastMessageSpawnPoint extends TEntity
 
 
 	'override to allow alignment
-	Method GetChildX:Float(child:TStaticEntity)
+	Method GetChildX:Float(child:TStaticEntity = Null)
+		if not child then return Super.GetChildX()
+
 		return alignment.GetX() * (GetScreenWidth() - child.area.GetW())
 	End Method
 
 
 	'override to displace if there are other entities
-	Method GetChildY:Float(child:TStaticEntity)
-		if not child then return Null
+	Method GetChildY:Float(child:TStaticEntity = Null)
+		if not child then return Super.GetChildY()
 
 		local result:Float = 0
 		'if alignment.y = GROW_DOWN then result = 0
@@ -269,11 +271,32 @@ Type TToastMessage extends TEntity
 	Field _openCloseTimeGone:Float = 0
 	Field _lifeTime:Float = -1
 	Field _lifeTimeStartValue:Float = -1
+	'additional data
+	Field _data:TData
+	Field _onCloseFunction(sender:TToastMessage)
 
 
 	Method New()
 		area.dimension.SetXY(200,50)
 		Open()
+	End Method
+
+
+	'sets a function to call when the message gets closed
+	Method SetOnCloseFunction(onCloseFunction(sender:TToastMessage))
+		_onCloseFunction = onCloseFunction
+	End Method
+
+
+	'sets the data the close function gets as param
+	Method SetData(data:TData)
+		_data = data
+	End Method
+
+
+	Method GetData:TData()
+		if not _data then _data = new TData
+		return _data
 	End Method
 
 
@@ -329,6 +352,7 @@ Type TToastMessage extends TEntity
 
 		'fire event so others can handle it (eg. remove from list)
 		EventManager.triggerEvent(TEventSimple.Create("toastmessage.onClose", null, Self))
+		if _onCloseFunction then _onCloseFunction(self)
 	End Method
 
 
