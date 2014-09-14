@@ -252,14 +252,14 @@ Function ColorizePixmapCopy:TPixmap(sourcePixmap:TPixmap, color:TColor, coloriza
 					if ARGB_Alpha(pixel) = 0 then continue
 
 					colorTone = isMonochrome(pixel, True)
-					If colorTone > 0 and colorTone < 255
+					If colorTone > 0 'and colorTone < 255
 						WritePixel(colorizedPixmap, x,y, ARGB_Color(..
 							ARGB_Alpha(pixel),..
 							colorTone * color.r / 255, ..
 							colortone * color.g / 255, ..
 							colortone * color.b / 255 ..
 						))
-					elseif colorTone = 0
+					elseif colorTone = 0 and ARGB_Alpha(pixel) = 255
 						'somehow writing 255,0,0,0 keeps things transparent
 						WritePixel(colorizedPixmap, x,y, ARGB_Color( 255, 0, 0, 1))
 					endif
@@ -278,14 +278,14 @@ Function ColorizePixmapCopy:TPixmap(sourcePixmap:TPixmap, color:TColor, coloriza
 					if ARGB_Alpha(pixel) = 0 then continue
 
 					colorTone = isMonochrome(pixel, True)
-					If colorTone > 0 and colorTone < 255
+					If colorTone > 0 'and colorTone < 255
 						WritePixel(colorizedPixmap, x,y, ARGB_Color(..
 							ARGB_Alpha(pixel),..
 							255 - (255 - color.r) * (255 - colorTone) / 255, ..
 							255 - (255 - color.g) * (255 - colorTone) / 255, ..
 							255 - (255 - color.b) * (255 - colorTone) / 255 ..
 						))
-					elseif colorTone = 0
+					elseif colorTone = 0 and ARGB_Alpha(pixel) = 255
 						'somehow writing 255,0,0,0 keeps things transparent
 						WritePixel(colorizedPixmap, x,y, ARGB_Color( 255, color.r, color.g, color.b))
 					endif
@@ -306,7 +306,7 @@ Function ColorizePixmapCopy:TPixmap(sourcePixmap:TPixmap, color:TColor, coloriza
 					if ARGB_Alpha(pixel) = 0 then continue
 
 					colorTone = isMonochrome(pixel, True)
-					If colorTone > 0 and colorTone < 255
+					If colorTone > 0' and colorTone < 255
 						if colorTone < 128
 							WritePixel(colorizedPixmap, x,y, ARGB_Color(..
 								ARGB_Alpha(pixel),..
@@ -322,7 +322,7 @@ Function ColorizePixmapCopy:TPixmap(sourcePixmap:TPixmap, color:TColor, coloriza
 								255 - 2 * (255 - color.b) * (255 - colorTone) / 255 ..
 							))
 						endif
-					elseif colorTone = 0
+					elseif colorTone = 0 and ARGB_Alpha(pixel) = 255
 						'somehow writing 255,0,0,0 keeps things transparent
 						WritePixel(colorizedPixmap, x,y, ARGB_Color( 255, 0, 0, 1))
 					endif
