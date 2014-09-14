@@ -62,6 +62,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 			childFieldNames :+ ["offsetLeft", "offsetTop", "offsetRight", "offsetBottom"]
 			childFieldNames :+ ["frames|f"]
 			childFieldNames :+ ["ninepatch"]
+			childFieldNames :+ ["rotated"]
 			TXmlHelper.LoadValuesToData(childNode, childData, childFieldNames)
 
 			'add child data
@@ -115,7 +116,10 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 
 		'Print "LoadSpritePackResource: "+data.GetString("name") + " ["+url+"]"
 		Local img:TImage = LoadImage(url, data.GetInt("flags", 0))
-
+		'just return - so requests to the sprite should be using the
+		'registries "default sprite" (if registry is used)
+		if not img then print "ERROR: image "+string(url)+" not found.";return False
+		
 		Local spritePack:TSpritePack = new TSpritePack.Init(img, data.GetString("name"))
 		'add spritepack to asset
 		GetRegistry().Set(spritePack.name, spritePack)
@@ -145,6 +149,9 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 				null, ..
 				childData.GetInt("id", 0) ..
 			)
+			'rotation
+			sprite.rotated = childData.GetInt("rotated", 0)
+
 			'search for ninepatch
 			if childData.GetBool("ninepatch")
 				sprite.EnableNinePatch()
