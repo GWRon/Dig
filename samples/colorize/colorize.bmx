@@ -35,6 +35,11 @@ for local i:int = 0 to 3
 Next
 
 
+global tafel:TImage = LoadImage("roomboard_sign_base.png", DYNAMICIMAGE)
+global tafelCol:TImage = ColorizeImageCopy(tafel, TColor.clRed, 0, 0, 0, 1, 0, COLORIZEMODE_MULTIPLY)
+global tafelCol2:TImage = ColorizeImageCopy(tafel, TColor.clRed, 0, 0, 0, 1, 0, COLORIZEMODE_OVERLAY)
+
+
 'init graphics
 GetGraphicsManager().SetResolution(640,480)
 GetGraphicsManager().InitGraphics()
@@ -81,6 +86,9 @@ Function WorldRender:int()
 		DrawImage(myGradients[i], 520,50 + 50*i)
 	Next
 
+	DrawImage(tafel, 50,400)
+	DrawImage(tafelCol, 240,400)
+	DrawImage(tafelCol2, 430,400)
 
 	GetGraphicsManager().Flip()
 End Function

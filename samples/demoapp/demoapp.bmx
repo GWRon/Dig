@@ -28,6 +28,10 @@ Type TMyApp Extends TGraphicalApp
 	'	gm.SetResolution(1024, 768)
 	'	gm.SetDesignedResolution(800, 600)
 	'	gm.InitGraphics()
+			GetDeltatimer().Init(30, -1)
+			GetGraphicsManager().SetVsync(FALSE)
+			GetGraphicsManager().SetResolution(800,600)
+			GetGraphicsManager().InitGraphics()	
 
 		'we use a full screen background - so no cls needed
 		autoCls = True

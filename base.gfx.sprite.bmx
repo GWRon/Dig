@@ -154,6 +154,7 @@ Type TSpritePack
 	Method AddSpriteCopy:TSprite(spriteNameSrc:String, spriteNameDest:String, area:TRectangle, offset:TRectangle=null, frames:int = 0, color:TColor)
 		local spriteCopy:TSprite = new TSprite.Init(self, spriteNameDest, area, offset, frames)
 		Local tmppix:TPixmap = LockImage(image, 0)
+			'area the image is copied on, is cleared before!
 			tmppix.Window(spriteCopy.area.GetX(), spriteCopy.area.GetY(), spriteCopy.area.GetW(), spriteCopy.area.GetH()).ClearPixels(0)
 			DrawImageOnImage(ColorizeImageCopy(GetSprite(spriteNameSrc).GetImage(), color), tmppix, spriteCopy.area.GetX(), spriteCopy.area.GetY())
 		UnlockImage(image, 0)
@@ -170,7 +171,11 @@ End Type
 
 
 Type TSprite
+	'defines how many pixels have to get offset from a given position
 	Field offset:TRectangle = new TRectangle.Init(0,0,0,0)
+	'defines at which pixels of the area the content "starts"
+	'or how many pixels from the last row/col the content "ends"
+	Field padding:TRectangle = new TRectangle.Init(0,0,0,0)
 	Field area:TRectangle = new TRectangle.Init(0,0,0,0)
 	'the id is NOT globally unique but a value to make it selectable
 	'from a TSpritePack without knowing the name
@@ -291,6 +296,11 @@ Type TSprite
 		return name
 	End Method
 
+
+	Method SetPadding:int(padding:TRectangle)
+		self.padding = padding
+	End Method
+	
 
 	Method IsNinePatchEnabled:int()
 		return ninePatchEnabled
@@ -434,8 +444,8 @@ Type TSprite
 	End Method
 
 
-	Method GetColorizedImage:TImage(color:TColor, frame:int=-1)
-		return ColorizeImageCopy(GetImage(frame), color)
+	Method GetColorizedImage:TImage(color:TColor, frame:int=-1, colorizeMode:int=0)
+		return ColorizeImageCopy(GetImage(frame), color, 0,0,0, 1,0, colorizeMode)
 	End Method
 
 
@@ -448,36 +458,44 @@ Type TSprite
 
 
 	Method GetWidth:int(includeOffset:int=TRUE)
+		'substract 2 pixels (left and right) ?
+		local ninePatchPixels:int = 0
+		if ninePatchEnabled then ninePatchPixels = 2
+
 		'todo: advanced calculation
 		if rotated = 90 or rotated = -90
 			if includeOffset
-				return area.GetH() - offset.GetTop() - offset.GetBottom()
+				return area.GetH() - offset.GetTop() - offset.GetBottom() - (padding.GetTop() + padding.GetBottom()) - ninePatchPixels
 			else
-				return area.GetH()
+				return area.GetH() - (padding.GetTop() + padding.GetBottom()) - ninePatchPixels
 			endif
 		else
 			if includeOffset
-				return area.GetW() - offset.GetLeft() - offset.GetRight()
+				return area.GetW() - offset.GetLeft() - offset.GetRight() - (padding.GetLeft() + padding.GetRight()) - ninePatchPixels
 			else
-				return area.GetW()
+				return area.GetW() - (padding.GetLeft() + padding.GetRight()) - ninePatchPixels
 			endif
 		endif
 	End Method
 
 
 	Method GetHeight:int(includeOffset:int=TRUE)
+		'substract 2 pixles (left and right) ?
+		local ninePatchPixels:int = 0
+		if ninePatchEnabled then ninePatchPixels = 2
+
 		'todo: advanced calculation
 		if rotated = 90 or rotated = -90
 			if includeOffset
-				return area.GetW() + offset.GetLeft() + offset.GetRight()
+				return area.GetW() + offset.GetLeft() + offset.GetRight() - ninePatchPixels
 			else
-				return area.GetW()
+				return area.GetW() - ninePatchPixels
 			endif
 		else
 			if includeOffset
-				return area.GetH() + offset.GetTop() + offset.GetBottom()
+				return area.GetH() + offset.GetTop() + offset.GetBottom() - ninePatchPixels
 			else
-				return area.GetH()
+				return area.GetH() - ninePatchPixels
 			endif
 		endif
 	End Method
@@ -699,9 +717,6 @@ Type TSprite
 
 
 	Method Draw(x:Float, y:Float, frame:Int=-1, alignment:TVec2D=null, scale:float=1.0, drawCompleteImage:Int=FALSE)
-		x:- offset.GetLeft() * scale
-		y:- offset.GetTop() * scale
-
 		if drawCompleteImage then frame = -1
 
 		rem
@@ -721,6 +736,13 @@ Type TSprite
 			alignX = alignment.x
 			alignY = alignment.y
 		endif
+	
+		'add offset
+		x:- offset.GetLeft() * scale
+		Y:- offset.GetTop() * scale
+'		x:- offset.GetRight() * scale
+'		Y:- offset.GetBottom() * scale
+
 
 		'for a correct rotation calculation
 		if scale <> 1.0 then SetScale(scale, scale)

@@ -15,6 +15,7 @@ Import "base.util.registry.bmx"
 Import "base.util.event.bmx"
 Import "base.util.time.bmx"
 
+Import "base.gfx.renderconfig.bmx"
 
 
 '===== GUI CONSTANTS =====
@@ -43,12 +44,11 @@ CONST GUI_OBJECT_STATUS_APPEARANCE_CHANGED:Int	= 2^0
 Const GUI_OBJECT_ORIENTATION_VERTICAL:Int		= 0
 Const GUI_OBJECT_ORIENTATION_HORIZONTAL:Int		= 1
 
-
-Global gfx_GuiPack:TSpritePack = new TSpritePack.Init(LoadImage("res/grafiken/GUI/guipack.png"), "guipack_pack")
-gfx_GuiPack.AddSprite(New TSprite.Init(Null, "ListControl", new TRectangle.Init(96, 0, 56, 28), Null, 8, new TVec2D.Init(14, 14)))
-gfx_GuiPack.AddSprite(New TSprite.Init(Null, "DropDown", new TRectangle.Init(160, 0, 126, 42), Null, 21, new TVec2D.Init(14, 14)))
-gfx_GuiPack.AddSprite(New TSprite.Init(Null, "Slider", new TRectangle.Init(0, 30, 112, 14), Null, 8))
-gfx_GuiPack.AddSprite(New TSprite.Init(Null, "Chat_IngameOverlay", new TRectangle.Init(0, 60, 504, 20), Null))
+'===== GUI MANAGER =====
+'for each "List" of the guimanager
+Const GUIMANAGER_TYPES_DRAGGED:int    = 2^0
+Const GUIMANAGER_TYPES_NONDRAGGED:int = 2^1
+Const GUIMANAGER_TYPES_ALL:int        = GUIMANAGER_TYPES_DRAGGED | GUIMANAGER_TYPES_NONDRAGGED
 
 
 Type TGUIManager
@@ -81,7 +81,7 @@ Type TGUIManager
 	'is there an object listening to keystrokes?
 	Field _keystrokeReceivingObject:TGUIObject = Null
 
-	Global viewportX:Int=0,viewportY:Int=0,viewportW:Int=0,viewportH:Int=0
+	'Global viewportX:Int=0,viewportY:Int=0,viewportW:Int=0,viewportH:Int=0
 	Global _instance:TGUIManager
 
 
@@ -229,13 +229,15 @@ Type TGUIManager
 
 
 	Method RestrictViewport(x:Int,y:Int,w:Int,h:Int)
-		GetViewport(viewportX,viewportY,viewportW,viewportH)
+		TRenderConfig.Push()
+'		GetViewport(viewportX,viewportY,viewportW,viewportH)
 		SetViewport(x,y,w,h)
 	End Method
 
 
 	Method ResetViewport()
-		SetViewport(viewportX,viewportY,viewportW,viewportH)
+		TRenderConfig.Pop()
+'		SetViewport(viewportX,viewportY,viewportW,viewportH)
 	End Method
 
 
@@ -474,7 +476,7 @@ endrem
 	End Method
 
 
-	Method Update(State:String = "", fromZ:Int=-1000, toZ:Int=-1000)
+	Method Update(State:String = "", fromZ:Int=-1000, toZ:Int=-1000, updateTypes:int=GUIMANAGER_TYPES_ALL)
 		'_lastUpdateTick :+1
 		'if _lastUpdateTick >= 100000 then _lastUpdateTick = 0
 
@@ -487,81 +489,89 @@ endrem
 		Local ListDraggedBackup:TList = ListDragged
 
 		'first update all dragged objects...
-		For Local obj:TGUIobject = EachIn ListDragged
-			If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
+		if GUIMANAGER_TYPES_DRAGGED & updateTypes
+			For Local obj:TGUIobject = EachIn ListDragged
+				If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
 
-			'avoid getting updated multiple times
-			'this can be overcome with a manual "obj.Update()"-call
-			'if obj._lastUpdateTick = _lastUpdateTick then continue
-			'obj._lastUpdateTick = _lastUpdateTick
+				'avoid getting updated multiple times
+				'this can be overcome with a manual "obj.Update()"-call
+				'if obj._lastUpdateTick = _lastUpdateTick then continue
+				'obj._lastUpdateTick = _lastUpdateTick
 
-			obj.Update()
-			'fire event
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onUpdate", Null, obj ) )
-		Next
+				obj.Update()
+				'fire event
+				EventManager.triggerEvent( TEventSimple.Create( "guiobject.onUpdate", Null, obj ) )
+			Next
+		endif
 
 		'then the rest
-		For Local obj:TGUIobject = EachIn ListReversed 'from top to bottom
-			'all dragged objects got already updated...
-			If ListDraggedBackup.contains(obj) Then Continue
+		if GUIMANAGER_TYPES_NONDRAGGED & updateTypes
+			For Local obj:TGUIobject = EachIn ListReversed 'from top to bottom
+				'all dragged objects got already updated...
+				If ListDraggedBackup.contains(obj) Then Continue
 
-			If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
+				If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
 
-			'avoid getting updated multiple times
-			'this can be overcome with a manual "obj.Update()"-call
-			'if obj._lastUpdateTick = _lastUpdateTick then continue
-			'obj._lastUpdateTick = _lastUpdateTick
-			obj.Update()
-			'fire event
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onUpdate", Null, obj ) )
-		Next
+				'avoid getting updated multiple times
+				'this can be overcome with a manual "obj.Update()"-call
+				'if obj._lastUpdateTick = _lastUpdateTick then continue
+				'obj._lastUpdateTick = _lastUpdateTick
+				obj.Update()
+				'fire event
+				EventManager.triggerEvent( TEventSimple.Create( "guiobject.onUpdate", Null, obj ) )
+			Next
+		endif
 	End Method
 
 
-	Method Draw:Int(State:String = "", fromZ:Int=-1000, toZ:Int=-1000)
+	Method Draw:Int(State:String = "", fromZ:Int=-1000, toZ:Int=-1000, drawTypes:int=GUIMANAGER_TYPES_ALL)
 		'_lastDrawTick :+1
 		'if _lastDrawTick >= 100000 then _lastDrawTick = 0
 
 		currentState = State
 
-		For Local obj:TGUIobject = EachIn List
-			'all special objects get drawn separately
-			If ListDragged.contains(obj) Then Continue
-			If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
+		if GUIMANAGER_TYPES_NONDRAGGED & drawTypes
+			For Local obj:TGUIobject = EachIn List
+				'all special objects get drawn separately
+				If ListDragged.contains(obj) Then Continue
+				If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
 
-			'skip invisible objects
-			if not obj.IsVisible() then continue
+				'skip invisible objects
+				if not obj.IsVisible() then continue
 
-			'avoid getting drawn multiple times
-			'this can be overcome with a manual "obj.Draw()"-call
-			'if obj._lastDrawTick = _lastDrawTick then continue
-			'obj._lastDrawTick = _lastDrawTick
+				'avoid getting drawn multiple times
+				'this can be overcome with a manual "obj.Draw()"-call
+				'if obj._lastDrawTick = _lastDrawTick then continue
+				'obj._lastDrawTick = _lastDrawTick
 
-			'tint image if object is disabled
-			If Not(obj._flags & GUI_OBJECT_ENABLED) Then SetAlpha 0.5*GetAlpha()
-			obj.Draw()
-'RON
-'print obj.GetClassName() + " z:"+obj.GetZIndex()
-			If Not(obj._flags & GUI_OBJECT_ENABLED) Then SetAlpha 2.0*GetAlpha()
+				'tint image if object is disabled
+				If Not(obj._flags & GUI_OBJECT_ENABLED) Then SetAlpha 0.5*GetAlpha()
+				obj.Draw()
 
-			'fire event
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onDraw", Null, obj ) )
-		Next
+				If Not(obj._flags & GUI_OBJECT_ENABLED) Then SetAlpha 2.0*GetAlpha()
 
-		'draw all dragged objects above normal objects...
-		For Local obj:TGUIobject = EachIn listDraggedReversed
-			If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
+				'fire event
+				EventManager.triggerEvent( TEventSimple.Create( "guiobject.onDraw", Null, obj ) )
+			Next
+		endif
 
-			'avoid getting drawn multiple times
-			'this can be overcome with a manual "obj.Draw()"-call
-			'if obj._lastDrawTick = _lastDrawTick then continue
-			'obj._lastDrawTick = _lastDrawTick
 
-			obj.Draw()
+		if GUIMANAGER_TYPES_DRAGGED & drawTypes
+			'draw all dragged objects above normal objects...
+			For Local obj:TGUIobject = EachIn listDraggedReversed
+				If Not haveToHandleObject(obj,State,fromZ,toZ) Then Continue
 
-			'fire event
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onDraw", Null, obj ) )
-		Next
+				'avoid getting drawn multiple times
+				'this can be overcome with a manual "obj.Draw()"-call
+				'if obj._lastDrawTick = _lastDrawTick then continue
+				'obj._lastDrawTick = _lastDrawTick
+
+				obj.Draw()
+
+				'fire event
+				EventManager.triggerEvent( TEventSimple.Create( "guiobject.onDraw", Null, obj ) )
+			Next
+		endif
 	End Method
 End Type
 Global GUIManager:TGUIManager = TGUIManager.GetInstance()
@@ -815,10 +825,16 @@ Type TGUIobject
 	End Method
 
 
-	'default hit handler for all gui objects
+	'default click handler for all gui objects
 	'by default they do nothing
 	'click: no wait: mouse button was down and is now up again
 	Method onClick:Int(triggerEvent:TEventBase)
+		Return False
+	End Method
+
+
+	'default hit handler for all gui objects
+	Method onHit:Int(triggerEvent:TEventBase)
 		Return False
 	End Method
 
@@ -1032,6 +1048,11 @@ Type TGUIobject
 	End Method
 
 
+	Method IsClickable:int()
+		return _flags & GUI_OBJECT_CLICKABLE
+	End Method
+
+
 	Method IsVisible:Int()
 		'i am invisible if my parent is not visible
 '		if _parent and not _parent.IsVisible() then return FALSE
@@ -1109,6 +1130,12 @@ Type TGUIobject
 			'do other things (eg. events)
 			Self.state = state
 		EndIf
+	End Method
+
+
+	Method GetState:string()
+		if state <> "" then return Mid(state, 1)
+		return ""
 	End Method
 
 
@@ -1477,14 +1504,31 @@ Type TGUIobject
 
 		If GUIManager._ignoreMouse then return FALSE
 
+
+		'mouse position could have changed since a begin of a "click"
+		'-> eg when clicking + moving the cursor very fast
+		'   in that case the mouse position should be the one of the
+		'   moment the "click" begun
+		local mousePos:TVec2D = new TVec2D.Init(MouseManager.x, MouseManager.y)
+		If MouseManager.IsClicked(1) or MouseManager.GetClicks(1) > 0
+			mousePos = MouseManager.GetClickPosition(1)
+		Endif
+
+
+		'=== HANDLE MOUSE ===
+		if not GUIManager.UpdateState_mouseButtonDown[1]
+			mouseIsDown	= Null
+			'remove hover/active state
+			setState("")
+		endif
 		'=== HANDLE MOUSE OVER ===
 
 		'if nothing of the obj is visible or the mouse is not in
 		'the visible part - reset the mouse states
-		If Not containsXY(MouseManager.x, MouseManager.y)
-			mouseIsDown		= Null
-			mouseIsClicked	= Null
-			mouseover		= 0
+		If Not containsXY(mousePos.x, mousePos.y)
+			'reset clicked position as soon as leaving the widget
+			mouseIsClicked = Null
+			mouseover = 0
 			setState("")
 
 			'mouseclick somewhere - should deactivate active object
@@ -1508,10 +1552,10 @@ Type TGUIobject
 		'=== HANDLE MOUSE CLICKS / POSITION ===
 
 		'skip non-clickable objects
-		if not (_flags & GUI_OBJECT_CLICKABLE) then return FALSE
+		if not IsClickable() then return FALSE
 		'skip objects the mouse is not over.
 		'ATTENTION: this differs to self.mouseOver (which is set later on)
-		if not containsXY(MouseManager.x, MouseManager.y) then return FALSE
+		if not containsXY(mousePos.x, mousePos.y) then return FALSE
 
 
 		'handle mouse clicks / button releases
@@ -1530,7 +1574,7 @@ Type TGUIobject
 						GUImanager.setFocus(Self)
 					endif
 
-					MouseIsDown = new TVec2D.Init( MouseManager.x, MouseManager.y )
+					MouseIsDown = mousePos.Copy()
 				EndIf
 
 				'we found a gui element which can accept clicks
@@ -1549,18 +1593,18 @@ Type TGUIobject
 					'create events
 					'onmouseenter
 					If mouseover = 0
-						EventManager.registerEvent( TEventSimple.Create( "guiobject.OnMouseEnter", new TData, Self ) )
+						EventManager.triggerEvent( TEventSimple.Create( "guiobject.OnMouseEnter", new TData, Self ) )
 						mouseover = 1
 					EndIf
 					'onmousemove
-					EventManager.registerEvent( TEventSimple.Create("guiobject.OnMouseOver", new TData, Self ) )
+					EventManager.triggerEvent( TEventSimple.Create("guiobject.OnMouseOver", new TData, Self ) )
 					GUIManager.UpdateState_foundHoverObject = True
 				EndIf
 
 				'somone decided to say the button is pressed above the object
 				If MouseIsDown
 					setState("active")
-					EventManager.registerEvent( TEventSimple.Create("guiobject.OnMouseDown", new TData.AddNumber("button", 1), Self ) )
+					EventManager.triggerEvent( TEventSimple.Create("guiobject.OnMouseDown", new TData.AddNumber("button", 1), Self ) )
 				Else
 					setState("hover")
 				EndIf
@@ -1586,9 +1630,20 @@ Type TGUIobject
 				'IsClicked does not include waiting time - so check for
 				'single and double clicks too
 				If _flags & GUI_OBJECT_ENABLED and not GUIManager.UpdateState_foundHitObject
+					local isHit:int = False
+					If MouseManager.IsHit(1)
+						local hitEvent:TEvenTsimple = TEventSimple.Create("guiobject.OnHit", new TData.AddNumber("button",1), Self)
+						'let the object handle the click
+						OnHit(hitEvent)
+						'fire onClickEvent
+						EventManager.triggerEvent(hitEvent)
+
+						isHit = True
+					endif
+					
 					If MOUSEMANAGER.IsClicked(1) or MOUSEMANAGER.GetClicks(1) > 0
 						'=== SET CLICKED VAR ====
-						mouseIsClicked = new TVec2D.Init( MouseManager.x, MouseManager.y)
+						mouseIsClicked = MouseManager.GetClickposition(1)
 
 						'=== SEND OUT CLICK EVENT ====
 						'if recognized as "double click" no normal "onClick"
@@ -1614,7 +1669,7 @@ Type TGUIobject
 						EventManager.triggerEvent(clickEvent)
 
 						'added for imagebutton and arrowbutton not being reset when mouse standing still
-						MouseIsDown = Null
+'						MouseIsDown = Null
 						'reset mouse button
 						'-> do not reset it as it would disable
 						'   "doubleclick" recognition
@@ -1622,7 +1677,10 @@ Type TGUIobject
 						'but we can reset clicked state
 						MOUSEMANAGER.ResetClicked(1)
 
-						
+						isHit = True
+					EndIf
+
+					If isHit
 						'reset Button cache
 						GUIManager.UpdateState_mouseButtonHit[1] = False
 
