@@ -326,6 +326,13 @@ Type TSoundManager
 	End Method
 
 
+	Function UpdateMusicStreams:int()
+		'refill buffers
+		if GetInstance().inactiveMusicStream then GetInstance().inactiveMusicStream.Update()
+		If GetInstance().activeMusicStream then GetInstance().activeMusicStream.Update()
+	End Function
+
+
 	Method Update:Int()
 		'skip updates if muted
 		If isMuted() Then Return True
@@ -341,8 +348,9 @@ Type TSoundManager
 			If Not activeMusicChannel Then Return True
 
 			'refill buffers
-			If inactiveMusicStream then inactiveMusicStream.Update()
-			If activeMusicStream then activeMusicStream.Update()
+			UpdateMusicStreams()
+'			If inactiveMusicStream then inactiveMusicStream.Update()
+'			If activeMusicStream then activeMusicStream.Update()
 
 
 			'autocrossfade to the next song
