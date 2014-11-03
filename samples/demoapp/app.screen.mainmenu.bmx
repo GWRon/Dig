@@ -22,6 +22,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 	Field LogoFadeInFirstCall:int = 0
 	'store it so we can check for existence later on
 	global modalDialogue:TGUIModalWindow
+	global guiChat:TGUIChat
 
 	Method Setup:Int()
 		GuiManager.SetDefaultFont( GetBitmapFontManager().Get("Default", 14) )
@@ -107,7 +108,7 @@ endrem
 		Next
 
 
-'		local chat:TGUIChat = new TGUIChat.Create(new TVec2D.Init(200,300), new TVec2D.Init(300,120), self.GetName())
+		guiChat = new TGUIChat.Create(new TVec2D.Init(200,300), new TVec2D.Init(300,120), self.GetName())
 
 		'register demo click listener - only listen to click events of
 		'the "button" created above
@@ -169,6 +170,10 @@ endrem
 		If KeyManager.IsHit(KEY_SPACE)
 			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("room1") )
 		Endif
+
+		If KeyManager.IsHit(KEY_C)
+			EventManager.triggerEvent( TEventSimple.Create( "chat.onAddEntry", new TData.AddNumber("senderID", 1).AddNumber("channels", guiChat.getChannelsFromText("text")).AddString("text", rand(10000)) , guiChat ) )
+		EndIf
 
 		GuiManager.Update(self.name)
 	End Method
@@ -234,6 +239,8 @@ Type TGUIChat Extends TGUIPanel
 		guiList.setParent(Self)
 		guiList.autoScroll = True
 		guiList.SetBackground(Null)
+
+		self.className = "TGUIChat"
 
 		guiInput = New TGUIInput.Create(new TVec2D.Init(0, dimension.y),new TVec2D.Init(dimension.x,-1), "", 32, limitState)
 		guiInput.setParent(Self)
