@@ -123,6 +123,24 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
+	'resizes a rectangle by the given values (like scaling but with
+	'fixed numbers)
+	Method Grow:TRectangle(dx:Float, dy:Float, dw:Float, dh:Float)
+		position.AddXY(-dx, -dy)
+		dimension.AddXY(dx + dw, dy + dh)
+		return self
+	End Method
+
+
+	Method Scale:TRectangle(sx:Float, sy:Float)
+		local centerX:Float = 0.5 * GetW()
+		local centerY:Float = 0.5 * GetH()
+		position.AddXY( -(sx - 1.0) * centerX, -(sy - 1.0) * centerY)
+		dimension.AddXY( +2*(sx - 1.0) * centerX, +2*(sy - 1.0) * centerY)
+		return self
+	End Method
+
+
 	'moves the rectangle to x,y
 	Method MoveXY:int(x:float, y:float)
 		position.AddXY(x, y)
