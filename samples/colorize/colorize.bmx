@@ -90,6 +90,21 @@ Function WorldRender:int()
 	DrawImage(tafelCol, 240,400)
 	DrawImage(tafelCol2, 430,400)
 
+	For local i:int = 0 to 5
+		new TColor.Create(255,0,0).AdjustSaturationRGB(-0.2 * i).SetRGB()
+		DrawRect(50 + 60*i, 270, 50, 30)
+
+		new TColor.Create(255,0,0).AdjustSaturation(-0.2 * i).SetRGB()
+		DrawRect(50 + 60*i, 300, 50, 30)
+
+		new TColor.Create(255,0,0).AdjustBrightness(-0.2 * i).SetRGB()
+		DrawRect(50 + 60*i, 330, 50, 30)
+		
+		new TColor.Create(255,0,0).AdjustBrightness(+0.2 * i).SetRGB()
+		DrawRect(50 + 60*i, 360, 50, 30)
+	Next
+	SetColor 255,255,255
+
 	GetGraphicsManager().Flip()
 End Function
 

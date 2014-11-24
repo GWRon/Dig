@@ -220,3 +220,105 @@ Type TLocalizationLanguage
 		EndIf
 	End Method
 End Type
+
+
+
+
+Type TLocalizedString
+	Field values:TMap = CreateMap()
+	Global defaultLanguage:string = "de"
+
+
+	'to ease "setting" (mystring.set(value)) the language
+	'comes after the value.
+	Method Set:int(value:String, language:String="")
+		if language="" then language = defaultLanguage
+		values.insert(language, value)
+	End Method
+
+
+	Method Get:String(language:String="")
+		if language="" then language=defaultLanguage
+		if values.Contains(language) or language = defaultLanguage
+			return string(values.ValueForKey(language))
+		else
+			return string(values.ValueForKey(defaultLanguage))
+		endif
+	End Method
+
+
+	Method SerializeToString:string()
+		local s:string = ""
+		'concencate all into one string
+		'de::TextGerman::en::TextEnglish::...
+		For local language:string = EachIn values.Keys()
+			if s <> "" then s :+ "::"
+			s :+ language.replace("\","\\").replace(":", "\:")
+			s :+ "::"
+			s :+ string(values.ValueForKey(language)).replace("\","\\").replace(":", "\:")
+		Next
+		return s
+	End Method
+
+
+	Method DeSerializeFromString(text:String)
+		local vars:string[] = text.split("::")
+		local language:string, value:string
+		local mode:int = 0
+		For local s:string = EachIn vars
+			s = s.replace("\:", ":").replace("\\", "\")
+			if mode = 0
+				language = s
+				mode :+ 1
+			else
+				value = s
+				mode = 0
+				Set(value, language)
+			endif
+		Next
+	End Method
+rem
+	Method SerializeToString:string()
+		local s:string = ""
+		'concencate all into one string
+		'de::TextGerman::en::TextEnglish::...
+		local q:string = "~~"
+		For local language:string = EachIn values.Keys()
+			if s <> "" then s :+ "::"
+			s :+ language.replace(q,q+q).replace(":", q+":")
+			s :+ "::"
+			s :+ string(values.ValueForKey(language)).replace(q,q+q).replace(":", q+":")
+		Next
+		return s
+	End Method
+
+
+	Method DeSerializeFromString(text:String)
+		local vars:string[] = text.split("::")
+		local language:string, value:string
+		local mode:int = 0
+		local q:string = "~~"
+		For local s:string = EachIn vars
+			s = s.replace(q+":", ":").replace(q+q, q)
+			if mode = 0
+				language = s
+				mode :+ 1
+			else
+				value = s
+				mode = 0
+				Set(value, language)
+			endif
+		Next
+	End Method
+endrem
+
+	Method Append:Int(other:TLocalizedString)
+		if not other then return False
+
+		For local language:String = EachIn other.values.Keys()
+			'this might overwrite previous values of the same language
+			Set(string(other.values.ValueForKey(language)), language)
+		Next
+		return True
+	End Method
+End Type

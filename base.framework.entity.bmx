@@ -54,7 +54,12 @@ Type TStaticEntity
 	'returns whether two (Static)Entities overlap eachother visually
 	Method Overlaps:int(other:TStaticEntity)
 		if not other then return False
-		return GetScreenArea().intersects(other.GetScreenArea())
+		return GetBoundingBox().intersects(other.GetBoundingBox())
+	End Method
+
+
+	Method GetBoundingBox:TRectangle()
+		return GetScreenArea()
 	End Method
 
 

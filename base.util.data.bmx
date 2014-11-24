@@ -78,7 +78,12 @@ Type TData
 
 		For local key:string = eachin data.Keys()
 			key = key.ToLower()
-			dataCopy.Add(key, data.ValueForKey(key))
+			local value:object = data.ValueForKey(key)
+			if TData(value)
+				dataCopy.Add(key, TData(value).Copy())
+			else
+				dataCopy.Add(key, value)
+			endif
 		Next
 		
 		return dataCopy
@@ -187,7 +192,7 @@ Type TData
 		Add( key, object( string(data) ) )
 		return self
 	End Method
-
+	
 
 	Method AddBoolString:TData(key:string, data:string)
 		Select data.toLower()
@@ -233,6 +238,13 @@ Type TData
 				return False
 		End Select
 		return False
+	End Method
+
+
+	Method GetLong:float(key:string, defaultValue:Long = 0.0)
+		local result:object = Get(key)
+		if result then return Long( String( result ) )
+		return defaultValue
 	End Method
 
 
