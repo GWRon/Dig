@@ -76,7 +76,6 @@ Type TSurfaceCamera
 	Field offsetY:Float = 0.0
 	Field scaleX:Float = 1.0
 	Field scaleY:Float = 1.0
-	Field keepScale:Int = True
 
 
 	Method New()
@@ -246,7 +245,6 @@ Type TStretchingSurfaceCamera Extends TSurfaceCamera
 
 		Super.init(dimensions)
 
-		Self.keepScale = False
 		Return Self
 	End Method
 
@@ -281,12 +279,6 @@ Type TStretchingSurfaceCamera Extends TSurfaceCamera
 		'       would help.
 		Cls;Flip; Cls;Flip; Cls;Flip
 		SetClsColor( clsR, clsG, clsB )
-
-		
-		'calculate aspect ratios
-		Local gtovratio:Float = GetGraphicsAspectRatio() / GetAspectRatio()
-		Local vtogratio:Float = 1.0 / gtovratio
-
 
 		'calculate individual scales
 		scaleX = GetGraphicsHeight() / Float(GetHeight())
@@ -401,36 +393,23 @@ Type TExtendingSurfaceCamera Extends TStretchingSurfaceCamera
 		'check if the maxSize is bigger than the calculated ones
         Local newWidth:Float = width * scaleForMaxSize  
         Local newHeight:Float = newWidth / GetAspectRatio()  
-		Local doScale:Int = False
 		If IsBetween(newWidth, minWidth, maxWidth) And IsBetween(newHeight, minHeight, maxHeight)
             Self.width = newWidth
             Self.height = newHeight
-            doScale = True
-    		Print "max :"+ Self.width+"x"+Self.height
 	    Else
 			newWidth = width * scaleForMinSize
 			newHeight = newWidth / GetAspectRatio()
 			If IsBetween(newWidth, minWidth, maxWidth) And IsBetween(newHeight, minHeight, maxHeight)
 				Self.width = newWidth
 				Self.height = newHeight
-				doScale = True
-				Print "min :"+ Self.width+"x"+Self.height
 			Else
-'				self.width = minWidth
-'				self.height = minHeight
-				doScale = False
-				Print "default :"+ Self.width+"x"+Self.height
+				'just keep the currently stored width/height
 			EndIf
 		EndIf
-
-		Local oldKeepScale:Int = Self.keepScale
-		Self.keepScale = doScale
 
 		'again we leave it up to the stretched camera to do the letter-
 		'boxing and offset calculation
 		Super.CalculateViewport()
-
-		Self.keepScale = oldKeepScale
 		Return
 		
 
