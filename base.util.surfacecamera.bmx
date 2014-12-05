@@ -328,7 +328,7 @@ Type TStretchingSurfaceCamera Extends TSurfaceCamera
 
 
 	'override
-	Method VirtualGrabPixmap:TPixmap( x:Int, y:Int, w:Int, h:Int )
+	Method GrabPixmap:TPixmap( x:Int, y:Int, w:Int, h:Int )
 		Local scaleX:Float = GraphicsWidth() / Float(width)
 		Local scaleY:Float = GraphicsHeight() / Float(height)
 		Return _max2dDriver.GrabPixmap( x * scaleX + offsetX, y* scaleY + offsetY, w * scaleX, h * scaleY )
@@ -353,7 +353,7 @@ Type TExtendingSurfaceCamera Extends TStretchingSurfaceCamera
 	'Ex.: [800,600, 854,480]
 	'     results in minArea "800x480" and maxArea "854,600" 
 	Method Init:TExtendingSurfaceCamera( dimensions:Int[] )
-		If dimensions.length < 2 Then Throw "TStretchingSurfaceCamera.Init(): at least 2 arguments needed."
+		If dimensions.length < 2 Then Throw "TExtendingSurfaceCamera.Init(): at least 2 arguments needed."
 		If minWidth = 0 And minHeight = 0 And minWidth = 0 And minHeight = 0
 			If dimensions.length >= 4
 				SetMinMaxRatios(dimensions[0], dimensions[1], dimensions[2], dimensions[3])
