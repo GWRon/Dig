@@ -8,8 +8,8 @@ Graphics 800, 600, 0
 Global sound:TSound = LoadSound("sound1.ogg")
 Global sound2:TSound = LoadSound("sound2.ogg")
 
-if not sound then Throw "provide a valid OGG sound for sound1.ogg"
-if not sound2 then Throw "provide a valid OGG sound for sound1.ogg"
+if not sound then Throw "provide a valid OGG sound for ~qsound~q"
+if not sound2 then Throw "provide a valid OGG sound for ~qsound2~q"
 
 Repeat
 	'enable this to see how only one channel is used

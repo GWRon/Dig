@@ -1,7 +1,7 @@
 SuperStrict
 Import "../../base.util.surfacecamera.bmx"
 
-Graphics 1024,768,0
+Graphics 816,544,0
 'we init the cameras with a specific resolution to simulate that
 'the desired graphic resolution was not created 
 Global cameraStretch:TStretchingSurfaceCamera = new TStretchingSurfaceCamera.Init([800, 480])
