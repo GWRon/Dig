@@ -63,19 +63,36 @@ Type TChannelPool
 		'if we do not have a channel now, we will surely have exceeded a
 		'limit. In that case we return a random one to override it
 		If not channel and GetChannelCount() >= 1
-			channel = GetRandomChannel()
-			If not channel
+			local channelKey:string = GetRandomChannelKey()
+			If not channelKey
 				Throw "TChannelPool: Limit exceeded. No existing and valid channel found to reuse."
 			EndIf
+
+			local channel:TChannel = TChannel(channels.ValueForKey(channelKey))
+			If not channel
+				Throw "TChannelPool: channelKey invalid."
+			EndIf
+
+			'remove the old channel, and add it back with the new
+			'name - so from now on, the newly requested key is stored
+			'instead of the old one
+			RemoveChannel(channelKey)
+			AddChannel(key, channel)
 		EndIf
 
 		return channel
 	End Function
 
 
-	'returns a random channel of the registered ones
-	'currently unused channels are preferred so it is not truly "random"
+	'returns the channel of a random channel key
 	Function GetRandomChannel:TChannel()
+		return TChannel(channels.ValueForKey( GetRandomChannelKey() ))
+	End Function
+
+	
+	'returns the key of a random channel
+	'currently unused channels are preferred so it is not truly "random"
+	Function GetRandomChannelKey:String()
 		'if no protected channels are existent ... we just could
 		'randomly access a channel
 		If protectedChannels.length = 0
@@ -84,38 +101,39 @@ Type TChannelPool
 			For local k:string = EachIn channels.Keys()
 				randPosition :+ 1
 				If randPosition >= randNumber and not isProtectedChannel(k)
-					return GetChannel(k)
+					return k
 				EndIf
 			Next
-			return Null
+			return ""
 		Else
 			'create an array containing just "unprotected" channels
 			'also store not playing channels in an extra array
 			'because we prefer an currently unused channel
-			local unprotectedChannels:TChannel[]
-			local unprotectedUnusedChannels:TChannel[]
+			local unprotectedChannelKeys:string[]
+			local unprotectedUnusedChannelKeys:string[]
 			local channel:TChannel
 			For local k:string = EachIn channels.Keys()
 				If isProtectedChannel(k) then Continue
 				channel = TChannel(channels.ValueForKey(k))
 				If not channel then continue
 
-				unprotectedChannels :+ [channel]
+				unprotectedChannelKeys :+ [k]
 				If not channel.Playing()
-					unprotectedUnusedChannels :+ [channel]
+					unprotectedUnusedChannelKeys :+ [k]
 				EndIf
 			Next
 
-			If not unprotectedChannels
-				Throw "TChannelPool.GetRandomChannel(): No unprotected and valid channel found to return."
+			If not unprotectedChannelKeys
+				Throw "TChannelPool.GetRandomChannelKey(): No unprotected and valid channel found to return."
 			Else
-				If unprotectedUnusedChannels
-					return unprotectedUnusedChannels[ Rnd(0,unprotectedUnusedChannels.length-1) ]
+				If unprotectedUnusedChannelKeys
+					return unprotectedUnusedChannelKeys[ Rnd(0,unprotectedUnusedChannelKeys.length-1) ]
 				Else
-					return unprotectedChannels[ Rnd(0,unprotectedChannels.length-1) ]
+					return unprotectedChannelKeys[ Rnd(0,unprotectedChannelKeys.length-1) ]
 				EndIf
 			EndIf
 		EndIf
+		return ""
 	End Function
 
 
