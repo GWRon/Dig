@@ -287,6 +287,15 @@ Type TLocalizedString
 	Global currentLanguage:string = "de"
 
 
+	Method Copy:TLocalizedString()
+		local c:TLocalizedString = New TLocalizedString
+		For local k:string = EachIn values.Keys()
+			c.values.insert(k, values.ValueForKey(k))
+		Next
+		return c
+	End Method
+	
+
 	Function SetCurrentLanguage(language:String)
 		currentLanguage = language
 	End Function
@@ -301,9 +310,10 @@ Type TLocalizedString
 
 	'to ease "setting" (mystring.set(value)) the language
 	'comes after the value.
-	Method Set:int(value:String, language:String="")
+	Method Set:TLocalizedString(value:String, language:String="")
 		if language="" then language = defaultLanguage
 		values.insert(language, value)
+		return self
 	End Method
 
 
@@ -314,6 +324,15 @@ Type TLocalizedString
 		else
 			return string(values.ValueForKey(defaultLanguage))
 		endif
+	End Method
+
+
+	Method GetLanguageKeys:string[]()
+		local keys:string[]
+		for local k:string = EachIn values.Keys()
+			keys :+ [k]
+		next
+		return keys
 	End Method
 
 
@@ -382,13 +401,13 @@ rem
 	End Method
 endrem
 
-	Method Append:Int(other:TLocalizedString)
-		if not other then return False
-
-		For local language:String = EachIn other.values.Keys()
-			'this might overwrite previous values of the same language
-			Set(string(other.values.ValueForKey(language)), language)
-		Next
-		return True
+	Method Append:TLocalizedString(other:TLocalizedString)
+		if other
+			For local language:String = EachIn other.values.Keys()
+				'this might overwrite previous values of the same language
+				Set(string(other.values.ValueForKey(language)), language)
+			Next
+		endif
+		return self
 	End Method
 End Type
