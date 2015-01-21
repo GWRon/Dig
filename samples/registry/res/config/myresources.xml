@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <tvt>
 	<resources>
-		<spriteentity name="figureSpriteEntity">
-			<sprite name="figureSprite" url="../__res/gfx/spielfigur_hausmeister.png" x="0" y="0" w="765" h="44" cw="51" ch="44" f="15" />
+		<sprite name="figureSprite" url="../__res/gfx/spielfigur_hausmeister.png" x="0" y="0" w="765" h="44" cw="51" ch="44" f="15" />
+		
+		<spriteentity name="figureSpriteEntity" sprite="figureSprite">
 			<spriteframeanimations guid="default_walkAnimation" currentAnimationName="walkRight">
 				<spriteframeanimation name="walkRight" frames="0::1::2::3" framesTime="0.2::0.2::0.2::0.2" />
 				<spriteframeanimation name="walkLeft" frames="4::5::6::7" framesTime="0.2" />
@@ -10,8 +11,7 @@
 
 			<children>
 				<!-- place another sprite as child a bit offset to the parent -->
-				<spriteentity name="figureSpriteEntity2" offsetLeft="10" offsetTop="20">
-					<sprite name="figureSprite" url="../__res/gfx/spielfigur_hausmeister.png" x="0" y="0" w="765" h="44" cw="51" ch="44" f="15" />
+				<spriteentity name="figureSpriteEntity2" sprite="figureSprite" offsetLeft="10" offsetTop="20">
 					<spriteframeanimations currentAnimationName="walkLeft">
 						<spriteframeanimation name="walkRight" frames="0::1::2::3" framesTime="0.2::0.2::0.2::0.2" />
 						<spriteframeanimation name="walkLeft" frames="4::5::6::7" framesTime="0.2" />

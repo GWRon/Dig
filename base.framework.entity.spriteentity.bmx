@@ -63,9 +63,9 @@ Type TSpriteEntity extends TEntity
 
 		'if sprite is defined but invalid, return Null (this eg. allows
 		'trying to load it again after other resources)
-		local spriteName:string = data.GetString("spriteName", "")
-		local sprite:TSprite
-		if spriteName
+		local spriteName:string = data.GetString("spriteGUID", "")
+		local sprite:TSprite = TSprite(data.Get("sprite"))
+		if not sprite and spriteName
 			sprite = GetSpriteFromRegistry(spriteName)
 			if not sprite or sprite = GetRegistry().GetDefault("sprite") then return Null
 		endif

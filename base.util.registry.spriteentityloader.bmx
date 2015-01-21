@@ -77,31 +77,16 @@ Type TRegistrySpriteEntityLoader extends TRegistryBaseLoader
 		local data:TData = new TData
 
 		local fieldNames:String[]
-		fieldNames :+ ["name", "id", "guid", "spriteName"]
+		fieldNames :+ ["name", "id", "guid", "sprite"]
 		fieldNames :+ ["x", "y", "w", "h"]
 		'only of interest for CHILDREN
 		fieldNames :+ ["offsetLeft", "offsetTop", "offsetRight", "offsetBottom"]
 		TXmlHelper.LoadValuesToData(node, data, fieldNames)
 
-
-		'check if a sprite gets defined within the <spriteentity> set
-		local spriteNode:TxmlNode = TXmlHelper.FindChild(node, "sprite")
-		if spriteNode
-			'try to find a loader for "sprite" setups
-			local spriteLoader:TRegistryBaseLoader = TRegistryLoader.GetResourceLoader("sprite")
-			if spriteLoader
-				local spriteConfig:TData = spriteLoader.GetConfigFromXML(loader, spriteNode)
-				local spriteName:String = spriteLoader.GetNameFromConfig(spriteConfig)
-
-				'store the new spriteName + spriteConfig in the child
-				if spriteConfig
-					local spriteName:string = spriteLoader.GetNameFromConfig(spriteConfig)
-					'if there is a sprite, override "spriteName" with
-					'the name of the sprite
-					if spriteName then data.AddString("spriteName", spriteName)
-					data.Add("spriteConfig", spriteConfig)
-				endif
-			endif
+		'rename "sprite" to "spriteGUID"
+		if data.GetString("sprite")
+			data.Add("spriteGUID", data.GetString("sprite"))
+			data.Remove("sprite")
 		endif
 
 
@@ -137,22 +122,16 @@ Type TRegistrySpriteEntityLoader extends TRegistryBaseLoader
 
 	Method LoadFromConfig:TSpriteEntity(data:TData, resourceName:string)
 		'check if we need to load a sprite first
-		local spriteName:string = data.GetString("spriteName")
-		local spriteConfig:TData = TData(data.Get("spriteconfig"))
-		if spriteName and spriteConfig
-			'try to find a loader for "sprite" setups
-			'local spriteLoader:TRegistryBaseLoader = TRegistryLoader.GetResourceLoader("sprite")
-
-			local sprite:TSprite = GetSpriteFromRegistry(spriteName, null)
+		local spriteGUID:string = data.GetString("spriteGUID")
+		if spriteGUID
+			local sprite:TSprite = GetSpriteFromRegistry(spriteGUID, null)
 			if not sprite OR sprite = GetRegistry().GetDefault("sprite")
-				'a) load later
-				TRegistryLoader.AddLazyLoadedResource(spriteName, "sprite", spriteConfig)
-				'b) load now
-				'local sprite:TSprite = TSprite(spriteLoader.LoadFromConfig(spriteConfig, "sprite"))
-
 				'cannot load this entity until sprite exists
 				return Null
 			endif
+
+			'add sprite to dataset
+			data.Add("sprite", sprite)
 		endif
 
 
