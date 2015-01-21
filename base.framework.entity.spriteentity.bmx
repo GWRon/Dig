@@ -36,7 +36,6 @@ SuperStrict
 Import "base.framework.entity.bmx"
 Import "base.gfx.sprite.bmx"
 Import "base.gfx.sprite.frameanimation.bmx"
-Import "base.util.registry.spriteloader.bmx"
 
 
 Type TSpriteEntity extends TEntity
@@ -61,21 +60,17 @@ Type TSpriteEntity extends TEntity
 	Function InitFromConfig:TSpriteEntity(data:TData)
 		if not data then return Null
 
-		'if sprite is defined but invalid, return Null (this eg. allows
-		'trying to load it again after other resources)
-		local spriteName:string = data.GetString("spriteGUID", "")
-		local sprite:TSprite = TSprite(data.Get("sprite"))
-		if not sprite and spriteName
-			sprite = GetSpriteFromRegistry(spriteName)
-			if not sprite or sprite = GetRegistry().GetDefault("sprite") then return Null
-		endif
-		
 		local spriteEntity:TSpriteEntity = new TSpriteEntity
+
 		'assign name
 		spriteEntity.name = data.GetString("name", "unknownSpriteEntity")
-		'assign sprite
-		if sprite then spriteEntity.SetSprite(sprite)
 
+		'assign sprite
+		if TSprite(data.Get("sprite")) then spriteEntity.SetSprite(TSprite(data.Get("sprite")))
+
+		'set base values
+		spriteEntity.setPosition(data.GetInt("x"), data.GetInt("y"))
+		spriteEntity.setSize(data.GetInt("w"), data.GetInt("h"))
 
 		'Animations configuration
 		'load this before children, so children could refer to this
@@ -87,7 +82,7 @@ Type TSpriteEntity extends TEntity
 
 		'assign children - if one of them fails, the whole entity
 		'                  has to fail!
-		For local childData:TData = EachIn TData[](data.Get("childrenData"))
+		For local childData:TData = EachIn TData[](data.Get("childrenData", new TData[0]))
 			local child:TSpriteEntity = InitFromConfig(childData)
 			if not child
 				local childName:string = childData.GetString("name", "unknownSpriteEntity")

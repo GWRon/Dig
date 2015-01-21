@@ -121,18 +121,10 @@ Type TRegistrySpriteEntityLoader extends TRegistryBaseLoader
 
 
 	Method LoadFromConfig:TSpriteEntity(data:TData, resourceName:string)
-		'check if we need to load a sprite first
-		local spriteGUID:string = data.GetString("spriteGUID")
-		if spriteGUID
-			local sprite:TSprite = GetSpriteFromRegistry(spriteGUID, null)
-			if not sprite OR sprite = GetRegistry().GetDefault("sprite")
-				'cannot load this entity until sprite exists
-				return Null
-			endif
-
-			'add sprite to dataset
-			data.Add("sprite", sprite)
-		endif
+		'check if data (+ children) need to load a sprite first
+		'If it fails somehow, return null to indicate that the spritentity
+		'has to get loaded later
+		if not _LoadSprite(data) then return Null
 
 
 		'loads entity + children
@@ -148,6 +140,29 @@ Type TRegistrySpriteEntityLoader extends TRegistryBaseLoader
 
 		'indicate that the loading was successful
 		return spriteEntity
+	End Method
+
+
+	Method _LoadSprite:int(data:TData var)
+		'check if we need to load a sprite first
+		local spriteGUID:string = data.GetString("spriteGUID")
+		if spriteGUID
+			local sprite:TSprite = GetSpriteFromRegistry(spriteGUID, null)
+			if not sprite OR sprite = GetRegistry().GetDefault("sprite")
+				'cannot load this entity until sprite exists
+				return False
+			endif
+
+			'add sprite to dataset
+			data.Add("sprite", sprite)
+		endif
+
+		'load child sprites too
+		For local childData:TData = EachIn TData[](data.Get("childrenData", new TData[0]))
+			if not _Loadsprite(childData) then return False
+		Next
+
+		return True
 	End Method
 End Type
 
