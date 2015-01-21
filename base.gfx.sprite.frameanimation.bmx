@@ -19,14 +19,13 @@ Type TSpriteFrameAnimationCollection
 
 
 	Method InitFromData:TSpriteFrameAnimationCollection(data:TData)
-		currentAnimationName = data.GetString("currentAnimationName")
-print "RONNY: initfromdata "+currentAnimationName
-
 		For local animationData:TData = EachIn TData[](data.Get("animations"))
-print "adding "+animationData.GetString("name")
 			Set(new TSpriteFrameAnimation.InitFromData(animationData))
 		Next
-print "-------"
+
+		local newCurrentAnimationName:string = data.GetString("currentAnimationName")
+		if newCurrentAnimationName then SetCurrent(newCurrentAnimationName)
+
 		return self
 	End Method
 	

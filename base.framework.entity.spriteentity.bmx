@@ -168,12 +168,21 @@ Type TSpriteEntity extends TEntity
 	Method Render:Int(xOffset:Float = 0, yOffset:Float = 0)
 		'=== DRAW SPRITE ===
 		if sprite
-			local frame:int = -1
 			if frameAnimations
+				local frame:int = -1
 				frame = frameAnimations.GetCurrent().GetCurrentImageFrame()
+
+				'only draw something with a valid frame
+				'-> this allows to setup "-1" as frame which means
+				'   "do not draw me now"
+				if frame >= 0
+					sprite.Draw(GetScreenX() + xOffset, GetScreenY() + yOffset, frame)
+				endif
+			else
+				'draw the whole sprite
+				sprite.Draw(GetScreenX() + xOffset, GetScreenY() + yOffset)
 			endif
 
-			sprite.Draw(GetScreenX() + xOffset, GetScreenY() + yOffset, frame)
 		endif
 
 		'=== DRAW CHILDREN ===
@@ -187,15 +196,23 @@ Type TSpriteEntity extends TEntity
 	Method RenderAt:Int(x:Float = 0, y:Float = 0, animationName:string="", alignment:TVec2D = null)
 		'=== DRAW SPRITE ===
 		if sprite
-			local frame:int = -1
 			if frameAnimations
+				local frame:int = -1
 				if animationName = ""
 					frame = frameAnimations.GetCurrent().GetCurrentImageFrame()
 				else
 					frame = frameAnimations.Get(animationName).GetCurrentImageFrame()
 				endif
+				'only draw something with a valid frame
+				'-> this allows to setup "-1" as frame which means
+				'   "do not draw me now"
+				if frame >= 0
+					sprite.Draw(x, y, frame, alignment)
+				endif
+			else
+				'draw the whole sprite
+				sprite.Draw(x, y, -1, alignment)
 			endif
-			sprite.Draw(x, y, frame, alignment)
 		endif
 		
 		'=== DRAW CHILDREN ===

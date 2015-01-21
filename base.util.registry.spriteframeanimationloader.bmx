@@ -102,11 +102,10 @@ Type TRegistrySpriteFrameAnimationLoader extends TRegistryBaseLoader
 
 		'try to copy an already existing collection
 		if data.GetString("copyguid")
-			print "copying: " + data.GetString("copyguid")
+			'print "copying: " + data.GetString("copyguid")
 			collection = GetSpriteFrameAnimationCollectionFromRegistry(data.GetString("copyGuid"))
-			if not collection then print " ... not found"
 			if collection then collection = collection.copy()
-			if not collection then print " ... failed"
+			'if not collection then print " ... failed"
 		'add to registry to make it accessible for "copyGuild"
 		elseif data.GetString("guid")
 			collection = new TSpriteFrameAnimationCollection.InitFromData(data)
