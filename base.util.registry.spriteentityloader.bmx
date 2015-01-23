@@ -133,8 +133,8 @@ Type TRegistrySpriteEntityLoader extends TRegistryBaseLoader
 		'add to registry
 		GetRegistry().Set(spriteEntity.name, spriteEntity)
 
-		'add children to global registry too 
-		For local child:TSpriteEntity = eachin spriteEntity.childSpriteEntities
+		'add (spriteentity) children to global registry too 
+		For local child:TSpriteEntity = eachin spriteEntity.childEntities
 			GetRegistry().Set(child.name, child)
 		Next
 

@@ -11,8 +11,8 @@ local image:TImage = LoadImage("../__res/gfx/spielfigur_hausmeister.png", DYNAMI
 Global mySprite:TSprite = new TSprite.InitFromImage(image, "figure", 15)
 'create the entity
 Global myEntity:TSpriteEntity = new TSpriteEntity
-myEntity.GetFrameAnimations().Set("walkRight", TSpriteFrameAnimation.Create([ [0,130], [1,130], [2,130], [3,130] ], -1, 0) )
-myEntity.GetFrameAnimations().Set("walkLeft", TSpriteFrameAnimation.Create([ [4,130], [5,130], [6,130], [7,130] ], -1, 0) )
+myEntity.GetFrameAnimations().Set(TSpriteFrameAnimation.Create("walkRight", [ [0,130], [1,130], [2,130], [3,130] ], -1, 0) )
+myEntity.GetFrameAnimations().Set(TSpriteFrameAnimation.Create("walkLeft", [ [4,130], [5,130], [6,130], [7,130] ], -1, 0) )
 myEntity.Init(mySprite)
 
 

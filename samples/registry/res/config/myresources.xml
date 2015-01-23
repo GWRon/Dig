@@ -3,7 +3,7 @@
 	<resources>
 		<sprite name="figureSprite" url="../__res/gfx/spielfigur_hausmeister.png" x="0" y="0" w="765" h="44" cw="51" ch="44" f="15" />
 		
-		<spriteentity name="figureSpriteEntity" sprite="figureSprite" x="100">
+		<spriteentity name="OLDfigureSpriteEntity" sprite="figureSprite" x="100">
 			<spriteframeanimations guid="default_walkAnimation" currentAnimationName="walkRight">
 				<spriteframeanimation name="walkRight" frames="0::1::2::3" framesTime="0.2::0.2::0.2::0.2" />
 				<spriteframeanimation name="walkLeft" frames="4::5::6::7" framesTime="0.2" />
@@ -21,6 +21,34 @@
 				<spriteentity name="figureSpriteEntity3" sprite="figureSprite" offsetLeft="10" offsetTop="50">
 					<spriteframeanimations currentAnimationName="stand">
 						<spriteframeanimation name="stand" frames="8::9" framesTime="0.8::0.2" />
+					</spriteframeanimations>
+				</spriteentity>
+			</children>
+		</spriteentity>
+
+
+
+
+		<!-- MOVIEAGENCY -->
+		<spritepack name="screen_movieagency_elements">
+ 			<url>screen_movieagency_elements.png</url>
+			<children>
+				<child name="gfx_auctionmovie" 						x="0"	y="450"	w="256"	h="55" />
+				<child name="gfx_movieagency_vendor"	 			x="0"	y="0"	w="190"	h="220" />
+				<child name="gfx_movieagency_vendor_eyes"	 		x="191"	y="0"	w="56"	h="19" />
+				<child name="gfx_movieagency_hammer"		 		x="191"	y="20"	w="134"	h="60" />
+			</children>
+		</spritepack>
+
+
+		<!-- MOVIE AGENCY: Vendor entity - including blinking eyes -->
+		<spriteentity name="figureSpriteEntity" sprite="gfx_movieagency_vendor" x="0" y="75">
+			<children>
+				<!-- add some blinking eyes to the vendor -->
+				<spriteentity name="entity_movieagency_vendor_eyes" sprite="gfx_movieagency_vendor_eyes" offsetLeft="36" offsetTop="47">
+					<spriteframeanimations currentAnimationName="blink">
+						<!-- -1 = "no display", 0 = "frame 0" -->
+						<spriteframeanimation name="blink" frames="-1::0::-1::0::-1::0" framesTime="4.0::0.25::4.5::0.3::3.5::0.25" />
 					</spriteframeanimations>
 				</spriteentity>
 			</children>

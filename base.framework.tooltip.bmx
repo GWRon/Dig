@@ -58,7 +58,6 @@ Type TTooltip Extends TEntity
 
 	Global tooltipHeader:TSprite
 	Global tooltipIcons:TSprite
-	Global list:TList 			= CreateList()
 
 	Global useFontBold:TBitmapFont
 	Global useFont:TBitmapFont
@@ -69,7 +68,6 @@ Type TTooltip Extends TEntity
 		Local obj:TTooltip = New TTooltip
 		obj.Initialize(title, content, x, y, w, h, lifetime)
 
-		list.addLast(obj)
 		Return obj
 	End Function
 
@@ -114,6 +112,8 @@ Type TTooltip Extends TEntity
 
 
 	Method Update:Int()
+		if not enabled then return False
+		
 		lifeTime :- GetDeltaTimer().GetDelta()
 
 		'start fading if lifetime is running out (lower than fade time)
@@ -125,7 +125,6 @@ Type TTooltip Extends TEntity
 		If lifeTime <= 0 ' And enabled 'enabled - as pause sign?
 			Image	= Null
 			enabled	= False
-			List.remove(Self)
 			Return False
 		EndIf
 
@@ -300,7 +299,7 @@ Type TTooltip Extends TEntity
 	End Method
 
 
-	Method Render:Int(xOffset:Float=0, yOffset:Float=0)
+	Method Render:Int(xOffset:Float = 0, yOffset:Float=0, alignment:TVec2D = Null)
 		If Not enabled Then Return 0
 
 		local col:TColor = TColor.Create().Get()
@@ -355,5 +354,8 @@ endrem
 		EndIf
 
 		col.SetRGBA()
+
+		'=== DRAW CHILDREN ===
+		RenderChildren(xOffset, yOffset, alignment)
 	End Method
 End Type
