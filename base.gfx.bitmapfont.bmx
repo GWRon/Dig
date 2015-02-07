@@ -403,6 +403,11 @@ Type TBitmapFont
 	End Method
 
 
+	Method getBlockWidth:Float(text:String, w:Float, h:Float)
+		return drawBlock(text, 0,0,w,h, null, null, 0, 0).getX()
+	End Method
+
+
 	Method getBlockHeight:Float(text:String, w:Float, h:Float)
 		return drawBlock(text, 0,0,w,h, null, null, 0, 0).getY()
 	End Method
@@ -653,7 +658,7 @@ Type TBitmapFont
 
 
 	'can adjust used font or color
-	Method ProcessCommand:int(command:string, payload:string, font:TBitmapFont var , color:TColor var , colorOriginal:TColor, styleDisplaceY:int var)
+	Method ProcessCommand:int(command:string, payload:string, font:TBitmapFont, color:TColor, colorOriginal:TColor, styleDisplaceY:int var)
 		if color
 			if command = "color"
 				local colors:string[] = payload.split(",")
