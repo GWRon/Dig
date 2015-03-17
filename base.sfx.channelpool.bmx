@@ -59,7 +59,12 @@ Type TChannelPool
 	Function GetChannel:TChannel(key:string)
 		key = key.toLower()
 		local channel:TChannel = TChannel(channels.ValueForKey(key))
-		if not channel then channel = AddChannel(key, AllocChannel())
+		'if channel was not existing yet, create a new one
+		If not channel
+			channel = AllocChannel()
+			AddChannel(key, channel)
+		EndIf
+
 		'if we do not have a channel now, we will surely have exceeded a
 		'limit. In that case we return a random one to override it
 		If not channel and GetChannelCount() >= 1
@@ -163,11 +168,11 @@ Type TChannelPool
 
 
 	'adds a channel - and overwrites potentially existing ones
-	Function AddChannel:TChannel(key:string, channel:TChannel)
+	Function AddChannel:Int(key:string, channel:TChannel)
 		'if there is a limit, skip adding a channel if limit is
 		'exceeded
 		If channelLimit >= 0 and GetChannelCount() > channelLimit
-			return Null
+			return False
 		EndIf
 
 		key = key.toLower()
@@ -178,6 +183,8 @@ Type TChannelPool
 
 		'remove a previously set protection?
 		'UnProtectChannel(key)
+
+		return True
 	End Function
 
 
@@ -239,7 +246,7 @@ Function GetRandomPooledChannel:TChannel()
 	return TChannelPool.GetRandomChannel()
 End Function
 
-Function AddPooledChannel:TChannel(key:string, channel:TChannel)
+Function AddPooledChannel:Int(key:string, channel:TChannel)
 	return TChannelPool.AddChannel(key, channel)
 End Function
 
