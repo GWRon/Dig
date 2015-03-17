@@ -62,6 +62,9 @@ Type TChannelPool
 		'if channel was not existing yet, create a new one
 		If not channel
 			channel = AllocChannel()
+			If not channel
+				Throw "TChannelPool: Failed to allocate new channel."
+			EndIf
 			AddChannel(key, channel)
 		EndIf
 
