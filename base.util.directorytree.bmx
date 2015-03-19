@@ -157,6 +157,8 @@ Type TDirectoryTree
 			End Select
 		Forever
 
+		CloseDir(directory)
+
 		Return True
 	End Method
 
