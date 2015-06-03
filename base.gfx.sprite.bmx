@@ -636,7 +636,6 @@ Type TSprite
 				if skipBorders & BORDER_BOTTOM
 					stretchDestH :+ borderSize.GetBottom() * ninePatch_borderDimensionScale
 					borderSize.SetBottom(0)
-					print "skip bottom"
 				endif
 
 
