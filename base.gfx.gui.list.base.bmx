@@ -630,7 +630,6 @@ endrem
 		'"scrollTo"-value
 		If data.getString("changeType") = "percentage"
 			local percentage:Float = data.GetFloat("percentage", 0)
-			print percentage
 			if guiSender = guiList.guiScrollerH
 				guiList.SetScrollPercentageX(percentage)
 			elseif guiSender = guiList.guiScrollerV
@@ -645,6 +644,10 @@ endrem
 	'positive values scroll to top or left
 	Method ScrollEntries(dx:float, dy:float)
 		guiEntriesPanel.scroll(dx,dy)
+
+		'refresh scroller values (for "progress bar" on the scroller)
+		guiScrollerH.SetRelativeValue( GetScrollPercentageX() )
+		guiScrollerV.SetRelativeValue( GetScrollPercentageY() )
 	End Method
 
 
