@@ -29,7 +29,7 @@ Type TMyApp Extends TGraphicalApp
 	'	gm.SetDesignedResolution(800, 600)
 	'	gm.InitGraphics()
 			GetDeltatimer().Init(30, -1)
-			GetGraphicsManager().SetVsync(FALSE)
+'			GetGraphicsManager().SetVsync(FALSE)
 			GetGraphicsManager().SetResolution(800,600)
 			GetGraphicsManager().InitGraphics()	
 
@@ -171,7 +171,9 @@ Type TMyApp Extends TGraphicalApp
 		DrawText("worldTime: "+GetWorldTime().GetFormattedTime(-1, "h:i:s")+ " at day "+GetWorldTime().GetDayOfYear()+" in "+GetWorldTime().GetYear(), 80, 0)
 
 		'=== DRAW MOUSE CURSOR ===
+'		GetSpriteFromRegistry("gfx_mousecursor"+mouseCursorState).Draw(MouseManager.x - 12, MouseManager.y - 3, 0)
 		GetSpriteFromRegistry("gfx_mousecursor"+mouseCursorState).Draw(MouseManager.x, MouseManager.y, 0)
+		'DrawOval(MouseManager.x - 12 - 1, MouseManager.y - 3 - 1, 2,2)
 	End Method
 End Type
 
@@ -179,3 +181,6 @@ End Type
 'kickoff
 MyApp.SetTitle("Demoapp")
 MyApp.Run()
+
+
+
