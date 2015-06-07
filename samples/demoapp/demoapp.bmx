@@ -19,7 +19,6 @@ MyApp.debugLevel = 1
 Type TMyApp Extends TGraphicalApp
 	Field mouseCursorState:Int = 0
 
-
 	Method Prepare:Int()
 		Super.Prepare()
 

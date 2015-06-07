@@ -13,6 +13,7 @@ Import "../../base.gfx.gui.list.base.bmx"
 Import "../../base.gfx.gui.list.selectlist.bmx"
 Import "../../base.gfx.gui.list.slotlist.bmx"
 Import "../../base.gfx.gui.dropdown.bmx"
+Import "../../base.gfx.gui.slider.bmx"
 Import "../../base.gfx.gui.window.base.bmx"
 Import "../../base.gfx.gui.window.modal.bmx"
 Import "../../base.util.interpolation.bmx"
@@ -23,6 +24,9 @@ Type TScreenMainMenu extends TScreenMenuBase
 	'store it so we can check for existence later on
 	global modalDialogue:TGUIModalWindow
 	global guiChat:TGUIChat
+	Global sliderLabelH:TGUILabel
+	Global sliderLabelV:TGUILabel
+
 
 	Method Setup:Int()
 		GuiManager.SetDefaultFont( GetBitmapFontManager().Get("Default", 14) )
@@ -76,7 +80,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 		'imageButton.SetAutoSizeMode( TGUIButton.AUTO_SIZE_MODE_SPRITE )
 
 		'a simple window
-		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(550,200), new TVec2D.Init(200,150), self.GetName())
+		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(590,250), new TVec2D.Init(200,150), self.GetName())
 		'as content area starts to late for automatic caption positioning
 		'we set a specific area to use
 		window.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
@@ -94,13 +98,13 @@ rem
 endrem
 		
 		'a modal dialogue
-		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(610,20), new TVec2D.Init(180,-1), "create modal window", self.GetName())
+		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(590,20), new TVec2D.Init(200,-1), "create modal window", self.GetName())
 		'handle clicking on that button
 		EventManager.RegisterListenerFunction("guiobject.onclick", onClickCreateModalDialogue, createModalDialogueButton)
 
 
 
-		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TVec2D.Init(550,450), new TVec2D.Init(130,-1), "Sprache", 128, self.GetName())
+		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TVec2D.Init(590,450), new TVec2D.Init(200,-1), "Sprache", 128, self.GetName())
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
@@ -110,12 +114,106 @@ endrem
 
 		guiChat = new TGUIChat.Create(new TVec2D.Init(200,300), new TVec2D.Init(300,120), self.GetName())
 
+
+
+		'horizontals
+		local slider:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,140), New TVec2D.Init(150,25), "40", "mainmenu")
+		slider.SetValueRange(0,100)
+		slider.steps = 0
+		sliderLabelH = New TGUILabel.Create(New TVec2D.Init(640,227), "", TColor.clBlack, "mainmenu")
+
+		local slider2:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,110), New TVec2D.Init(150,25), "40", "mainmenu")
+		slider2.SetValueRange(0,10)
+		slider2.steps = 5
+		slider2.SetRenderMode(TGUISlider.RENDERMODE_DISCRETE)
+
+		local slider2a:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,170), New TVec2D.Init(150,25), "40", "mainmenu")
+		slider2a.SetValueRange(0,10)
+		slider2a.steps = 5
+		slider2a.SetValue(2)
+		slider2a.SetDirection(TGUISlider.DIRECTION_LEFT)
+		slider2a.SetRenderMode(TGUISlider.RENDERMODE_DISCRETE)
+
+		local slider2b:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,200), New TVec2D.Init(150,25), "40", "mainmenu")
+		slider2b.SetValueRange(0,10)
+		slider2b.steps = 5
+		slider2b.SetDirection(TGUISlider.DIRECTION_LEFT)
+		slider2b.SetRenderMode(TGUISlider.RENDERMODE_CONTINUOUS)
+
+		
+		local slider2c:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,60), New TVec2D.Init(150,40), "40", "mainmenu")
+		slider2c.SetValueRange(0,10)
+		slider2c.steps = 5
+		slider2c._gaugeOffset.SetY(12)
+		slider2c.SetRenderMode(TGUISlider.RENDERMODE_CONTINUOUS)
+		slider2c.SetDirection(TGUISlider.DIRECTION_RIGHT)
+
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderH, slider)
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderH, slider2)
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderH, slider2a)
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderH, slider2b)
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderH, slider2c)
+
+		'verticals
+		'discrete up
+		local slider3:TGUISlider = New TGUISlider.Create(New TVec2D.Init(510,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		slider3.SetValueRange(0,10)
+		slider3.SetValue(3)
+		slider3.steps = 5
+		slider3.SetRenderMode(TGUISlider.RENDERMODE_DISCRETE)
+		slider3.SetDirection(TGUISlider.DIRECTION_UP)
+
+		'smooth down
+		local slider3a:TGUISlider = New TGUISlider.Create(New TVec2D.Init(540,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		slider3a.SetValueRange(0,10)
+		slider3a.steps = 0
+		slider3a.SetDirection(TGUISlider.DIRECTION_UP)
+
+
+		'discrete down
+		local slider3b:TGUISlider = New TGUISlider.Create(New TVec2D.Init(570,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		slider3b.SetValueRange(0,10)
+		slider3b.steps = 5
+		slider3b.SetRenderMode(TGUISlider.RENDERMODE_DISCRETE)
+		slider3b.SetDirection(TGUISlider.DIRECTION_DOWN)
+
+		'smooth down
+		local slider3c:TGUISlider = New TGUISlider.Create(New TVec2D.Init(600,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		slider3c.SetValueRange(0,10)
+		slider3c.steps = 0
+		slider3c.SetDirection(TGUISlider.DIRECTION_DOWN)
+
+
+		sliderLabelV = New TGUILabel.Create(New TVec2D.Init(540,227), "", TColor.clBlack, "mainmenu")
+
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderV, slider3)
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderV, slider3a)
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderV, slider3b)
+		EventManager.registerListenerFunction( "guiobject.onChangeValue",	onChangeSliderV, slider3c)
+
+
 		'register demo click listener - only listen to click events of
 		'the "button" created above
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickMyButton, button)
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement)
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickOnAButton, "tguibutton")
 	End Method
+
+
+	Function onChangeSliderV:Int( triggerEvent:TEventBase )
+		local slider:TGUISlider = TGUISlider(triggerEvent.GetSender())
+		if not slider then return False
+
+		sliderLabelV.SetValue( slider.GetValue() )
+	End Function
+
+
+	Function onChangeSliderH:Int( triggerEvent:TEventBase )
+		local slider:TGUISlider = TGUISlider(triggerEvent.GetSender())
+		if not slider then return False
+
+		sliderLabelH.SetValue( slider.GetValue() )
+	End Function
 
 
 	Function onClickCreateModalDialogue:Int(triggerEvent:TEventBase)
