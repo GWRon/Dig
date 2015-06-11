@@ -611,7 +611,7 @@ Type TSprite
 
 	'draw the sprite covering an area (if ninePatch is enabled, the
 	'stretching is only done on the center of the sprite)
-	Method DrawArea:int(x:float, y:float, width:float=-1, height:float=-1, frame:int=-1, skipBorders:int = 0)
+	Method DrawArea:int(x:float, y:float, width:float=-1, height:float=-1, frame:int=-1, skipBorders:int = 0, clipRect:TRectangle = null)
 		if width=-1 then width = area.GetW()
 		if height=-1 then height = area.GetH()
 		if frames <= 0 then frame = -1
@@ -675,6 +675,11 @@ Type TSprite
 			local sourceY2:int = sourceY1 + ninePatch_borderDimension.GetTop()
 			local sourceY3:int = sourceY2 + ninePatch_centerDimension.GetY()
 
+			local oldVPx:int, oldVPy:int, oldVPw:int, oldVPh:int
+			if clipRect
+				GetViewPort(oldVPx, oldVPy, oldVPw, oldVPh)
+				SetViewport(clipRect.GetX(), clipRect.GetY(), clipRect.GetW(), clipRect.GetH())
+			endif
 
 			'render
 			'top
@@ -682,17 +687,17 @@ Type TSprite
 				If ninePatch_borderDimension.GetLeft()
 					target.Init( targetX1, targetY1, targetW1, targetH1 )
 					source.Init( sourceX1, sourceY1, ninePatch_borderDimension.GetLeft(), ninePatch_borderDimension.GetTop() )
-					DrawResized( target, source, frame )
+					DrawResized( target, source, frame, false, clipRect )
 				endif
 
 				target.Init( targetX2, targetY1, targetW2, targetH1 )
 				source.Init( sourceX2, sourceY1, ninePatch_centerDimension.GetX(), ninePatch_borderDimension.GetTop() )
-				DrawResized( target, source, frame )
+				DrawResized( target, source, frame, false, clipRect )
 
 				If ninePatch_borderDimension.GetRight()
 					target.Init( targetX3, targetY1, targetW3, targetH1 )
 					source.Init( sourceX3, sourceY1, ninePatch_borderDimension.GetRight(), ninePatch_borderDimension.GetTop() )
-					DrawResized( target, source, frame )
+					DrawResized( target, source, frame, false, clipRect )
 				endif
 			endif
 
@@ -701,17 +706,17 @@ Type TSprite
 			If ninePatch_borderDimension.GetLeft()
 				target.Init( targetX1 , targetY2, targetW1, targetH2 )
 				source.Init( sourceX1, sourceY2, ninePatch_borderDimension.GetLeft(), ninePatch_centerDimension.GetY() )
-				DrawResized( target, source, frame )
+				DrawResized( target, source, frame, false, clipRect)
 			endif
 
 			target.Init( targetX2, targetY2, targetW2, targetH2 )
 			source.Init( sourceX2, sourceY2, ninePatch_centerDimension.GetX(), ninePatch_centerDimension.GetY() )
-			DrawResized( target, source, frame )
+			DrawResized( target, source, frame, false, clipRect )
 
 			If ninePatch_borderDimension.GetRight()
 				target.Init( targetX3, targetY2, targetW3, targetH2 )
 				source.Init( sourceX3, sourceY2, ninePatch_borderDimension.GetRight(), ninePatch_centerDimension.GetY() )
-				DrawResized( target, source, frame )
+				DrawResized( target, source, frame, false, clipRect )
 			endif
 			
 
@@ -720,17 +725,21 @@ Type TSprite
 				If ninePatch_borderDimension.GetLeft()
 					target.Init( targetX1, targetY3, targetW1, targetH3 )
 					source.Init( sourceX1, sourceY3, ninePatch_borderDimension.GetLeft(), ninePatch_borderDimension.GetBottom() )
-					DrawResized( target, source, frame )
+					DrawResized( target, source, frame, false, clipRect )
 				endif
 
 				target.Init( targetX2, targetY3, targetW2, targetH3 )
 				source.Init( sourceX2, sourceY3, ninePatch_centerDimension.GetX(), ninePatch_borderDimension.GetBottom() )
-				DrawResized( target, source, frame )
+				DrawResized( target, source, frame, false, clipRect )
 
 				If ninePatch_borderDimension.GetRight()
 					target.Init( targetX3, targetY3, targetW3, targetH3 )
 					source.Init( sourceX3, sourceY3, ninePatch_borderDimension.GetRight(), ninePatch_borderDimension.GetBottom() )
-					DrawResized( target, source, frame )
+					DrawResized( target, source, frame, false, clipRect )
+				endif
+
+				if clipRect
+					SetViewport(oldVPx, oldVPy, oldVPw, oldVPh)
 				endif
 			endif
 		endif
@@ -739,7 +748,7 @@ Type TSprite
 
 	'draw the sprite resized/stretched
 	'source is a rectangle within sprite.area
-	Method DrawResized(target:TRectangle, source:TRectangle = null, frame:int=-1, drawCompleteImage:Int=FALSE)
+	Method DrawResized(target:TRectangle, source:TRectangle = null, frame:int=-1, drawCompleteImage:Int=FALSE, clipRect:TRectangle = null)
 		'needed as "target" is a reference (changes original variable)
 		local targetCopy:TRectangle = target.Copy()
 		local sourceCopy:TRectangle
@@ -809,8 +818,36 @@ Type TSprite
 '			endif
 		endif
 
-		'round position down, and dimension up
-		DrawSubImageRect(parent.image, floor(targetCopy.GetX()), floor(targetCopy.GetY()), ceil(targetCopy.GetW()), ceil(targetCopy.GetH()), area.GetX() + sourceCopy.GetX(), area.GetY() + sourceCopy.GetY(), sourceCopy.GetW(), sourceCopy.GetH())
+		if clipRect
+			'check if render area is outside of clipping area
+			If not clipRect.Intersects(targetCopy) then return
+rem
+'unfinished- calculations not free of bugs...
+			'Clip left and top
+			Local clipL:float = Max(0, clipRect.GetX() - targetCopy.GetX())
+			Local clipT:float = Max(0, clipRect.GetY() - targetCopy.GetY())
+			'Clip right and bottom
+			Local clipR:float = Max(0, targetCopy.GetX2() - clipRect.GetX2())
+			Local clipB:float = Max(0, targetCopy.GetY2() - clipRect.GetY2())
+
+			'source area has to get scaled down because of clipping...
+			Local scaleX:Float = 1.0 - (clipL + clipR) / targetCopy.GetW() 
+			Local scaleY:Float = 1.0 - (clipT + clipB) / targetCopy.GetH() 
+
+'			DrawImageArea(Image, x + startX + offsetX, y + startY + offsetY, startX, startY, w - startX - endX, h - startY - endY, frame)
+
+	print "clipL="+clipL+" T="+clipT+" R="+clipR+" B="+clipB+"  scaleX="+scaleX+"  scaleY="+scaleY
+	print "classic:  target="+floor(targetCopy.GetX())+", "+floor(targetCopy.GetY())+", "+ceil(targetCopy.GetW())+", "+ceil(targetCopy.GetH())+"   source="+int(area.GetX() + sourceCopy.GetX())+", "+int(area.GetY() + sourceCopy.GetY())+", "+int(sourceCopy.GetW())+", "+int(sourceCopy.GetH())
+	print "new    :  target="+floor(targetCopy.GetX() + clipL)+", "+floor(targetCopy.GetY() + clipT)+", "+ceil(targetCopy.GetW() - clipR - clipL)+", "+ceil(targetCopy.GetH() - clipB - clipT)+"  source="+int(area.GetX() + sourceCopy.GetX() + clipL*scaleX)+", "+int(area.GetY() + sourceCopy.GetY() + clipT*scaleY)+", "+int(sourceCopy.GetW()*scaleX)+", "+int(sourceCopy.GetH()*scaleY)
+
+			DrawSubImageRect(parent.image,..
+				floor(targetCopy.GetX() + clipL), floor(targetCopy.GetY() + clipT), ceil(targetCopy.GetW() - clipR - clipL), ceil(targetCopy.GetH() - clipB - clipT), ..
+				area.GetX() + sourceCopy.GetX() + clipL*(1.0-scaleX), area.GetY() + sourceCopy.GetY() + (clipT/targetcopy.GetH())*scaleY, sourceCopy.GetW()*scaleX, sourceCopy.GetH()*scaleY)
+endrem
+			DrawSubImageRect(parent.image, floor(targetCopy.GetX()), floor(targetCopy.GetY()), ceil(targetCopy.GetW()), ceil(targetCopy.GetH()), area.GetX() + sourceCopy.GetX(), area.GetY() + sourceCopy.GetY(), sourceCopy.GetW(), sourceCopy.GetH())
+		else
+			DrawSubImageRect(parent.image, floor(targetCopy.GetX()), floor(targetCopy.GetY()), ceil(targetCopy.GetW()), ceil(targetCopy.GetH()), area.GetX() + sourceCopy.GetX(), area.GetY() + sourceCopy.GetY(), sourceCopy.GetW(), sourceCopy.GetH())
+		endif
 	End Method
 
 
