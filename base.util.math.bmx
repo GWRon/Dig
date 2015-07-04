@@ -115,7 +115,7 @@ Type MathHelper
 
 	'convert a double to a string
 	'double is rounded to the requested amount of digits after comma
-	Function NumberToString:String(value:Double, digitsAfterDecimalPoint:int = 2)
+	Function NumberToString:String(value:Double, digitsAfterDecimalPoint:int = 2, truncateZeros:int = False)
 		'RoundNumber() rounds, but does not handle "floating point", so
 		'1.5999 gets rounded to 1.6, but then it is stored again as
 		'floating point, which recreates "1.5999", that is why we do
@@ -151,6 +151,16 @@ Type MathHelper
 
 		'append minus if needed
 		if minus then s = "-"+s
+
+		'remove 0s? 1.23000 => 1.23, 1.00 = 1
+		if truncateZeros
+			while s<>"" and Right(s, 1) = "0"
+				s = s[.. s.length-1]
+			Wend
+			'only "xx." left?
+			if Right(s, 1) = "." then s = s[.. s.length-1]
+		endif
+		
 
 		Return s
 	End Function
