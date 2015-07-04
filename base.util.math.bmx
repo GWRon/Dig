@@ -138,8 +138,11 @@ Type MathHelper
 		'- this is needed because "-0.1" would be "0" as int (one char less)
 		local lengthBeforeDecimalPoint:int = string(abs(int(value))).length
 		'remove unneeded digits (length = BEFORE + . + AFTER)
-		s = Left(s, lengthBeforeDecimalPoint + 1 + digitsAfterDecimalPoint)
-
+		if s = "0"
+			s = "00"
+		else
+			s = Left(s, lengthBeforeDecimalPoint + 1 + digitsAfterDecimalPoint)
+		endif
 		'for numbers below 1.0 we add a zero... 
 		if int(s) < t then s = "0"+s
 
