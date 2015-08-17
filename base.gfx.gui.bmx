@@ -41,8 +41,8 @@ Const GUI_OBJECT_CHILDREN_CHANGE_GUIORDER:Int	= 2^15
 '===== GUI STATUS CONSTANTS =====
 CONST GUI_OBJECT_STATUS_APPEARANCE_CHANGED:Int	= 2^0
 
-Const GUI_OBJECT_ORIENTATION_VERTICAL:Int		= 0
-Const GUI_OBJECT_ORIENTATION_HORIZONTAL:Int		= 1
+Const GUI_OBJECT_ORIENTATION_VERTICAL:Int   = 0
+Const GUI_OBJECT_ORIENTATION_HORIZONTAL:Int = 1
 
 '===== GUI MANAGER =====
 'for each "List" of the guimanager
@@ -173,6 +173,7 @@ Type TGUIManager
 		If Not coord Then Return False
 		Local potentialDropTargets:TGuiObject[] = GUIManager.GetObjectsByPos(coord, GUIManager.currentState, True, GUI_OBJECT_ACCEPTS_DROP)
 		Local dropTarget:TGuiObject = TGUIObject(triggerEvent.GetReceiver())
+		Local source:TGuiObject = guiobject._parent
 
 
 		if not triggerEvent.isAccepted()
@@ -203,11 +204,11 @@ Type TGUIManager
 		'we found an object accepting the drop
 
 		'ask if something does not want that drop to happen
-		Local event:TEventSimple = TEventSimple.Create("guiobject.onTryDropOnTarget", new TData.Add("coord", coord) , guiobject, dropTarget)
+		Local event:TEventSimple = TEventSimple.Create("guiobject.onTryDropOnTarget", new TData.Add("coord", coord).Add("source", source) , guiobject, dropTarget)
 		EventManager.triggerEvent( event )
 		'if there is no problem ...just start dropping
 		If Not event.isVeto()
-			event = TEventSimple.Create("guiobject.onDropOnTarget", new TData.Add("coord", coord) , guiobject, dropTarget)
+			event = TEventSimple.Create("guiobject.onDropOnTarget", new TData.Add("coord", coord).Add("source", source) , guiobject, dropTarget)
 			EventManager.triggerEvent( event )
 		EndIf
 
@@ -215,11 +216,11 @@ Type TGUIManager
 		'also veto the onDropOnTarget-event
 		If event.isVeto()
 			triggerEvent.setVeto()
-			EventManager.triggerEvent( TEventSimple.Create("guiobject.onDropOnTargetDeclined", new TData.Add("coord", coord) , guiobject, dropTarget ))
+			EventManager.triggerEvent( TEventSimple.Create("guiobject.onDropOnTargetDeclined", new TData.Add("coord", coord).Add("source", source) , guiobject, dropTarget ))
 			Return False
 		Else
 			'inform others: we successfully dropped the object to a target#
-			EventManager.triggerEvent( TEventSimple.Create("guiobject.onDropOnTargetAccepted", new TData.Add("coord", coord) , guiobject, dropTarget ))
+			EventManager.triggerEvent( TEventSimple.Create("guiobject.onDropOnTargetAccepted", new TData.Add("coord", coord).Add("source", source) , guiobject, dropTarget ))
 
 			'also add this drop target as receiver of the original-drop-event
 			triggerEvent._receiver = dropTarget
@@ -723,9 +724,8 @@ Type TGUIobject
 		'unlink all potential event listeners concerning that object
 		EventManager.unregisterListenerByLimit(self,self)
 
-		For Local link:TLink = EachIn _registeredEventListener
-			link.Remove()
-		Next
+		EventManager.unregisterListenersByLinks(_registeredEventListener)
+		_registeredEventListener = new TLink[0]
 
 		'maybe our parent takes care of us...
 '		If _parent Then _parent.DeleteChild(Self)
@@ -856,6 +856,9 @@ Type TGUIobject
 				GuiManager.SortLists()
 			endif
 		endif
+
+		'inform object
+		child.onAddAsChild(self)
 	End Method
 
 
@@ -863,6 +866,9 @@ Type TGUIobject
 	Method DeleteChild:Int(child:TGUIobject)
 		If Not children Then Return False
 		children.Remove(child)
+
+		'inform object
+		child.onRemoveAsChild(self)
 	End Method
 	
 
@@ -875,6 +881,9 @@ Type TGUIobject
 		'add back to guimanager
 		'RON: this should be needed but bugs out "news dnd handling"
 		'GuiManager.Add(child)
+
+		'inform object
+		child.onRemoveAsChild(self)
 	End Method
 
 
@@ -893,6 +902,16 @@ Type TGUIobject
 		Next
 	End Method
 
+
+	Method onAddAsChild:int(parent:TGUIObject)
+		'stub
+	End Method
+
+
+	Method onRemoveAsChild:int(parent:TGUIObject)
+		'stub
+	End Method
+		
 
 	Method RestrictContentViewport:Int()
 		GUIManager.RestrictViewport(..
@@ -1085,6 +1104,11 @@ Type TGUIobject
 		EndIf
 	End Method
 
+
+	Method IsEnabled:int()
+		return _flags & GUI_OBJECT_ENABLED
+	End Method
+	
 
 	Method Resize(w:Float = 0, h:Float = 0)
 		If w > 0 Then rect.dimension.setX(w)
@@ -1526,11 +1550,14 @@ Type TGUIobject
 		'if nothing of the obj is visible or the mouse is not in
 		'the visible part - reset the mouse states
 		If Not containsXY(mousePos.x, mousePos.y)
-			'reset clicked position as soon as leaving the widget
-			mouseIsClicked = Null
-			mouseover = 0
-			setState("")
-
+			'avoid fast mouse movement to get interpreted incorrect
+			'-> only "unhover" undragged elements
+			if not isDragged()
+				'reset clicked position as soon as leaving the widget
+				mouseIsClicked = Null
+				mouseover = 0
+				setState("")
+			endif
 			'mouseclick somewhere - should deactivate active object
 			'no need to use the cached mouseButtonDown[] as we want the
 			'general information about a click
@@ -1550,56 +1577,54 @@ Type TGUIobject
 
 
 		'=== HANDLE MOUSE CLICKS / POSITION ===
-
-		'skip non-clickable objects
-		if not IsClickable() then return FALSE
-		'skip objects the mouse is not over.
+		'skip objects the mouse is not over (except it is already dragged).
 		'ATTENTION: this differs to self.mouseOver (which is set later on)
-		if not containsXY(mousePos.x, mousePos.y) then return FALSE
+		if not containsXY(mousePos.x, mousePos.y) and not isDragged() then return FALSE
 
 
-		'handle mouse clicks / button releases
+		'handle mouse clicks / button releases / hover state
 		'only do something if
 		'a) there is NO dragged object
 		'b) we handle the dragged object
 		'-> only react to dragged obj or all if none is dragged
 		If Not GUIManager.GetDraggedCount() Or isDragged()
 
-			'activate objects - or skip if if one gets active
-			If GUIManager.UpdateState_mouseButtonDown[1] And _flags & GUI_OBJECT_ENABLED
-				'create a new "event"
-				If Not MouseIsDown
-					'as soon as someone clicks on a object it is getting focused
-					if HasOption(GUI_OBJECT_CAN_GAIN_FOCUS)
-						GUImanager.setFocus(Self)
-					endif
+			If IsClickable()
+				'activate objects - or skip if if one gets active
+				If GUIManager.UpdateState_mouseButtonDown[1] And _flags & GUI_OBJECT_ENABLED
+					'create a new "event"
+					If Not MouseIsDown
+						'as soon as someone clicks on a object it is getting focused
+						if HasOption(GUI_OBJECT_CAN_GAIN_FOCUS)
+							GUImanager.setFocus(Self)
+						endif
 
-					MouseIsDown = mousePos.Copy()
+						MouseIsDown = mousePos.Copy()
+					EndIf
+
+					'we found a gui element which can accept clicks
+					'dont check further guiobjects for mousedown
+					'ATTENTION: do not use MouseManager.ResetKey(1)
+					'as this also removes "down" state
+					GUIManager.UpdateState_mouseButtonDown[1] = False
+					GUIManager.UpdateState_mouseButtonHit[1] = False
+					'MOUSEMANAGER.ResetKey(1)
 				EndIf
-
-				'we found a gui element which can accept clicks
-				'dont check further guiobjects for mousedown
-				'ATTENTION: do not use MouseManager.ResetKey(1)
-				'as this also removes "down" state
-				GUIManager.UpdateState_mouseButtonDown[1] = False
-				GUIManager.UpdateState_mouseButtonHit[1] = False
-				'MOUSEMANAGER.ResetKey(1)
 			EndIf
 
 			If Not GUIManager.UpdateState_foundHoverObject And _flags & GUI_OBJECT_ENABLED
 
 				'do not create "mouseover" for dragged objects
 				If Not isDragged()
-					'create events
-					'onmouseenter
+					'create event: onmouseenter
 					If mouseover = 0
-						EventManager.triggerEvent( TEventSimple.Create( "guiobject.OnMouseEnter", new TData, Self ) )
+						EventManager.triggerEvent( TEventSimple.Create( "guiobject.OnMouseEnter", null, Self ) )
 						mouseover = 1
 					EndIf
-					'onmousemove
-					EventManager.triggerEvent( TEventSimple.Create("guiobject.OnMouseOver", new TData, Self ) )
 					GUIManager.UpdateState_foundHoverObject = True
 				EndIf
+				'create event: onmouseover
+				EventManager.triggerEvent( TEventSimple.Create("guiobject.OnMouseOver", null, Self ) )
 
 				'somone decided to say the button is pressed above the object
 				If MouseIsDown
@@ -1610,86 +1635,88 @@ Type TGUIobject
 				EndIf
 
 
-				'inform others about a right guiobject click
-				'we do use a "cached hit state" so we can reset it if
-				'we found a one handling it
-				If GUIManager.UpdateState_mouseButtonHit[2]
-					Local clickEvent:TEventSimple = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("button",2), Self)
-					OnClick(clickEvent)
-					'fire onClickEvent
-					EventManager.triggerEvent(clickEvent)
-
-					'maybe change to "isAccepted" - but then each gui object
-					'have to modify the event IF they accepted the click
-
-					'reset Button
-					GUIManager.UpdateState_mouseButtonHit[2] = False
-				EndIf
-
-
-				'IsClicked does not include waiting time - so check for
-				'single and double clicks too
-				If _flags & GUI_OBJECT_ENABLED and not GUIManager.UpdateState_foundHitObject
-					local isHit:int = False
-					If MouseManager.IsHit(1)
-						local hitEvent:TEvenTsimple = TEventSimple.Create("guiobject.OnHit", new TData.AddNumber("button",1), Self)
-						'let the object handle the click
-						OnHit(hitEvent)
-						'fire onClickEvent
-						EventManager.triggerEvent(hitEvent)
-
-						isHit = True
-					endif
-					
-					If MOUSEMANAGER.IsClicked(1) or MOUSEMANAGER.GetClicks(1) > 0
-						'=== SET CLICKED VAR ====
-						mouseIsClicked = MouseManager.GetClickposition(1)
-
-						'=== SEND OUT CLICK EVENT ====
-						'if recognized as "double click" no normal "onClick"
-						'is emitted. Same for "single clicks".
-						'this avoids sending "onClick" and after 100ms
-						'again "onSingleClick" AND "onClick"
-						Local clickEvent:TEventSimple
-						If MOUSEMANAGER.IsDoubleClicked(1)
-							clickEvent = TEventSimple.Create("guiobject.OnDoubleClick", new TData.AddNumber("button",1), Self)
-							'let the object handle the click
-							OnDoubleClick(clickEvent)
-						ElseIf MOUSEMANAGER.IsSingleClicked(1)
-							clickEvent = TEventSimple.Create("guiobject.OnSingleClick", new TData.AddNumber("button",1), Self)
-							'let the object handle the click
-							OnSingleClick(clickEvent)
-						'only "hit" if done the first time
-						Else 'if not GUIManager.UpdateState_foundHitObject
-							clickEvent = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("button",1), Self)
-							'let the object handle the click
-							OnClick(clickEvent)
-						EndIf
+				If IsClickable()
+					'inform others about a right guiobject click
+					'we do use a "cached hit state" so we can reset it if
+					'we found a one handling it
+					If GUIManager.UpdateState_mouseButtonHit[2]
+						Local clickEvent:TEventSimple = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("button",2), Self)
+						OnClick(clickEvent)
 						'fire onClickEvent
 						EventManager.triggerEvent(clickEvent)
 
-						'added for imagebutton and arrowbutton not being reset when mouse standing still
-'						MouseIsDown = Null
-						'reset mouse button
-						'-> do not reset it as it would disable
-						'   "doubleclick" recognition
-						'MOUSEMANAGER.ResetKey(1)
-						'but we can reset clicked state
-						MOUSEMANAGER.ResetClicked(1)
+						'maybe change to "isAccepted" - but then each gui object
+						'have to modify the event IF they accepted the click
 
-						isHit = True
+						'reset Button
+						GUIManager.UpdateState_mouseButtonHit[2] = False
 					EndIf
 
-					If isHit
-						'reset Button cache
-						GUIManager.UpdateState_mouseButtonHit[1] = False
 
-						'clicking on an object sets focus to it
-						'so remove from old before
-'Ronny: 2014/05/11 - commented out, still needed?
-'						If Not HasFocus() Then GUIManager.ResetFocus()
+					'IsClicked does not include waiting time - so check for
+					'single and double clicks too
+					If _flags & GUI_OBJECT_ENABLED and not GUIManager.UpdateState_foundHitObject
+						local isHit:int = False
+						If MouseManager.IsHit(1)
+							local hitEvent:TEvenTsimple = TEventSimple.Create("guiobject.OnHit", new TData.AddNumber("button",1), Self)
+							'let the object handle the click
+							OnHit(hitEvent)
+							'fire onClickEvent
+							EventManager.triggerEvent(hitEvent)
 
-						GUIManager.UpdateState_foundHitObject = True
+							isHit = True
+						endif
+						
+						If MOUSEMANAGER.IsClicked(1) or MOUSEMANAGER.GetClicks(1) > 0
+							'=== SET CLICKED VAR ====
+							mouseIsClicked = MouseManager.GetClickposition(1)
+
+							'=== SEND OUT CLICK EVENT ====
+							'if recognized as "double click" no normal "onClick"
+							'is emitted. Same for "single clicks".
+							'this avoids sending "onClick" and after 100ms
+							'again "onSingleClick" AND "onClick"
+							Local clickEvent:TEventSimple
+							If MOUSEMANAGER.IsDoubleClicked(1)
+								clickEvent = TEventSimple.Create("guiobject.OnDoubleClick", new TData.AddNumber("button",1), Self)
+								'let the object handle the click
+								OnDoubleClick(clickEvent)
+							ElseIf MOUSEMANAGER.IsSingleClicked(1)
+								clickEvent = TEventSimple.Create("guiobject.OnSingleClick", new TData.AddNumber("button",1), Self)
+								'let the object handle the click
+								OnSingleClick(clickEvent)
+							'only "hit" if done the first time
+							Else 'if not GUIManager.UpdateState_foundHitObject
+								clickEvent = TEventSimple.Create("guiobject.OnClick", new TData.AddNumber("button",1), Self)
+								'let the object handle the click
+								OnClick(clickEvent)
+							EndIf
+							'fire onClickEvent
+							EventManager.triggerEvent(clickEvent)
+
+							'added for imagebutton and arrowbutton not being reset when mouse standing still
+	'						MouseIsDown = Null
+							'reset mouse button
+							'-> do not reset it as it would disable
+							'   "doubleclick" recognition
+							'MOUSEMANAGER.ResetKey(1)
+							'but we can reset clicked state
+							MOUSEMANAGER.ResetClicked(1)
+
+							isHit = True
+						EndIf
+
+						If isHit
+							'reset Button cache
+							GUIManager.UpdateState_mouseButtonHit[1] = False
+
+							'clicking on an object sets focus to it
+							'so remove from old before
+							'Ronny: 2014/05/11 - commented out, still needed?
+							'If Not HasFocus() Then GUIManager.ResetFocus()
+
+							GUIManager.UpdateState_foundHitObject = True
+						EndIf
 					EndIf
 				EndIf
 			EndIf
@@ -1729,31 +1756,35 @@ Type TGUIobject
 		'charCode is "0" if no key is recognized
 		local charCode:int = int(GetChar())
 
-		'charCode is < 0 for me when umlauts are pressed
-		if charCode < 0
-			?Win32
-			If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
-			If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
-			If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
-			?Mac
-			If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
-			If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
-			If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
-			?Linux
-			If KEYWRAPPER.pressedKey(252) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
-			If KEYWRAPPER.pressedKey(246) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
-			If KEYWRAPPER.pressedKey(163) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
-			?
-		'handle normal "keys" (excluding umlauts)
-		elseif charCode > 0
-			local addChar:int = True
-			'skip "backspace"
-			if chr(KEY_BACKSPACE) = chr(charCode) then addChar = False
-			'skip enter if whished so
-			if skipEnterKey and chr(KEY_ENTER) = chr(charCode) then addChar = False
+		'loop through all chars of the getchar-queue
+		While charCode <>0
+			'charCode is < 0 for me when umlauts are pressed
+			if charCode < 0
+				?Win32
+				If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
+				If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
+				If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
+				?Mac
+				If KEYWRAPPER.pressedKey(186) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
+				If KEYWRAPPER.pressedKey(192) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
+				If KEYWRAPPER.pressedKey(222) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
+				?Linux
+				If KEYWRAPPER.pressedKey(252) Then If shiftPressed Then value:+ "Ü" Else value :+ "ü"
+				If KEYWRAPPER.pressedKey(246) Then If shiftPressed Then value:+ "Ö" Else value :+ "ö"
+				If KEYWRAPPER.pressedKey(163) Then If shiftPressed Then value:+ "Ä" Else value :+ "ä"
+				?
+			'handle normal "keys" (excluding umlauts)
+			elseif charCode > 0
+				local addChar:int = True
+				'skip "backspace"
+				if chr(KEY_BACKSPACE) = chr(charCode) then addChar = False
+				'skip enter if whished so
+				if skipEnterKey and chr(KEY_ENTER) = chr(charCode) then addChar = False
 
-			if addChar then value :+ chr(charCode)
-		endif
+				if addChar then value :+ chr(charCode)
+			endif
+			charCode = int(GetChar())
+		Wend
 
 		'special chars - recognized on Mac, but not Linux
 		'euro sign
