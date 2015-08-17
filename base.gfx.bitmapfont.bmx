@@ -80,6 +80,8 @@ Type TBitmapFontManager
 
 	Method Get:TBitmapFont(name:String, size:Int=-1, style:Int=-1)
 		name = lower(name)
+		'fall back to default font if none was given
+		if name = "" then name = "default"
 		style :| SMOOTHFONT
 
 		Local defaultFont:TBitmapFont = GetDefaultFont()
@@ -203,6 +205,12 @@ Type TBitmapFont
 'DISABLECACHE	global ImageCaches:TMap = CreateMap()
 	global eventRegistered:int = 0
 
+	Const STYLE_NONE:int = 0
+	Const STYLE_EMBOSS:int = 1
+	Const STYLE_SHADOW:int = 2
+	Const STYLE_GLOW:int = 3
+	
+
 
 	Function Create:TBitmapFont(name:String, url:String, size:Int, style:Int)
 		Local obj:TBitmapFont = New TBitmapFont
@@ -312,6 +320,11 @@ Type TBitmapFont
 		if extraChars = ""
 			extraChars :+ chr(8364) '€
 			extraChars :+ chr(8230) '…
+			extraChars :+ chr(8220) '“
+			extraChars :+ chr(8221) '”
+			extraChars :+ chr(8222) '„
+			extraChars :+ chr(171) '«
+			extraChars :+ chr(187) '»
 		endif
 
 		self.glyphCount = glyphCount
@@ -414,11 +427,6 @@ Type TBitmapFont
 
 	Method getHeight:Float(text:String)
 		return draw(text,0,0,null,0).getY()
-	End Method
-
-
-	Method getBlockWidth:Float(text:String, w:Float, h:Float)
-		return drawBlock(text, 0,0,w,h, null, null, 0, 0).getX()
 	End Method
 
 
@@ -631,7 +639,7 @@ Type TBitmapFont
 		if doDraw and color then oldColor = new TColor.Get()
 
 		'emboss
-		if style = 1
+		if style = STYLE_EMBOSS
 			height:+ 1
 			if doDraw
 				if special <> -1.0
@@ -642,7 +650,7 @@ Type TBitmapFont
 				draw(text, x, y+1, TColor.clWhite)
 			endif
 		'shadow
-		else if style = 2
+		else if style = STYLE_SHADOW
 			height:+ 1
 			width:+1
 			if doDraw
@@ -650,7 +658,7 @@ Type TBitmapFont
 				draw(text, x+1,y+1, TColor.clBlack)
 			endif
 		'glow
-		else if style = 3
+		else if style = STYLE_GLOW
 			if doDraw
 				SetColor 0,0,0
 				if special <> -1.0 then SetAlpha 0.5*oldColor.a else SetAlpha 0.25*oldColor.a
@@ -685,7 +693,7 @@ Type TBitmapFont
 
 
 	'can adjust used font or color
-	Method ProcessCommand:int(command:string, payload:string, font:TBitmapFont, color:TColor, colorOriginal:TColor, styleDisplaceY:int var)
+	Method ProcessCommand:int(command:string, payload:string, font:TBitmapFont var , color:TColor var , colorOriginal:TColor, styleDisplaceY:int var)
 		if color
 			if command = "color"
 				local colors:string[] = payload.split(",")
