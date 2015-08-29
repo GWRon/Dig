@@ -171,6 +171,22 @@ Type TEventManager
 	End Method
 
 
+	'removes a listener using a list of links
+	Method unregisterListenersByLinkList(linkList:TList)
+		For local l:TLink = EachIn linkList
+			l.remove()
+		Next
+	End Method
+
+
+	'removes a listener using an array of links
+	Method unregisterListenersByLinks(links:TLink[])
+		For local l:TLink = EachIn links
+			l.remove()
+		Next
+	End Method
+
+
 	'add a new event to the list
 	Method registerEvent(event:TEventBase)
 		_events.AddLast(event)
@@ -187,17 +203,28 @@ Type TEventManager
 		EndIf
 		?
 
-
 		Local listeners:TList = TList(_listeners.ValueForKey( Lower(triggeredByEvent._trigger) ))
 		If listeners
+			'use a _copy_ of the original listeners to avoid concurrent
+			'modification within the loop
+			listeners = listeners.Copy()
 			For Local listener:TEventListenerBase = EachIn listeners
 				listener.onEvent(triggeredByEvent)
 				'stop triggering the event if ONE of them vetos
 				If triggeredByEvent.isVeto() Then Exit
 			Next
-			Return listeners.count()
+		endif
+
+		'run individual event method
+		If Not triggeredByEvent.IsVeto()
+			triggeredByEvent.onEvent()
 		EndIf
-		Return 0
+
+		If listeners
+			Return listeners.count()
+		Else
+			Return 0
+		EndIf
 	End Method
 
 
@@ -226,7 +253,6 @@ Type TEventManager
 
 '				Assert startTime >= self._ticks, "TEventManager: an future event didn't get triggered in time"
 				If event.getStartTime() <= _ticks			' is it time for this event?
-					event.onEvent()							' start event
 					If event._trigger <> ""					' only trigger event if _trigger is set
 						triggerEvent( event )
 					EndIf
