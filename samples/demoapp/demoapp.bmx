@@ -112,7 +112,7 @@ Type TMyApp Extends TGraphicalApp
 			toast.SetText("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam")
 
 			if rand(0,1) = 1
-				toast.SetCaption("Der Chef will Dich sehen!")
+				toast.SetCaption("Lorem ipsum dolor sit amet")
 				toast.SetLifeTime(-1)
 				'close in 1 worldTime minute
 				toast.SetCloseAtWorldTime( GetWorldTime().GetTimeGone() + rand(60,120))

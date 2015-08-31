@@ -195,8 +195,10 @@ endrem
 		'register demo click listener - only listen to click events of
 		'the "button" created above
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickMyButton, button)
-'		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement)
 '		EventManager.RegisterListenerFunction("guiobject.onclick", onClickOnAButton, "tguibutton")
+
+		'we only listen to elements extending "TGUIObject"
+		EventManager.RegisterListenerFunction("guiobject.onclick", onClickAGuiElement, "TGUIObject")
 	End Method
 
 
