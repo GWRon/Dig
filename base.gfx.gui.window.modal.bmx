@@ -156,6 +156,11 @@ Type TGUIModalWindow Extends TGUIWindowBase
 	End Method
 
 
+	Method Open:Int()
+		EventManager.triggerEvent(TEventSimple.Create("guiModalWindow.onOpen", Self))
+	End Method
+	
+
 	'close the window (eg. with an animation)
 	Method Close:Int(closeButton:Int=-1)
 		'only close once :D
