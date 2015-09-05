@@ -171,11 +171,11 @@ Type TChannelPool
 
 
 	'adds a channel - and overwrites potentially existing ones
-	Function AddChannel:Int(key:string, channel:TChannel)
+	Function AddChannel:TChannel(key:string, channel:TChannel)
 		'if there is a limit, skip adding a channel if limit is
 		'exceeded
 		If channelLimit >= 0 and GetChannelCount() > channelLimit
-			return False
+			return Null
 		EndIf
 
 		key = key.toLower()
@@ -187,7 +187,7 @@ Type TChannelPool
 		'remove a previously set protection?
 		'UnProtectChannel(key)
 
-		return True
+		return channel
 	End Function
 
 
@@ -249,7 +249,7 @@ Function GetRandomPooledChannel:TChannel()
 	return TChannelPool.GetRandomChannel()
 End Function
 
-Function AddPooledChannel:Int(key:string, channel:TChannel)
+Function AddPooledChannel:TChannel(key:string, channel:TChannel)
 	return TChannelPool.AddChannel(key, channel)
 End Function
 

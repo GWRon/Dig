@@ -30,6 +30,7 @@ Type TMyApp Extends TGraphicalApp
 			GetDeltatimer().Init(30, -1)
 '			GetGraphicsManager().SetVsync(FALSE)
 			GetGraphicsManager().SetResolution(800,600)
+			GetGraphicsManager().SetFullscreen(True)
 			GetGraphicsManager().InitGraphics()	
 
 		'we use a full screen background - so no cls needed
@@ -57,10 +58,10 @@ Type TMyApp Extends TGraphicalApp
 
 
 		'register toaster position: position, alignment, name
-		GetToastMessageCollection().AddNewSpawnPoint( new TRectangle.Init(20,20, 380,280), new TVec2D.Init(0,0), "TOPLEFT" )
-		GetToastMessageCollection().AddNewSpawnPoint( new TRectangle.Init(400,20, 380,280), new TVec2D.Init(1,0), "TOPRIGHT" )
-		GetToastMessageCollection().AddNewSpawnPoint( new TRectangle.Init(20,300, 380,280), new TVec2D.Init(0,1), "BOTTOMLEFT" )
-		GetToastMessageCollection().AddNewSpawnPoint( new TRectangle.Init(400,300, 380,280), new TVec2D.Init(1,1), "BOTTOMRIGHT" )
+		GetToastMessageCollection().AddNewSpawnPoint( New TRectangle.Init(20,20, 380,280), New TVec2D.Init(0,0), "TOPLEFT" )
+		GetToastMessageCollection().AddNewSpawnPoint( New TRectangle.Init(400,20, 380,280), New TVec2D.Init(1,0), "TOPRIGHT" )
+		GetToastMessageCollection().AddNewSpawnPoint( New TRectangle.Init(20,300, 380,280), New TVec2D.Init(0,1), "BOTTOMLEFT" )
+		GetToastMessageCollection().AddNewSpawnPoint( New TRectangle.Init(400,300, 380,280), New TVec2D.Init(1,1), "BOTTOMRIGHT" )
 
 
 		GenerateRandomToast()
@@ -93,7 +94,7 @@ Type TMyApp Extends TGraphicalApp
 		Super.Update()
 
 
-		if KeyManager.IsHit(KEY_T) then GenerateRandomToast()
+		If KeyManager.IsHit(KEY_T) Then GenerateRandomToast()
 
 		'check if new resources have to get loaded
 		TRegistryUnloadedResourceCollection.GetInstance().Update()
@@ -104,28 +105,28 @@ Type TMyApp Extends TGraphicalApp
 
 
 	Method GenerateRandomToast()
-			local toast:TAppToastMessage = new TAppToastMessage
+			Local toast:TAppToastMessage = New TAppToastMessage
 			toast.SetLifeTime( Rand(10000,15000)/1000.0 )
-			toast.SetMessageType(rand(0,3))
-			toast.SetPriority(rand(0,10))
-			toast.SetCaption("Testnachricht" + Millisecs())
+			toast.SetMessageType(Rand(0,3))
+			toast.SetPriority(Rand(0,10))
+			toast.SetCaption("Testnachricht" + MilliSecs())
 			toast.SetText("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam")
 
-			if rand(0,1) = 1
+			If Rand(0,1) = 1
 				toast.SetCaption("Lorem ipsum dolor sit amet")
 				toast.SetLifeTime(-1)
 				'close in 1 worldTime minute
-				toast.SetCloseAtWorldTime( GetWorldTime().GetTimeGone() + rand(60,120))
-			endif
+				toast.SetCloseAtWorldTime( GetWorldTime().GetTimeGone() + Rand(60,120))
+			EndIf
 
-			Select rand(0,3)
-				case 0
+			Select Rand(0,3)
+				Case 0
 					GetToastMessageCollection().AddMessage(toast, "TOPLEFT")
-				case 1
+				Case 1
 					GetToastMessageCollection().AddMessage(toast, "TOPRIGHT")
-				case 2
+				Case 2
 					GetToastMessageCollection().AddMessage(toast, "BOTTOMLEFT")
-				case 3
+				Case 3
 					GetToastMessageCollection().AddMessage(toast, "BOTTOMRIGHT")
 			EndSelect
 	End Method

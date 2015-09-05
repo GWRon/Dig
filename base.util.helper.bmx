@@ -93,14 +93,14 @@ Type THelper
 
 
 	'returns whether the mouse is within the given rectangle coords
-	Function MouseIn:int(x:float,y:float,w:float,h:float)
+	Function MouseIn:int(x:Int,y:Int, w:Int,h:Int)
 		return IsIn(MouseManager.x, MouseManager.y, x,y,w,h)
 	End Function
 
 
 	'returns whether the mouse is within the given rectangle
 	Function MouseInRect:int(rect:TRectangle)
-		return IsIn(MouseManager.x, MouseManager.y, rect.position.x,rect.position.y,rect.dimension.x, rect.dimension.y)
+		return IsIn(MouseManager.x, MouseManager.y, rect.position.x, rect.position.y, rect.dimension.x, rect.dimension.y)
 	End Function
 
 
@@ -113,9 +113,10 @@ Type THelper
 
 
 	'returns whether the given x,y coordinate is within the given rectangle coords
-	Function IsIn:Int(x:Float, y:Float, rectx:Float, recty:Float, rectw:Float, recth:Float)
-		If x >= rectx And x<=rectx+rectw And..
-		   y >= recty And y<=recty+recth
+	'checks are done on _int_-base (to avoid floating point inaccuracies)
+	Function IsIn:Int(x:Int, y:Int, rectx:Int, recty:Int, rectw:Int, recth:Int)
+		If x >= rectx And x<rectx+rectw And..
+		   y >= recty And y<recty+recth
 			Return 1
 		Else
 			Return 0
@@ -138,6 +139,13 @@ Type THelper
 	End Function
 
 
+	Function IntArrayContainsNumber:int(arr:Int[], number:Int)
+		For local d:Int = EachIn arr
+			if d = number then return True
+		Next
+		return False
+	End Function
+
 
 	Global ListTypeID:TTypeId=TTypeId.ForObject(new TList)
 	Global MapTypeID:TTypeId=TTypeId.ForObject(new TMap)
@@ -145,9 +153,11 @@ Type THelper
 	'clones the given object
 	'function is calling itself recursively for each property
 	'returns the cloned object
-	Function CloneObject:object(obj:object)
+	Function CloneObject:object(obj:object, skipFields:string = "")
 		'clone code is based on the work of "Azathoth"
 		'http://www.blitzbasic.com/codearcs/codearcs.php?code=2132
+
+		skipFields = " " + skipFields.toLower() + " "
 
 		'skip cloning nothing
 		If obj = Null Then Return Null
@@ -242,6 +252,9 @@ Type THelper
 			For Local fld:TField=EachIn objTypeID.EnumFields()
 				Local fldId:TTypeId=fld.TypeId()
 
+				'ignore this field (eg. an auto-populated ID-field)
+				if skipFields.find(" "+fld.name().toLower()+" ") >= 0 then continue
+
 				'only clone non-null-fields and if not explicitely forbidden
 				If fld.Get(obj) And fld.MetaData("NoClone") = Null
 					'if explizitely stated, clone referenceable objects by
@@ -261,5 +274,43 @@ Type THelper
 		If mth then mth.Invoke(clone, [obj])
 
 		Return clone
-	End Function	
+	End Function
+
+
+	'assigns field properties of one object to another
+	'no deep cloning is done but "references" are copied
+	Function TakeOverObjectValues:object(source:object, target:object var, skipFields:string="")
+		If source = Null
+			target = null
+			return null
+		EndIf
+
+		skipFields = " " + skipFields.toLower() + " "
+
+		'to access properties we need a TTypeID of the object
+		Local srcTypeID:TTypeId=TTypeId.ForObject(source)
+		Local tarTypeID:TTypeId=TTypeId.ForObject(target)
+		if not srcTypeID or not tarTypeID then return target
+
+		'loop over all fields of the object
+		'if the target has the same or compatible field, assign it
+		'(reference, no deep clone!)
+		Local fldId:TTypeId, tarFldId:TTypeID
+		Local tarFld:TField
+		For Local fld:TField = EachIn srcTypeID.EnumFields()
+			fldId = fld.TypeId()
+
+			'ignore this field (eg. an auto-populated ID-field)
+			if skipFields.find(" "+fld.name().toLower()+" ") >= 0 then continue
+
+			tarFld = tarTypeID.FindField( fld.name() )
+			if tarFld
+				tarFldId = tarfld.TypeId()
+				if tarFldID = fldId or tarFldId.ExtendsType(fldId)
+					tarFld.Set(target, fld.Get(source))
+				endif
+			endif
+		Next
+		Return target
+	End Function
 End Type

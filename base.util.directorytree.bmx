@@ -41,13 +41,13 @@ Type TDirectoryTree
 
 
 	Method AddFile(fileURI:String)
-		if filePaths.Contains(fileURI) then return
+		If filePaths.Contains(fileURI) Then Return
 		filePaths.AddLast(fileURI)
 	End Method
 
 
 	Method AddDirectory(directoryURI:String)
-		if directories.Contains(directoryURI) then return
+		If directories.Contains(directoryURI) Then Return
 		directories.AddLast(directoryURI)
 	End Method
 
@@ -116,10 +116,14 @@ Type TDirectoryTree
 	'directory.
 	'if no file ending is added until scanning, all files
 	'will get added
-	Method ScanDir:Int( directory:String="" )
+	Method ScanDir:Int( directory:String="", sortResults:int = True )
 		If directory = "" Then directory = baseDirectory
 
+		?bmxng
+		Local dirHandle:Byte Ptr = ReadDir(directory)
+		?not bmxng
 		Local dirHandle:Int = ReadDir(directory)
+		?
 		If Not dirHandle Then Return False
 
 
@@ -156,9 +160,14 @@ Type TDirectoryTree
 					ScanDir(uri)
 			End Select
 		Forever
+		
+		CloseDir(dirHandle)
 
-		CloseDir(directory)
-
+		if sortResults
+			directories.Sort(True)
+			filePaths.Sort(True)
+		endif
+		
 		Return True
 	End Method
 
