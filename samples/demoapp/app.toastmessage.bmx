@@ -5,14 +5,14 @@ Import "../../base.util.registry.spriteloader.bmx"
 Import "app.world.worldtime.bmx"
 
 
-Type TAppToastMessage extends TToastMessage
+Type TAppToastMessage Extends TToastMessage
 	Field backgroundSprite:TSprite
-	Field messageType:int = 0
-	Field caption:string = ""
-	Field text:string = ""
+	Field messageType:Int = 0
+	Field caption:String = ""
+	Field text:String = ""
 	'the higher the more important the message is
-	Field priority:int = 0
-	Field showBackgroundSprite:int = True
+	Field priority:Int = 0
+	Field showBackgroundSprite:Int = True
 	'an array containing registered event listeners
 	Field _registeredEventListener:TLink[]
 	Field _closeAtWorldTime:Double = -1
@@ -24,7 +24,7 @@ Type TAppToastMessage extends TToastMessage
 	End Method
 
 
-	Method Remove()
+	Method Remove:int()
 		For Local link:TLink = EachIn _registeredEventListener
 			link.Remove()
 		Next
@@ -32,18 +32,18 @@ Type TAppToastMessage extends TToastMessage
 	End Method
 	
 
-	Method SetMessageType:Int(messageType:int)
-		self.messageType = messageType
+	Method SetMessageType:Int(messageType:Int)
+		Self.messageType = messageType
 
 		Select messageType
-			case 0
-				self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.info")
-			case 1
-				self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.attention")
-			case 2
-				self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.positive")
-			case 3
-				self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.negative")
+			Case 0
+				Self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.info")
+			Case 1
+				Self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.attention")
+			Case 2
+				Self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.positive")
+			Case 3
+				Self.backgroundSprite = GetSpriteFromRegistry("gfx_toastmessage.negative")
 		EndSelect
 
 		RecalculateHeight()
@@ -51,7 +51,7 @@ Type TAppToastMessage extends TToastMessage
 
 
 	Method AddCloseOnEvent(eventKey:String)
-		local listenerLink:TLink = EventManager.registerListenerMethod(eventKey, self, "onReceiveCloseEvent", self)
+		Local listenerLink:TLink = EventManager.registerListenerMethod(eventKey, Self, "onReceiveCloseEvent", Self)
 		_registeredEventListener :+ [listenerLink]
 	End Method
 
@@ -62,13 +62,13 @@ Type TAppToastMessage extends TToastMessage
 
 
 	Method SetCaption:Int(caption:String)
-		self.caption = caption
+		Self.caption = caption
 		RecalculateHeight()
 	End Method
 
 
 	Method SetText:Int(text:String)
-		self.text = text
+		Self.text = text
 		RecalculateHeight()
 	End Method
 
@@ -86,28 +86,28 @@ Type TAppToastMessage extends TToastMessage
 	End Method
 
 
-	Method SetPriority:Int(priority:int=0)
-		self.priority = priority
+	Method SetPriority:Int(priority:Int=0)
+		Self.priority = priority
 	End Method 
 
 
 	Method RecalculateHeight:Int()
-		local height:int = 0
+		Local height:Int = 0
 		'caption singleline
 		height :+ GetBitmapFontManager().baseFontBold.GetMaxCharHeight()
 		'text
 		height :+ GetBitmapFontManager().baseFont.GetBlockDimension(text, area.GetW(), -1).GetY()
 		'gfx padding
-		if showBackgroundSprite and backgroundSprite
+		If showBackgroundSprite And backgroundSprite
 			height :+ backgroundSprite.GetNinePatchContentBorder().GetTop()
 			height :+ backgroundSprite.GetNinePatchContentBorder().GetBottom()
-		endif
+		EndIf
 		'lifetime bar
-		if _lifeTime > 0 then height :+ 5
+		If _lifeTime > 0 Then height :+ 5
 		'close hint
-		if _closeAtWorldTime > 0 and _closeAtWorldTimeText <> ""
+		If _closeAtWorldTime > 0 And _closeAtWorldTimeText <> ""
 			height :+ GetBitmapFontManager().baseFontBold.GetMaxCharHeight()
-		endif
+		EndIf
 		
 		area.dimension.SetY(height)
 	End Method
@@ -116,47 +116,47 @@ Type TAppToastMessage extends TToastMessage
 	'override to add worldTime
 	Method Update:Int()
 		'check if lifetime is running out - close message then
-		if _closeAtWorldTime >= 0 and not HasStatus(TOASTMESSAGE_OPENING_OR_CLOSING)
-			if _closeAtWorldTime < GetWorldTime().GetTimeGone()
+		If _closeAtWorldTime >= 0 And Not HasStatus(TOASTMESSAGE_OPENING_OR_CLOSING)
+			If _closeAtWorldTime < GetWorldTime().GetTimeGone()
 				close()
-			endif
-		endif
+			EndIf
+		EndIf
 		
-		return Super.Update()
+		Return Super.Update()
 	End Method
 
 
 	'override to draw our nice background
 	Method RenderBackground:Int(xOffset:Float=0, yOffset:Float=0)
-		if showBackgroundSprite
+		If showBackgroundSprite
 			'set type again to reload sprite
-			if not backgroundSprite or backgroundSprite.name = "defaultsprite" then SetMessageType(messageType)
-			if backgroundSprite then backgroundSprite.DrawArea(xOffset + GetScreenX(), yOffset + GetScreenY(), area.GetW(), area.GetH())
-		endif
+			If Not backgroundSprite Or backgroundSprite.name = "defaultsprite" Then SetMessageType(messageType)
+			If backgroundSprite Then backgroundSprite.DrawArea(xOffset + GetScreenX(), yOffset + GetScreenY(), area.GetW(), area.GetH())
+		EndIf
 	End Method
 
 
 	'override to draw our texts
 	Method RenderForeground:Int(xOffset:Float=0, yOffset:Float=0)
-		local contentX:int = xOffset + GetScreenX()
-		local contentY:int = yOffset + GetScreenY()
-		local contentX2:int = contentX + GetScreenWidth()
-		local contentY2:int = contentY + GetScreenHeight()
-		if showBackgroundSprite and backgroundSprite
+		Local contentX:Int = xOffset + GetScreenX()
+		Local contentY:Int = yOffset + GetScreenY()
+		Local contentX2:Int = contentX + GetScreenWidth()
+		Local contentY2:Int = contentY + GetScreenHeight()
+		If showBackgroundSprite And backgroundSprite
 			contentX :+ backgroundSprite.GetNinePatchContentBorder().GetLeft()
 			contentY :+ backgroundSprite.GetNinePatchContentBorder().GetTop()
 			contentX2 :- backgroundSprite.GetNinePatchContentBorder().GetRight()
 			contentY2 :- backgroundSprite.GetNinePatchContentBorder().GetBottom()
-		endif
+		EndIf
 
-		local captionHeight:int = GetBitmapFontManager().baseFontBold.GetMaxCharHeight()
-		GetBitmapFontManager().baseFontBold.DrawBlock(caption, contentX, contentY, contentX2 - contentX, captionHeight, null, TColor.clBlack)
-		GetBitmapFontManager().baseFont.DrawBlock(text, contentX, contentY + captionHeight, contentX2 - contentX, -1, null, TColor.CreateGrey(50))
+		Local captionHeight:Int = GetBitmapFontManager().baseFontBold.GetMaxCharHeight()
+		GetBitmapFontManager().baseFontBold.DrawBlock(caption, contentX, contentY, contentX2 - contentX, captionHeight, Null, TColor.clBlack)
+		GetBitmapFontManager().baseFont.DrawBlock(text, contentX, contentY + captionHeight, contentX2 - contentX, -1, Null, TColor.CreateGrey(50))
 
 
 		'worldtime close hint
-		if _closeAtWorldTime > 0 and _closeAtWorldTimeText <> ""
-			local text:String = _closeAtWorldTimeText
+		If _closeAtWorldTime > 0 And _closeAtWorldTimeText <> ""
+			Local text:String = _closeAtWorldTimeText
 			text = text.Replace("%H%", GetWorldTime().GetDayHour(_closeAtWorldTime))
 			text = text.Replace("%I%", GetWorldTime().GetDayMinute(_closeAtWorldTime))
 			text = text.Replace("%S%", GetWorldTime().GetDaySecond(_closeAtWorldTime))
@@ -165,29 +165,29 @@ Type TAppToastMessage extends TToastMessage
 			text = text.Replace("%SEASON%", GetWorldTime().GetSeason(_closeAtWorldTime))
 			text = text.Replace("%TIME%", GetWorldTime().GetFormattedTime(_closeAtWorldTime))
 			
-			GetBitmapFontManager().baseFontBold.DrawBlock(text, contentX, contentY2 - GetBitmapFontManager().baseFontBold.GetMaxCharHeight(), contentX2 - contentX, -1, null, TColor.CreateGrey(50))
-		endif
+			GetBitmapFontManager().baseFontBold.DrawBlock(text, contentX, contentY2 - GetBitmapFontManager().baseFontBold.GetMaxCharHeight(), contentX2 - contentX, -1, Null, TColor.CreateGrey(50))
+		EndIf
 		
 		'lifetime bar
-		if _lifeTime > 0
-			local lifeTimeWidth:int = contentX2 - contentX
-			local oldCol:TColor = new TColor.Get()
+		If _lifeTime > 0
+			Local lifeTimeWidth:Int = contentX2 - contentX
+			Local oldCol:TColor = New TColor.Get()
 			lifeTimeWidth :* GetLifeTimeProgress()
 
-			if priority <= 2
+			If priority <= 2
 				SetAlpha oldCol.a * 0.2 + 0.05*priority
 				SetColor(120,120,120)
-			elseif priority <= 5
+			ElseIf priority <= 5
 				SetAlpha oldCol.a * 0.3 + 0.1*priority
 				SetColor(200,150,50)
-			else
+			Else
 				SetAlpha oldCol.a * 0.5 + 0.05*priority
 				SetColor(255,80,80)
-			endif
+			EndIf
 			'+2 = a bit of padding
 			DrawRect(contentX, contentY2 - 5 + 2, lifeTimeWidth, 3)
 			oldCol.SetRGBA()
-		endif
+		EndIf
 
 	End Method
 End Type

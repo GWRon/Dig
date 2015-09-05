@@ -1,5 +1,5 @@
 SuperStrict
-
+Framework BRL.StandardIO
 Import "../../base.util.luaengine.bmx"
 
 Type TMyObject {_exposeToLua}
@@ -54,10 +54,15 @@ For Local i:Int = 0 To 0
 
 
 	Print "calling luafile's ~qMyRun()~q'"
+	Print ">>>>>>"
 	luaEngine.CallLuaFunction("MyRun")
+	Print "<<<<<<"
 	Print "prop is now: " +MyObject.prop
-	Print "arr2 is now: " +MyObject.arr[2] +" = 30 ?"
-	If MyObject.myList Then Print "list exists"
-	If Not MyObject.myList Then Print "list exists no more"
+	Print "arr2 is now: " +MyObject.arr[0]+","+MyObject.arr[1]+","+MyObject.arr[2]+" (was 1,2,3)"
+	If MyObject.myList 
+		Print "list exists"
+	Else
+		Print "list exists no longer"
+	EndIf
 	Print "---"
 Next

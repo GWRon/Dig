@@ -24,13 +24,13 @@ Type TMyApp Extends TGraphicalApp
 
 		Local gm:TGraphicsManager = TGraphicsManager.GetInstance()
 		'scale everything from 800x600 to 1024x768
-	'	gm.SetResolution(1024, 768)
-	'	gm.SetDesignedResolution(800, 600)
-	'	gm.InitGraphics()
+		'gm.SetResolution(1024, 768)
+		'gm.SetDesignedResolution(800, 600)
+		'gm.InitGraphics()
 			GetDeltatimer().Init(30, -1)
 '			GetGraphicsManager().SetVsync(FALSE)
 			GetGraphicsManager().SetResolution(800,600)
-			GetGraphicsManager().SetFullscreen(True)
+'			GetGraphicsManager().SetFullscreen(True)
 			GetGraphicsManager().InitGraphics()	
 
 		'we use a full screen background - so no cls needed
