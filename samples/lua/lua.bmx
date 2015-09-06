@@ -31,7 +31,7 @@ Function LuaPrint:Int(luaState:Byte Ptr)
 	Local argCount:Int = lua_gettop(luaState)
 	Local text:String = ""
 	'from last to first
-	For Local i:Int = 0 To argCount
+	For Local i:Int = 0 Until argCount
 		If Not lua_isnil(luaState,-1 )
 			text = String.FromCString(lua_tostring(luaState, -1)) + text
 			'pop the string
