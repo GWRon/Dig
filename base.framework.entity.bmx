@@ -179,10 +179,9 @@ Type TRenderableEntity extends TEntityBase
 	Field area:TRectangle = new TRectangle
 	Field name:string
 	Field visible:int = True
-	Field zIndex:int
 	Field parent:TRenderableEntity = null
-	Field parentOffset:TVec2D
 	Field childEntities:TRenderableEntity[]
+	Field childOffsets:TVec2D[]
 
 	Field _options:int = 0
 	Const OPTION_IGNORE_PARENT_SCREENLIMIT:int = 1
@@ -207,41 +206,25 @@ Type TRenderableEntity extends TEntityBase
 	End Method
 
 
-	Method GetZIndex:int()
-		return zIndex
-	End Method
-
-
-	Method SetZIndex(zIndex:Int)
-		if self.zIndex <> zIndex
-			self.zIndex = zIndex
-			if parent then parent.SortChildren()
-		endif
-	End Method
-
 
 	Method AddChild(child:TRenderableEntity, childOffset:TVec2D = null, index:int = -1)
 		if not child then return
 		if not childEntities then childEntities = new TRenderableEntity[0]
+		if not childOffsets then childOffsets = new TVec2D[0]
 
 		if not childOffset then childOffset = new TVec2D.Init()
 
-		index = Min(childEntities.length, max(0, index))
-
+		if index < 0 then index = childEntities.length
 		if index >= childEntities.length
 			childEntities :+ [child]
+			childOffsets :+ [childOffset]
 		else
 			childEntities = childEntities[.. index] + [child] + childEntities[index ..]
+			childOffsets = childOffsets[.. index] + [childOffset] + childOffsets[index ..]
 		endif
-
-		if child.GetZIndex() = 0 then child.SetZIndex(index)
 
 		'set self as parent
 		childEntities[index].SetParent(self)
-		childEntities[index].SetParentOffset(childOffset)
-
-		'sort the children list
-		SortChildren()
 	End Method
 
 
@@ -269,38 +252,21 @@ Type TRenderableEntity extends TEntityBase
 		'remove parent association (strong reference)
 		'this makes it garbage-collectable
 		childEntities[index].SetParent(null)
-		childEntities[index].SetParentOffset(null)
 
 		if index <= 0
 			childEntities = childEntities[1 ..]
+			childOffsets = childOffsets[1 ..]
 		elseif index >= childEntities.length - 1
 			childEntities = childEntities[.. childEntities.length-1]
+			childOffsets = childOffsets[.. childOffsets.length-1]
 		else
 			childEntities = childEntities[.. index] + childEntities[index+1 ..]
+			childOffsets = childOffsets[.. index] + childOffsets[index+1 ..]
 		endif
 
 		return True
 	End Method
-
-
-	Method SortChildren()
-		childEntities.Sort()
-	End Method
-
-
-	Method Compare:Int(obj:Object)
-		Local otherObj:TRenderableEntity = TRenderableEntity(obj)
-
-		'undefined object - "a>b"
-		If Not otherObj Then Return 1
-
-		'if self is "higher", move it to the top
-		If GetZIndex() > otherObj.GetZIndex() Then Return 1
-		'if self is "lower"", move to bottom
-		If GetZIndex() < otherObj.GetZIndex() Then Return -1
-		Return 0
-	End Method	
-
+	
 
 	Method Render:Int(xOffset:Float = 0, yOffset:Float = 0, alignment:TVec2D = Null)
 		RenderChildren(xOffset, yOffset, alignment)
@@ -325,12 +291,7 @@ Type TRenderableEntity extends TEntityBase
 	Method RenderChildren:Int(xOffset:Float = 0, yOffset:Float = 0, alignment:TVec2D = Null)
 		For local i:int = 0 until childEntities.length
 			if not childEntities[i] then continue
-			if childEntities[i].parent <> self then continue
-			if childEntities[i].parentOffset
-				childEntities[i].Render(xOffset + childEntities[i].parentOffset.x, yOffset + childEntities[i].parentOffset.y, alignment)
-			else
-				childEntities[i].Render(xOffset, yOffset, alignment)
-			endif
+			childEntities[i].Render(xOffset + childOffsets[i].GetX(), yOffset + childOffsets[i].GetY(), alignment)
 		Next
 	End Method
 
@@ -443,10 +404,6 @@ Type TRenderableEntity extends TEntityBase
 
 	Method SetParent:Int(parent:TRenderableEntity)
 		self.parent = parent
-	End Method
-
-	Method SetParentOffset:Int(offset:TVec2D)
-		self.parentOffset = offset
 	End Method
 
 
