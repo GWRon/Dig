@@ -35,7 +35,8 @@ Rem
 	====================================================================
 EndRem
 SuperStrict
-Import BRL.Reflection
+'Import BRL.Reflection
+Import "external/reflectionExtended/reflection.bmx"
 Import BRL.Retro
 Import "base.util.input.bmx" 		'Mousemanager
 Import "base.util.rectangle.bmx"	'TRectangle
@@ -139,14 +140,6 @@ Type THelper
 	End Function
 
 
-	Function IntArrayContainsNumber:int(arr:Int[], number:Int)
-		For local d:Int = EachIn arr
-			if d = number then return True
-		Next
-		return False
-	End Function
-
-
 	Global ListTypeID:TTypeId=TTypeId.ForObject(new TList)
 	Global MapTypeID:TTypeId=TTypeId.ForObject(new TMap)
 
@@ -194,12 +187,12 @@ Type THelper
 			If size = 0 then return Null
 
 			'create new array
-			local clone:object = objTypeID.NewArray(objTypeID.ArrayLength(obj))
+			local clone:object = objTypeID.NewArray(size)
 			'something failed, return a null object
 			If not clone then return Null
 
 			'clone each element of the array
-			For Local i:int=0 Until objTypeID.ArrayLength(obj)
+			For Local i:int=0 Until size
 				'run recursive clone for arrays, objects and strings
 				If objTypeID.ElementType().ExtendsType(ArrayTypeId) or objTypeID.ElementType().ExtendsType(StringTypeId) or objTypeID.ElementType().ExtendsType(ObjectTypeId)
 					objTypeID.SetArrayElement(clone, i, CloneObject(objTypeID.GetArrayElement(obj, i)))

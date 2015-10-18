@@ -24,7 +24,7 @@ Type TAppToastMessage Extends TToastMessage
 	End Method
 
 
-	Method Remove:int()
+	Method Remove:Int()
 		For Local link:TLink = EachIn _registeredEventListener
 			link.Remove()
 		Next

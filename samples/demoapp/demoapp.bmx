@@ -2,6 +2,7 @@ SuperStrict
 
 'keep it small
 Framework BRL.standardIO
+Import pub.opengles
 Import "../../base.framework.graphicalapp.bmx"
 Import "../../base.util.registry.bmx"
 Import "../../base.util.registry.imageloader.bmx"
@@ -29,7 +30,8 @@ Type TMyApp Extends TGraphicalApp
 		'gm.InitGraphics()
 			GetDeltatimer().Init(30, -1)
 '			GetGraphicsManager().SetVsync(FALSE)
-			GetGraphicsManager().SetResolution(800,600)
+			GetGraphicsManager().SetResolution(840,480)
+			GetGraphicsManager().SetDesignedResolution(800,600)
 '			GetGraphicsManager().SetFullscreen(True)
 			GetGraphicsManager().InitGraphics()	
 
