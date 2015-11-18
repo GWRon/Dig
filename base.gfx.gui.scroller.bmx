@@ -63,6 +63,13 @@ Type TGUIScroller Extends TGUIobject
 	End Method
 
 
+	Method Remove:Int()
+		Super.Remove()
+		if guiButtonMinus then guiButtonMinus.Remove()
+		if guiButtonPlus then guiButtonPlus.Remove()
+	End Method
+
+
 	'override to also check buttons
 	Method IsAppearanceChanged:int()
 		if guiButtonMinus and guiButtonMinus.isAppearanceChanged() then return TRUE
@@ -154,8 +161,8 @@ Type TGUIScroller Extends TGUIobject
 
 
 	Method SetCurrentValue(currentValue:Double)
-		self.currentValue = Max(minValue, Min(maxValue, currentValue))
 		EventManager.registerEvent( TEventSimple.Create( "guiobject.onChangeValue", null, self ) )
+		self.currentValue = Max(minValue, Min(maxValue, currentValue))
 	End Method
 
 
