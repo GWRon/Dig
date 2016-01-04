@@ -1,9 +1,13 @@
 SuperStrict
-Import "../../base.sfx.soundmanager.new.bmx"
+'Import "../../base.sfx.soundmanager.new.bmx"
+Import "../../base.sfx.soundstream.bmx"
+Import brl.WAVLoader
+Import brl.OGGLoader
+SetAudioDriver("FreeAudio")
 
 
 'create and init audio engine
-GetSoundManager()
+'GetSoundManager()
 'init streams -> done when calling stream.play()
 'DigAudioStreamManager.Init()
 
@@ -13,7 +17,7 @@ Local uri:String
 Local stream:TDigAudioStreamOgg
 
 stream = New TDigAudioStreamOgg.CreateWithFile("sound3.ogg", True)
-GetSoundManager().AddSound("song3", stream, "default")
+'GetSoundManager().AddSound("song3", stream, "default")
 
 'stream = New TDigAudioStreamOgg.CreateWithFile("sound2.ogg", False)
 'GetSoundManager().AddSound("song2", stream, "default")
@@ -42,8 +46,6 @@ While Not KeyHit(KEY_ESCAPE)
 	SetColor 255,255,255
 	DrawText(GCMemAlloced(), 20,20)
 
-	'If KeyHit(KEY_SPACE) Then GetSoundManager().activeMusicStream.Reset();GetSoundManager().activeMusicStream.Play()
-	'If KeyHit(KEY_X) Then GetSoundManager().PlayMusicPlaylist("default")
 
 	if stream
 		Local soundWidth:Int = 600
