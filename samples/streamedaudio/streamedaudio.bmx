@@ -43,11 +43,11 @@ While Not KeyHit(KEY_ESCAPE)
 		DrawText("Buffers:  playIndex="+stream.GetBufferPlayIndex()+"  writeIndex="+stream.GetBufferWriteIndex(), 20,345)
 		For local i:int = 0 to 2
 			if i = stream.GetBufferPlayIndex()
-				SetColor 255,255,0
+				SetColor 200,200,0
 				DrawRect(20 + i*(soundWidth / 3) + 10, 362, 40, 5)
 			endif
 			if i = stream.GetBufferWriteIndex()
-				SetColor 255,100,0
+				SetColor 200,0,0
 				DrawRect(20 + i*(soundWidth / 3) + 50, 362, 40, 5)
 			endif
 
@@ -62,12 +62,12 @@ While Not KeyHit(KEY_ESCAPE)
 					SetColor 0,255,0
 					DrawText("buffered", 20 + i*(soundWidth / 3), 380)
 			EndSelect
-			DrawRect(20 + i*(soundWidth / 3), 365, soundWidth / 3, 15)
+			DrawRect(20 + i*(soundWidth / 3) + 1, 365, soundWidth / 3 - 2, 15)
 
 			SetColor 200,200,0
-			DrawRect(20, 365+7, soundWidth * stream.GetTotalBufferPlayPosition()/Float(stream.GetTotalBufferLength()), 4)
+			DrawRect(20, 365+9, soundWidth * stream.GetTotalBufferPlayPosition()/Float(stream.GetTotalBufferLength()), 3)
 			SetColor 200,0,0
-			DrawRect(20, 365+11, soundWidth * stream.GetTotalBufferWritePosition()/Float(stream.GetTotalBufferLength()), 4)
+			DrawRect(20, 365+12, soundWidth * stream.GetTotalBufferWritePosition()/Float(stream.GetTotalBufferLength()), 3)
 		Next
 		SetColor 255,255,255
 	endif

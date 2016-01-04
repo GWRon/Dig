@@ -135,8 +135,8 @@ Type TDigAudioStream
 	Field sound:TSound
 	Field currentChannel:TChannel
 
-	'amount of bytes written to the buffer since begin to play 
-	Field bufferBytesWritten:int = 0
+	'amount of bytes read from the stream 
+	Field bytesRead:int = 0
 
 	'channel position might differ from the really played position
 	'so better store a custom position property to avoid discrepancies
@@ -166,7 +166,7 @@ Type TDigAudioStream
 	'length of each chunk in positions/ints 
 	Const chunkLength:Int = 1024
 	'amount of chunks in one buffer
-	Const bufferChunkCount:Int = 64
+	Const bufferChunkCount:Int = 32
 	'amount of buffers
 	Const bufferCount:Int = 3
 	Const BUFFER_STATE_UNUSED:Int = 0
@@ -303,7 +303,7 @@ Type TDigAudioStream
 
 	'returns current write position within the complete buffer
 	Method GetTotalBufferWritePosition:Int()
-		Return (bufferBytesWritten / 4) Mod GetTotalBufferLength()
+		Return (bytesRead / 4) Mod GetTotalBufferLength()
 	End Method
 
 
@@ -365,7 +365,7 @@ Type TDigAudioStream
 
 
 	Method ReadyToPlay:Int()
-		Return Not streaming And GetBufferWritePosition() >= GetBufferLength()
+		Return Not streaming And GetBufferWriteIndex() > 0
 	End Method
 
 
@@ -379,7 +379,7 @@ Type TDigAudioStream
 
 	Method ResetAudioData:Int()
 		samplesRead = 0
-		bufferBytesWritten = 0
+		bytesRead = 0
 	End Method
 
 
@@ -436,7 +436,6 @@ Type TDigAudioStream
 
 		'load initial buffer - preload + playback buffer
 		FillBuffer(0, GetBufferLength())
-		'_lastBufferIndex = bufferCount
 		Print "  Loaded initial buffer"
 
 
@@ -472,18 +471,14 @@ Type TDigAudioStream
 
 		'=== CALCULATE STREAM-PLAYBACK POSITION ===
 		playbackPosition :+ GetChannelPosition() - _lastPlaybackPosition
-'		if playbackPosition - _lastPlaybackPosition > 2* GetBufferLength()
-'			print "SKIPPED MORE THAN THE BUFFER " + playbackPosition
-'		endif
-		_lastPlaybackPosition = playbackPosition
-
 		'keep the value as small as possible
 		playbackPosition = playbackPosition mod GetLength()
+		_lastPlaybackPosition = playbackPosition
 
-'Print "update  playbackPosition=" + playbackPosition + "  samplesRead=" + samplesRead+"/"+samplesCount
+		'Print "update  playbackPosition=" + playbackPosition + "  samplesRead=" + samplesRead+"/"+samplesCount
 
 
-		'refresh bufferstates
+		'=== REFRESH BUFFERSTATES ===
 		Local unusedCount:Int = 0
 		For Local i:Int = 0 Until bufferCount
 			If GetBufferPlayIndex() <> i
@@ -497,25 +492,26 @@ Type TDigAudioStream
 			unusedCount :+ 1
 		Next
 
+
+		'=== SKIP FURTHER PROCESSING ? ===
 		'nothing to do
 		If GetBufferIndex(playbackPosition) = _lastHandledBufferIndex Then Return
 		_lastHandledBufferIndex = GetBufferIndex(playbackPosition)
-
-
-		'=== FINISH PLAYBACK IF END IS REACHED ===
-		'did the playing position reach the last piece of the stream?
-'TODO
-'		If samples >= samplesCount And Not loop
-'			FinishPlaying()
-'			Return
-'		EndIf
-
-
 
 		'no buffer for refill available
 		If unusedCount = 0 Then Print "NOTHING TO DO";Return
 
 
+		'=== FINISH PLAYBACK IF END IS REACHED ===
+		'did the playing position reach the last piece of the stream?
+		'TODO
+		'If playbackPosition >= samplesCount And Not loop
+		'	FinishPlaying()
+		'	Return
+		'EndIf
+
+
+		'=== REFILL BUFFERS ===
 		For Local i:Int = 0 Until bufferCount
 			'for playIndex = 1 this is: 2, 0
 			'for playIndex = 2 this is: 0, 1
@@ -525,7 +521,7 @@ Type TDigAudioStream
 			
 			Local loadSamples:Int = Max(0, Min( GetBufferLength(), samplesCount - samplesRead))
 			If loadSamples > 0
-				print "fillbuffer  offset=" + GetTotalBufferWritePosition() +" loadSamples="+loadSamples+"/"+GetBufferLength()
+				'print "fillbuffer  offset=" + GetTotalBufferWritePosition() +" loadSamples="+loadSamples+"/"+GetBufferLength()
 				FillBuffer(GetTotalBufferWritePosition(), loadSamples)
 
 				'wasn't enough data for the buffer?
@@ -534,7 +530,7 @@ Type TDigAudioStream
 					Local fillSamples:Int = GetBufferLength() - loadSamples
 					If loop
 						Local bufferWritePosition:Int = GetTotalBufferWritePosition()
-						Print "reset offset=" + bufferWritePosition +" fillSamples="+fillSamples+"  rest="+(GetBufferLength() - loadSamples - fillSamples)
+						Print "reset offset=" + bufferWritePosition +" fillSamples="+fillSamples
 						ResetAudioData()
 						_channelAudioStartPosition = GetChannelPosition()
 						
@@ -558,8 +554,8 @@ Type TDigAudioStream
 
 
 		'=== BEGIN PLAYBACK IF BUFFERED ENOUGH ===
-		If ReadyToPlay() And Not IsPaused()
-Print "  Set streaming to true"
+		If not streaming and ReadyToPlay() And Not IsPaused()
+			Print "  Set streaming to true"
 			If currentChannel Then currentChannel.SetPaused(False)
 			streaming = True
 		EndIf
@@ -662,9 +658,6 @@ Type TDigAudioStreamOgg Extends TDigAudioStream
 
 
 	Method EmptyBuffer:int(offset:Int, length:Int = -1)
-'TODO: check
-print "TODO: EmptyBuffer()"
-return false
 		'length is given in "ints", so calculate length in bytes
 		Local bytes:Int = 4 * length
 		If bytes > GetTotalBufferBytes() Then bytes = GetTotalBufferBytes()
@@ -689,7 +682,7 @@ return false
 		'=== FILL IN DATA ===
 		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset*4
 
-print "fillbuffer()  stream.Pos="+stream.Pos()+"/"+stream.Size()+"  samplesRead="+samplesRead+"/"+samplesCount + "  offset="+offset+"  bytes="+bytes+"  length="+length
+print "fillbuffer()  stream.Pos="+stream.Pos()+"/"+stream.Size()+"  samplesRead="+samplesRead+"/"+samplesCount + "  offset="+offset+"  bytes="+bytes+"  length="+length+"/"+GetBufferLength()
 
 		'try to read the oggfile at the current position
 		Local result:Int = Read_Ogg(ogg, bufAppend, bytes)
@@ -697,12 +690,15 @@ print "fillbuffer()  stream.Pos="+stream.Pos()+"/"+stream.Size()+"  samplesRead=
 			Print "read_ogg: Error streaming from OGG"
 			Throw "read_ogg: Error streaming from OGG"
 		elseif result = 0
+			'take care that you use the patched
+			'pub.mod/oggvorbis.mod/oggvorbis.bmx
+			'which returns results > 0 for successful reads
 			print "read_ogg: REACHED END OF FILE"
 		else
 '			print "read_ogg: "+result+"/"+bytes+" bytes read"
 		EndIf
 		samplesRead :+ (result / 4) 'as int
-		bufferBytesWritten :+ result
+		bytesRead :+ result
 
 		Return result
 	End Method
