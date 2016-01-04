@@ -68,7 +68,7 @@ Type TDigAudioStreamManager
 	Field streams:TList = CreateList()
 	Global externalThreadRunning:Int = False
 	'USE MANUAL UPDATES?
-	Global threaded:int = False
+	Global threaded:int = True
 
 	Method Init()
 		Print "TDigAudioStreamManager.Init()"
