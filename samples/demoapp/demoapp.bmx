@@ -2,7 +2,7 @@ SuperStrict
 
 'keep it small
 Framework BRL.standardIO
-Import pub.opengles
+'Import pub.opengles
 Import "../../base.framework.graphicalapp.bmx"
 Import "../../base.util.registry.bmx"
 Import "../../base.util.registry.imageloader.bmx"
@@ -26,14 +26,10 @@ Type TMyApp Extends TGraphicalApp
 		Local gm:TGraphicsManager = TGraphicsManager.GetInstance()
 		'scale everything from 800x600 to 1024x768
 		'gm.SetResolution(1024, 768)
-		'gm.SetDesignedResolution(800, 600)
-		'gm.InitGraphics()
-			GetDeltatimer().Init(30, -1)
-'			GetGraphicsManager().SetVsync(FALSE)
-			GetGraphicsManager().SetResolution(840,480)
-			GetGraphicsManager().SetDesignedResolution(800,600)
-'			GetGraphicsManager().SetFullscreen(True)
-			GetGraphicsManager().InitGraphics()	
+		gm.SetResolution(800, 600)
+		gm.SetDesignedResolution(800,600)
+		'gm.SetFullscreen(True)
+		gm.InitGraphics()	
 
 		'we use a full screen background - so no cls needed
 		autoCls = True
@@ -121,6 +117,7 @@ Type TMyApp Extends TGraphicalApp
 				toast.SetCloseAtWorldTime( GetWorldTime().GetTimeGone() + Rand(60,120))
 			EndIf
 
+			rem
 			Select Rand(0,3)
 				Case 0
 					GetToastMessageCollection().AddMessage(toast, "TOPLEFT")
@@ -131,6 +128,8 @@ Type TMyApp Extends TGraphicalApp
 				Case 3
 					GetToastMessageCollection().AddMessage(toast, "BOTTOMRIGHT")
 			EndSelect
+			endrem
+			GetToastMessageCollection().AddMessage(toast, "BOTTOMRIGHT")
 	End Method
 
 

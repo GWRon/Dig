@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tvt>
+	<!-- files to load at all -->
+	<resources>
+		<file name="resource_gui" url="../__res/config/gui.xml" />
+		<file name="resource_toastmessage" url="../__res/config/toastmessage.xml" />
+	</resources>
+</tvt>
