@@ -16,12 +16,13 @@ end
 		MyObject.prop = MyObject.arr[2]
 		MyObject.Test("changing MyObject.prop from ".. MyObject.prop .. " to nil (results in 0)")
 		MyObject.prop = nil
-		-- does not work yet
+		-- array modification does not work yet
 		--MyObject.Test("changing MyObject.arr[2] from ".. MyObject.arr[2] .. " to 10")
 		--MyObject.arr[2] = 30
 
-		local mylist = MyObject.GetList()
-		myprint ("List count: " .. mylist.Count() .. " = 3 ?")
+		local mylistB = MyObject.GetList()
+		myprint ("List count: " .. MyObject.mylist.Count() .. " = 0 ?")
+		myprint ("List count: " .. mylistB.Count() .. " = 3 ?")
 		MyObject.myList = nil
 	else
 		print "MyObject is null"

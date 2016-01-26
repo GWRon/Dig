@@ -66,3 +66,11 @@ For Local i:Int = 0 To 0
 	EndIf
 	Print "---"
 Next
+
+
+print "count: "+MyObject.GetList().Count()
+
+Local typeId:TTypeId = TTypeId.ForObject(MyObject)
+print "TMyObject = " +typeId.name()+"?"
+Local typeId2:TTypeId = TTypeId.ForObject(MyObject.GetList())
+print "TList = " +typeId2.name()+"?"

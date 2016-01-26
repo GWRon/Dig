@@ -51,15 +51,21 @@ Type TScreenMainMenu extends TScreenMenuBase
 		'add some items to that list
 		for local i:int = 1 to 10
 			'base items do not have a size - so we have to give a manual one
-			baseList.AddItem( new TGUIListItem.Create(null, new TVec2D.Init(100, 20), "basetest "+i) )
+			local entry:TGUIListItem = new TGUIListItem.Create(null, new TVec2D.Init(100, 20), "basetest "+i)
+			'draw a beautiful rectangle as background
+			entry._customDrawBackground = DrawListEntryBackground
+			baseList.AddItem( entry )
 		Next
 
 
 		local selectList:TGUISelectList = new TGUISelectList.Create(new TVec2D.Init(200,450), new TVec2D.Init(130,80), self.GetName())
 		'add some items to that list
-		for local i:int = 1 to 10
+		for local i:int = 1 to 5 '10
 			'base items do not have a size - so we have to give a manual one
-			selectList.AddItem( new TGUISelectListItem.Create(null, null, "selecttest "+i) )
+			local entry:TGUISelectListItem = new TGUISelectListItem.Create(null, new TVec2D.Init(100, 20), "selecttest "+i)
+			'draw a beautiful rectangle as background
+			entry._customDrawBackground = DrawListEntryBackground
+			selectList.AddItem( entry )
 		Next
 
 
@@ -71,7 +77,10 @@ Type TScreenMainMenu extends TScreenMenuBase
 		slotList.SetItemLimit(5) 'max 5 items
 		'add some items to that list
 		for local i:int = 1 to 3
-			slotList.SetItemToSlot( new TGUIListItem.Create(null, new TVec2D.Init(130,20), "slottest "+i), i )
+			local entry:TGUIListItem = new TGUIListItem.Create(null, new TVec2D.Init(130,20), "slottest "+i)
+			'draw a beautiful rectangle as background
+			entry._customDrawBackground = DrawListEntryBackground
+			slotList.SetItemToSlot( entry, i )
 		Next
 
 		'uncomment to have a simple image button
@@ -260,6 +269,39 @@ endrem
 	End Function
 
 
+	Function DrawListEntryBackground(obj:TGUIObject)
+		Local atPoint:TVec2D = obj.GetScreenPos()
+
+		local oldCol:TColor = new TColor.Get()
+
+		Local maxWidth:Int = obj.GetParent().getContentScreenWidth() - obj.rect.getX()
+
+		SetColor 0,0,0
+		DrawRect(atPoint.GetX(), atPoint.GetY(), maxWidth, obj.rect.getH())
+		If obj._flags & GUI_OBJECT_DRAGGED
+			SetColor 125,0,125
+		Else
+			SetColor 125,125,125
+		EndIf
+		DrawRect(atPoint.GetX() + 1, atPoint.GetY() + 1, maxWidth-2, obj.rect.getH()-2)
+
+
+		'hovered
+		if obj.isHovered()
+			SetBlend LightBlend
+			SetAlpha 0.25 * GetAlpha()
+			DrawRect(atPoint.GetX() + 1, atPoint.GetY() + 1, maxWidth-2, obj.rect.getH()-2)
+			SetAlpha 4 * GetAlpha()
+			SetBlend AlphaBlend
+		endif
+
+		oldCol.SetRGBA()
+
+		'draw original widget background (eg. selected state for SelectList items)
+		obj.DrawBackground()
+	End Function
+	
+
 	Method PrepareStart:Int()
 		Super.PrepareStart()
 		LogoFadeInFirstCall = 0
@@ -334,10 +376,10 @@ Type TGUIChat Extends TGUIPanel
 
 		guiList = New TGUIListBase.Create(new TVec2D.Init(0,0), new TVec2D.Init(GetContentScreenWidth(),GetContentScreenHeight()), limitState)
 		guiList.setOption(GUI_OBJECT_ACCEPTS_DROP, False)
-		guiList.autoSortItems = False
+		guiList.SetAutoSortItems(False)
 		guiList.SetAcceptDrop("")
 		guiList.setParent(Self)
-		guiList.autoScroll = True
+		guiList.SetAutoScroll(True)
 		guiList.SetBackground(Null)
 
 		self.className = "TGUIChat"
@@ -630,8 +672,6 @@ Type TGUIChatEntry Extends TGUIListItem
 
 
 	Method DrawContent()
-		Self.getParent("tguilistbase").RestrictViewPort()
-
 		If Self.showtime <> Null Then SetAlpha Float(Self.showtime - Time.GetTimeGone())/500.0
 		'available width is parentsDimension minus startingpoint
 		Local parentPanel:TGUIScrollablePanel = TGUIScrollablePanel(Self.getParent("tguiscrollablepanel"))
@@ -650,7 +690,5 @@ Type TGUIChatEntry Extends TGUIListItem
 		GetBitmapFontManager().baseFont.drawBlock(GetValue(), getScreenX()+move.x, getScreenY()+move.y, maxWidth-move.X, maxHeight, Null, valueColor, 2, 1, 0.5)
 
 		SetAlpha 1.0
-
-		Self.getParent("tguilistbase").ResetViewPort()
 	End Method
 End Type
