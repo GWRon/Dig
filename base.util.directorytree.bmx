@@ -21,20 +21,44 @@ Type TDirectoryTree
 	'files to include/exclude in the tree. "*" means all
 	Field _includeFileEndings:TList    = CreateList()
 	Field _excludeFileEndings:TList    = CreateList()
-	Field _includeFileNames:TList    = CreateList()
-	Field _excludeFileNames:TList    = CreateList()
+	Field _includeFileNames:TList      = CreateList()
+	Field _excludeFileNames:TList      = CreateList()
 	Field _includeDirectoryNames:TList = CreateList()
 	Field _excludeDirectoryNames:TList = CreateList()
+	Field relativePaths:int = True
 
+
+	Method New()
+		baseDirectory = AppDir
+	End Method
+
+	Method SimpleInit:TDirectoryTree( baseDirectory:String="" )
+		return Init(baseDirectory, ["*"], null, ["*"], null)
+	End Method
+	
 
 	'initialize object
-	Method Init:TDirectoryTree( baseDirectory:String, includeFileEndings:String[] = Null, excludeFileEndings:String[] = Null, includeDirectoryNames:String[] = Null, excludeDirectoryNames:String[] = Null )
+	Method Init:TDirectoryTree( baseDirectory:String="", includeFileEndings:String[] = Null, excludeFileEndings:String[] = Null, includeDirectoryNames:String[] = Null, excludeDirectoryNames:String[] = Null )
+		_includeFileEndings.Clear()
+		_excludeFileEndings.Clear()
+		_includeFileNames.Clear()
+		_excludeFileNames.Clear()
+		_includeDirectoryNames.Clear()
+		_excludeDirectoryNames.Clear()
+		directories.Clear()
+		filePaths.Clear()
+	
+		'include all if not defined differently
 		If includeFileEndings Then AddIncludeFileEndings(includeFileEndings)
-		If excludeFileEndings Then AddExcludeFileEndings(excludeFileEndings)
 		If includeDirectoryNames Then AddIncludeDirectoryNames(includeDirectoryNames)
+'		AddIncludeFileNames(["*"])
+		
+		'exclude none if nothing was given
+		If excludeFileEndings Then AddExcludeFileEndings(excludeFileEndings)
 		If excludeDirectoryNames Then AddExcludeDirectoryNames(excludeDirectoryNames)
 
 		Self.baseDirectory = baseDirectory
+		If Self.baseDirectory = "" then Self.baseDirectory = AppDir 
 
 		Return Self
 	End Method
@@ -120,13 +144,18 @@ Type TDirectoryTree
 	End Method
 
 
+	Method GetURI:string(uri:string)
+		if relativePaths then return uri.Replace(baseDirectory+"/","")
+		return uri
+	End Method
+	
+
 	'scans all files and directories within the given base
 	'directory.
 	'if no file ending is added until scanning, all files
 	'will get added
 	Method ScanDir:Int( directory:String="", sortResults:int = True )
 		If directory = "" Then directory = baseDirectory
-
 		?bmxng
 		Local dirHandle:Byte Ptr = ReadDir(directory)
 		?not bmxng
@@ -150,21 +179,21 @@ Type TDirectoryTree
 					'skip forbidden file endings
 					If _excludeFileEndings.Contains( ExtractExt(file).toLower() ) Then Continue
 					'skip files with non-enabled file endings
-					If Not _includeFileEndings.Contains( ExtractExt(file).toLower() ) And Not _includeFileEndings.Contains("*") Then Continue
+					If _includeFileEndings.Count() > 0 and Not _includeFileEndings.Contains( ExtractExt(file).toLower() ) And Not _includeFileEndings.Contains("*") Then Continue
 
 					'skip forbidden file names
 					If _excludeFileNames.Contains( StripAll(file).toLower() ) Then Continue
 					'skip files with non-enabled file names
-					If Not _includeFileNames.Contains( StripAll(file).toLower() ) And Not _includeFileNames.Contains("*") Then Continue
+					If _includeFileNames.Count() > 0 and Not _includeFileNames.Contains( StripAll(file).toLower() ) And Not _includeFileNames.Contains("*") Then Continue
 
-					AddFile(uri)
+					AddFile( GetURI(uri) )
 				Case 2
 					'skip forbidden directories
 					If _excludeDirectoryNames.Contains( file.toLower() ) Then Continue
 					'skip directories with non-enabled directory names
 					If Not _includeDirectoryNames.Contains( file.toLower() ) And Not _includeDirectoryNames.Contains("*") Then Continue
 
-					AddDirectory(uri)
+					AddDirectory( GetURI(uri) )
 					ScanDir(uri)
 			End Select
 		Forever
@@ -184,6 +213,7 @@ Type TDirectoryTree
 	Method GetFiles:String[](fileName:String="", fileEnding:String="", URIstartsWith:String="")
 		Local result:String[]
 		For Local uri:String = EachIn filePaths
+			uri = GetURI(uri) 'strip absolute path if necessary
 			'skip files with wrong filename - case sensitive
 			If fileName <> "" And StripDir(uri) <> fileName Then Continue
 			'skip uris not starting with given filter
