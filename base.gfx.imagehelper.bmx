@@ -88,6 +88,7 @@ Function DrawImageOnImage:int(src:object, dest:object, x:Int, y:Int, modifyColor
 		For Local j:Int = 0 To Source.height-1
 			'skip if out of range
 			If x+i >= destination.width or y+j >= destination.height then continue
+			If x+i < 0 or y+j < 0 then continue
 
 			sourcePixel = ReadPixel(source, i,j)
 			'modify the source's alpha with the modifer
