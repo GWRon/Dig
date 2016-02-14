@@ -141,30 +141,30 @@ End Function
 
 
 
-Function blurPixmap(pm:TPixmap, k:Float = 0.5)
+Function blurPixmap:TPixmap(pm:TPixmap, k:Float = 0.5)
 	'pm - the pixmap to blur. Format must be PF_RGBA8888
 	'k - blurring amount. Value between 0.0 and 1.0
 	'	 0.1 = Extreme, 0.9 = Minimal
 
-	For Local x:Int = 1 To (pm.Width - 1)
-    	For Local z:Int = 0 To (pm.Height - 1)
+	For Local x:Int = 1 Until pm.Width
+    	For Local z:Int = 0 Until pm.Height
 			WritePixel(pm, x, z, blurPixel(ReadPixel(pm, x, z), ReadPixel(pm, x - 1, z), k))
     	Next
     Next
 
     For Local x:Int = (pm.Width - 3) To 0 Step -1
-    	For Local z:Int = 0 To (pm.Height - 1)
+    	For Local z:Int = 0 Until pm.Height
 			WritePixel(pm, x, z, blurPixel(ReadPixel(pm, x, z), ReadPixel(pm, x + 1, z), k))
     	Next
     Next
 
-    For Local x:Int = 0 To (pm.Width - 1)
-    	For Local z:Int = 1 To (pm.Height - 1)
+    For Local x:Int = 0 Until pm.Width
+    	For Local z:Int = 1 Until pm.Height
 			WritePixel(pm, x, z, blurPixel(ReadPixel(pm, x, z), ReadPixel(pm, x, z - 1), k))
     	Next
     Next
 
-    For Local x:Int = 0 To (pm.Width - 1)
+    For Local x:Int = 0 Until pm.Width
     	For Local z:Int = (pm.Height - 3) To 0 Step -1
 			WritePixel(pm, x, z, blurPixel(ReadPixel(pm, x, z), ReadPixel(pm, x, z + 1), k))
     	Next
@@ -173,38 +173,16 @@ Function blurPixmap(pm:TPixmap, k:Float = 0.5)
 
 	'function in a function - it is just a helper
 	Function blurPixel:Int(px:Int, px2:Int, k:Float)
-		'Utility function used by blurPixmap.
-		'Uncomment the commented lines to enable alpha component
-		'processing (usually not required).
-		rem
-			Return ARGB_Color(1.0,..
-						(ARGB_Red(px2) * (1 - k)) + (ARGB_Red(px) * k), ..
-						(ARGB_Green(px2) * (1 - k)) + (ARGB_Green(px) * k) ,..
-						(ARGB_Blue(px2) * (1 - k)) + (ARGB_Blue(px) * k) ..
-						)
-		endrem
-
-
-		Local pxa:Byte = px Shr 24
-		Local pxb:Byte = px Shr 16
-		Local pxg:Byte = px Shr 8
-		Local pxr:Byte = px
-
-		Local px2a:Byte = px2 Shr 24
-		Local px2b:Byte = px2 Shr 16
-		Local px2g:Byte = px2 Shr 8
-		Local px2r:Byte = px2
-
-		pxa = (px2a * (1 - k)) + (pxa * k)
-		pxb = (px2b * (1 - k)) + (pxb * k)
-		pxg = (px2g * (1 - k)) + (pxg * k)
-		pxr = (px2r * (1 - k)) + (pxr * k)
-
-		Return Int(pxa Shl 24 | pxb Shl 16 | pxg Shl 8 | pxr)
-
+		Return Int( ..
+		            int((Byte(px2 Shr 24) * (1 - k)) + (Byte(px Shr 24) * k)) Shl 24 | ..
+		            int((Byte(px2 Shr 16) * (1 - k)) + (Byte(px Shr 16) * k)) Shl 16 | ..
+		            int((Byte(px2 Shr  8) * (1 - k)) + (Byte(px Shr  8) * k)) Shl  8 | ..
+		            int((Byte(px2)        * (1 - k)) + (Byte(px)        * k)) ..
+		          )
 	End Function
-End Function
 
+	return pm
+End Function
 
 
 
