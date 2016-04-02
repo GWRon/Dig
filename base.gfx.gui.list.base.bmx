@@ -40,6 +40,9 @@ Type TGUIListBase Extends TGUIobject
 
 	Field _listFlags:int = 0
 
+	'amount (percentage) a list is scrolled based on item height 
+	Field scrollItemHeightPercentage:Float = 0.5
+
 	Field entries:TList	= CreateList()
 	Field entriesLimit:Int = -1
 	'private mouseover-field (ignoring covering child elements)
@@ -688,7 +691,7 @@ endrem
 			'try to scroll by 0.5 of an item height
 			local item:TGUIObject
 			if list.entries.Count() > 0 then item = TGUIObject(list.entries.First())
-			if item then scrollAmount = item.rect.GetH() * 0.5
+			if item then scrollAmount = item.rect.GetH() * list.scrollItemHeightPercentage
 			
 			EventManager.registerEvent(TEventSimple.Create("guiobject.onScrollPositionChanged", new TData.AddString("direction", direction).AddNumber("scrollAmount", scrollAmount), list))
 		endif
@@ -806,7 +809,7 @@ endrem
 		endif
 				
 
-		_mouseOverArea = THelper.MouseIn(GetScreenX(), GetScreenY(), rect.GetW(), rect.GetH())
+		_mouseOverArea = THelper.MouseIn(Int(GetScreenX()), Int(GetScreenY()), Int(rect.GetW()), Int(rect.GetH()))
 
 		If hasListOption(GUILIST_AUTOHIDE_SCROLLER)
 			If _mouseOverArea
@@ -832,8 +835,9 @@ endrem
 			Else
 				backgroundColor.setRGBA()
 			EndIf
-
-			DrawRect(rect.GetX(), rect.GetY(), rect.GetW(), rect.GetH())
+			if GetAlpha() > 0
+				DrawRect(rect.GetX(), rect.GetY(), rect.GetW(), rect.GetH())
+			endif
 
 			oldCol.SetRGBA()
 		EndIf
@@ -894,9 +898,9 @@ Type TGUIListItem Extends TGUIobject
 	'how long until auto remove? (initial value)
 	Field initialLifetime:Float	= Null
 	'how long until hiding (current value)
-	Field showtime:Float = Null
+	Field showtime:Double = Null
 	'how long until hiding (initial value)
-	Field initialShowtime:Float	= Null
+	Field initialShowtime:Int = Null
 	'color of the displayed value
 	Field valueColor:TColor	= new TColor
 
@@ -936,6 +940,31 @@ Type TGUIListItem Extends TGUIobject
 	'override onClick to emit a special event
 	Method OnClick:int(triggerEvent:TEventBase)
 		Super.OnClick(triggerEvent)
+
+
+		Local data:TData = triggerEvent.GetData()
+		If Not data Then Return False
+
+		'skip reaction if parental list is disabled
+		if TGUIListBase.FindGUIListBaseParent(self) and not TGUIListBase.FindGUIListBaseParent(self).IsEnabled() then return False
+
+		'only react on clicks with left mouse button
+		If data.getInt("button") <> 1 Then Return False
+
+		'we handled the click
+		triggerEvent.SetAccepted(True)
+
+		If isDragged()
+			'instead of using auto-coordinates, we use the coord of the
+			'mouseposition when the "hit" started
+			'drop(new TVec2D.Init(data.getInt("x",-1), data.getInt("y",-1)))
+			drop(MouseManager.GetClickPosition(1))
+		Else
+			'same for dragging
+			'drag(new TVec2D.Init(data.getInt("x",-1), data.getInt("y",-1)))
+			drag(MouseManager.GetClickPosition(1))
+		EndIf
+
 		'inform others that a selectlistitem was clicked
 		'this makes the "listitem-clicked"-event filterable even
 		'if the itemclass gets extended (compared to the general approach
@@ -957,26 +986,6 @@ endrem
 
 	'override default
 	Method onHit:Int(triggerEvent:TEventBase)
-		Local data:TData = triggerEvent.GetData()
-		If Not data Then Return False
-
-
-		'only react on clicks with left mouse button
-		If data.getInt("button") <> 1 Then Return False
-
-		'we handled the click
-		triggerEvent.SetAccepted(True)
-
-		If isDragged()
-			'instead of using auto-coordinates, we use the coord of the
-			'mouseposition when the "hit" started
-			'drop(new TVec2D.Init(data.getInt("x",-1), data.getInt("y",-1)))
-			drop(MouseManager.GetClickPosition(1))
-		Else
-			'same for dragging
-			'drag(new TVec2D.Init(data.getInt("x",-1), data.getInt("y",-1)))
-			drag(MouseManager.GetClickPosition(1))
-		EndIf
 	End Method
 
 
@@ -1007,8 +1016,8 @@ endrem
 			InitialShowtime = milliseconds
 			showtime = Time.GetTimeGone() + milliseconds
 		Else
-			InitialShowtime = Null
-			showtime = Null
+			InitialShowtime = 0
+			showtime = 0
 		EndIf
 	End Method
 
