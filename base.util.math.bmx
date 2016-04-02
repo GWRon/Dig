@@ -134,7 +134,7 @@ Type MathHelper
 		if digitsAfterDecimalPoint <= 0 then return RoundLong(value)
 
 		Local t:Long = 10 ^ digitsAfterDecimalPoint
-		local s:string = MathHelper.RoundLong(Abs(value) * t)
+		local s:string = RoundLong(Abs(value) * t)
 		'instead of comparing "value" we use the rounded one - a value
 		'of "0.000" is sometimes represented using "-2xxxxxxx.xxxx"
 		local minus:int = (RoundLong(value * t) < 0)

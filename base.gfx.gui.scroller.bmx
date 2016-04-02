@@ -210,10 +210,8 @@ Type TGUIScroller Extends TGUIobject
 		If guiScroller = Null Then Return False
 
 		'emit event that the scroller position has changed
-		If sender = guiScroller.guiButtonMinus
-			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", "up").AddNumber("scrollAmount", 15), guiScroller ) )
-		ElseIf sender = guiScroller.guiButtonPlus
-			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", "down").AddNumber("scrollAmount", 15), guiScroller ) )
+		If sender = guiScroller.guiButtonMinus or sender = guiScroller.guiButtonPlus
+			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", sender.direction.ToLower()).AddNumber("scrollAmount", 15), guiScroller ) )
 		EndIf
 	End Function
 
@@ -234,10 +232,8 @@ Type TGUIScroller Extends TGUIobject
 		EndIf
 
 		'emit event that the scroller position has changed
-		If sender = guiScroller.guiButtonMinus
-			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", "up"), guiScroller ) )
-		ElseIf sender = guiScroller.guiButtonPlus
-			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", "down"), guiScroller ) )
+		If sender = guiScroller.guiButtonMinus or sender = guiScroller.guiButtonPlus
+			EventManager.registerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", sender.direction.ToLower()), guiScroller ) )
 		EndIf
 	End Function
 

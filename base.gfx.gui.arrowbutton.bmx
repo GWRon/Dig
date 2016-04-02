@@ -35,11 +35,11 @@ Type TGUIArrowButton Extends TGUIObject
 
 	Method SetDirection(direction:String="LEFT")
 		Select direction.ToUpper()
-			Case "LEFT"		Self.direction="Left"
-			Case "UP"		Self.direction="Up"
-			Case "RIGHT"	Self.direction="Right"
-			Case "DOWN"		Self.direction="Down"
-			Default			Self.direction="Left"
+			Case "LEFT"    Self.direction="Left"
+			Case "UP"      Self.direction="Up"
+			Case "RIGHT"   Self.direction="Right"
+			Case "DOWN"    Self.direction="Down"
+			Default        Self.direction="Left"
 		EndSelect
 	End Method
 
