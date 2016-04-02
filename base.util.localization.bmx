@@ -137,11 +137,12 @@ Type TLocalization
 	End Function
 
 
-	Function SetFallbackLanguage:Int(language:String)
-		local lang:TLocalizationLanguage = GetLanguage(language)
+	Function SetFallbackLanguage:Int(languageCode:String)
+		local lang:TLocalizationLanguage = GetLanguage(languageCode)
 
 		if lang
 			fallbackLanguage = lang
+			TLocalizedString.defaultLanguage = languageCode
 			Return True
 		else
 			Return False
@@ -156,11 +157,13 @@ Type TLocalization
 	End Function
 	
 
-	Function SetCurrentLanguage:Int(language:String)
-		local lang:TLocalizationLanguage = GetLanguage(language)
+	Function SetCurrentLanguage:Int(languageCode:String)
+		local lang:TLocalizationLanguage = GetLanguage(languageCode)
 
 		if lang
 			currentLanguage = lang
+			TLocalizedString.SetCurrentLanguage(languageCode)
+
 			Return True
 		else
 			Return False
@@ -247,7 +250,7 @@ Type TLocalization
 		local master:TLocalizationLanguage = GetLanguage("de")
 		local compare:TLocalizationLanguage = GetLanguage(compareLang)
 		
-		print "---- LOCALIZATION STATE ----"
+		print "=== LANGUAGE FILES ============="
 		print "AVAILABLE:"
 		print "----------"
 		for local k:string = EachIn master.map.Keys()
@@ -255,7 +258,7 @@ Type TLocalization
 
 			print master.languageCode+" |"+ k + " = " +master.Get(k)
 			print compare.languageCode+" |"+ k + " = " +compare.Get(k)
-			print "~t-"
+			print Chr(8203) 'zero width space, else it skips "~n"
 		Next
 		print "~t"
 		print "MISSING:"
@@ -265,10 +268,10 @@ Type TLocalization
 
 			print master.languageCode+" |"+ k + " = " +master.Get(k)
 			print compare.languageCode+" |"+ k + " = "
-			print "~t-"
+			print Chr(8203) 'zero width space, else it skips "~n"
 		Next
 
-		print "----------------------------"
+		print "================================"
 	End Function
 	
 
@@ -382,7 +385,8 @@ End Type
 
 Type TLocalizedString
 	Field values:TMap = CreateMap()
-	Global defaultLanguage:string = "de"
+	Global fallbackLanguage:string = "de"
+	Global defaultLanguage:string = "en"
 	Global currentLanguage:string = "de"
 
 
@@ -416,13 +420,18 @@ Type TLocalizedString
 	End Method
 
 
-	Method Get:String(language:String="")
+	Method Get:String(language:String="", returnDefault:int = True)
 		if language="" then language = currentLanguage
 		if values.Contains(language)
 			return string(values.ValueForKey(language))
-		else
-			return string(values.ValueForKey(defaultLanguage))
+		elseif returnDefault
+			if values.Contains(defaultLanguage)
+				return string(values.ValueForKey(defaultLanguage))
+			elseif fallbackLanguage <> defaultLanguage and values.Contains(fallbackLanguage)
+				return string(values.ValueForKey(fallbackLanguage))
+			endif
 		endif
+		return ""
 	End Method
 
 
