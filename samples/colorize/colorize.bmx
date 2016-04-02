@@ -9,6 +9,8 @@ Global myImages:TImage[4]
 Global myGradients:TImage[4]
 
 for local i:int = 0 to 3
+	'ATTENTION: the eyes of the figure are colorized here too... to avoid
+	'this, you should colorize the eyes accordingly
 	Select i
 		case 0
 			MyImages[i] = LoadImage("figure.png", DYNAMICIMAGE)
@@ -28,8 +30,8 @@ for local i:int = 0 to 3
 	mySprites[i] = new TSprite.InitFromImage(MyImages[i], "figure"+i, 11)
 	'create the entity
 	myEntity[i] = new TSpriteEntity
-	myEntity[i].GetFrameAnimations().Set("walkRight", TSpriteFrameAnimation.Create([ [0,130], [1,130], [2,130], [3,130] ], -1, 0) )
-	myEntity[i].GetFrameAnimations().Set("walkLeft", TSpriteFrameAnimation.Create([ [4,130], [5,130], [6,130], [7,130] ], -1, 0) )
+	myEntity[i].GetFrameAnimations().Set(TSpriteFrameAnimation.Create("walkRight", [ [0,130], [1,130], [2,130], [3,130] ], -1, 0) )
+	myEntity[i].GetFrameAnimations().Set(TSpriteFrameAnimation.Create("walkLeft", [ [4,130], [5,130], [6,130], [7,130] ], -1, 0) )
 	myEntity[i].Init(mySprites[i])
 	myEntity[i].area.position.SetXY(125, 50 + 50*i)
 Next
@@ -90,6 +92,10 @@ Function WorldRender:int()
 	DrawImage(tafelCol, 240,400)
 	DrawImage(tafelCol2, 430,400)
 
+	DrawText("Saturation RGB -20%", 410, 280)
+	DrawText("Saturation -20%", 410, 310)
+	DrawText("Brightness -20%", 410, 340)
+	DrawText("Brightness +20%", 410, 370)
 	For local i:int = 0 to 5
 		new TColor.Create(255,0,0).AdjustSaturationRGB(-0.2 * i).SetRGB()
 		DrawRect(50 + 60*i, 270, 50, 30)
@@ -100,7 +106,7 @@ Function WorldRender:int()
 		new TColor.Create(255,0,0).AdjustBrightness(-0.2 * i).SetRGB()
 		DrawRect(50 + 60*i, 330, 50, 30)
 		
-		new TColor.Create(255,0,0).AdjustBrightness(+0.2 * i).SetRGB()
+		new TColor.Create(100,0,50).AdjustBrightness(+0.2 * i).SetRGB()
 		DrawRect(50 + 60*i, 360, 50, 30)
 	Next
 	SetColor 255,255,255
