@@ -705,7 +705,11 @@ endrem
 					Case ArrayTypeId
 						Self.lua_pushArray(args[i])
 					Default
-						Self.lua_pushobject(args[i])
+						if typeId.ExtendsType(ArrayTypeId)
+							Self.lua_pushArray(args[i])
+						else
+							Self.lua_pushObject(args[i])
+						endif
 				End Select
 			Next
 			If lua_pcall(getLuaState(), args.length, 1, 0) Then DumpError()
