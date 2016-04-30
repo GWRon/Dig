@@ -68,7 +68,7 @@ Type TGUIWindowBase Extends TGUIPanel
 		If Not guiBackground
 			SetBackground( new TGUIBackgroundBox.Create(null, null) )
 		Else
-			guiBackground.rect.position.SetXY(0,0)
+			guiBackground.SetPosition(0, 0)
 			guiBackground.resize(dimension.GetX(), dimension.GetY())
 		EndIf
 
@@ -105,7 +105,7 @@ Type TGUIWindowBase Extends TGUIPanel
 
 		'resize content (if exists) to use all available content space
 		If guiContent
-			guiContent.rect.position.SetXY(0,0)
+			guiContent.SetPosition(0, 0)
 			guiContent.resize(GetContentScreenWidth(),GetContentScreenHeight())
 		EndIf
 	End Method
@@ -145,6 +145,9 @@ Type TGUIWindowBase Extends TGUIPanel
 			guiCaptionTextBox.resize(rect.GetW(), rect.GetH())
 		endif
 
+		If guiContent
+			guiContent.resize(GetContentScreenWidth(),GetContentScreenHeight())
+		endif
 	End Method
 
 
@@ -209,5 +212,14 @@ Type TGUIWindowBase Extends TGUIPanel
 		endif
 
 		Return True
+	End Method
+
+	Method DrawOverlay()
+		Super.DrawOverlay()
+		SetAlpha GetAlpha() * 0.25
+		SetColor 0,255,255
+		DrawRect(GetContentScreenX(), GetContentScreenY(), GetContentScreenWidth(), GetContentScreenHeight())
+		SetColor 255,255,255
+		SetAlpha GetAlpha() * 4
 	End Method
 End Type
