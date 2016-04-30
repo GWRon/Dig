@@ -202,6 +202,7 @@ Type TBitmapFont
 	Field _hasEllipsis:int = -1
 
 	global drawToPixmap:TPixmap = null
+	global pixmapOrigin:TVec2D = new TVec2D.Init(0,0)
 'DISABLECACHE	global ImageCaches:TMap = CreateMap()
 	global eventRegistered:int = 0
 
@@ -209,7 +210,6 @@ Type TBitmapFont
 	Const STYLE_EMBOSS:int = 1
 	Const STYLE_SHADOW:int = 2
 	Const STYLE_GLOW:int = 3
-	
 
 
 	Function Create:TBitmapFont(name:String, url:String, size:Int, style:Int)
@@ -600,6 +600,10 @@ Type TBitmapFont
 			endif
 		endif
 
+
+		'backup current setting
+		local fontStyle:TBitmapFontStyle = new TBitmapFontStyle.Push(FName, FSize, FStyle, color)
+
 		local startY:Float = y
 		For local i:int = 0 until lines.length
 			lineWidth = getWidth(lines[i])
@@ -613,7 +617,7 @@ Type TBitmapFont
 					alignedX = x
 				endif
 			EndIf
-			local p:TVec2D = drawStyled( lines[i], alignedX, y, color, style, doDraw,special)
+			local p:TVec2D = __drawStyled( lines[i], alignedX, y, color, style, doDraw, special, fontStyle)
 
 			y :+ Max(lineHeight, p.y)
 			'add extra spacing _between_ lines
@@ -622,11 +626,110 @@ Type TBitmapFont
 			Endif
 		Next
 
+		'clear everything
+		'TBitmapFontStyle.Reset()
+
 		return new TVec2D.Init(lineMaxWidth, y - startY)
 	End Method
 
 
+	Method drawWithBG:TVec2D(value:String, x:Int, y:Int, bgAlpha:Float = 0.3, bgCol:Int = 0, style:int=0)
+		Local OldAlpha:Float = GetAlpha()
+		Local color:TColor = new TColor.Get()
+		local dimension:TVec2D = drawStyled(value,0,0, null, style,0)
+		SetAlpha bgAlpha
+		SetColor bgCol, bgCol, bgCol
+		DrawRect(x, y, dimension.GetX(), dimension.GetY())
+		color.setRGBA()
+
+		'backup current setting
+		local fontStyle:TBitmapFontStyle = new TBitMapFontStyle.Push( FName, FSize, FStyle, color )
+
+		local vec:TVec2D = __drawStyled(value, x, y, color, style, true, , fontStyle)
+
+		'restore backup
+		'style.Reset()
+
+		return vec
+	End Method
+
+
+	'can adjust used font or color
+	Method ProcessCommand:int(command:string, payload:string, fontStyle:TBitMapFontStyle)
+		if command = "color" and not fontStyle.ignoreColorTag
+			local colors:string[] = payload.split(",")
+			local color:TColor
+			if colors.length >= 3
+				color = new TColor
+				color.r = int(colors[0])
+				color.g = int(colors[1])
+				color.b = int(colors[2])
+				if colors.length >= 4
+					color.a = int(colors[3]) / 255.0
+				else
+					color.a = 1.0
+				endif
+			else
+				if not fontStyle.GetColor()
+					color = TColor.clWhite.Copy()
+				else
+					color = fontStyle.GetColor().Copy()
+				endif
+			endif
+
+			'backup current setting
+			fontStyle.PushColor( color )
+		endif
+		if command = "/color" and not fontStyle.ignoreColorTag
+			'local color:TColor =
+			fontStyle.PopColor()
+		endif
+
+		if command = "b" then fontStyle.PushFontStyle( BOLDFONT )
+		if command = "/b" then fontStyle.PopFontStyle( BOLDFONT )
+
+		if command = "i" then fontStyle.PushFontStyle( ITALICFONT )
+		if command = "/i" then fontStyle.PopFontStyle( ITALICFONT )
+
+		'adjust line height if another font is selected
+		if fontStyle.GetFont() <> self and fontStyle.GetFont()
+			fontStyle.styleDisplaceY = getMaxCharHeight() - fontStyle.GetFont().getMaxCharHeight()
+		else
+			'reset displace
+			fontStyle.styleDisplaceY = 0
+		endif
+	End Method
+
+
+	Method draw:TVec2D(text:String,x:Float,y:Float, color:TColor=null, doDraw:int=TRUE)
+		'backup current setting
+		local fontStyle:TBitmapFontStyle = new TBitmapFontStyle.Push(FName, FSize, FStyle, color)
+
+		local vec:TVec2D = __draw(text, x, y, color, doDraw, fontStyle)
+
+		'restore backup
+		'TBitmapFontStyle.Reset()
+
+		return vec
+	End Method
+
+
 	Method drawStyled:TVec2D(text:String,x:Float,y:Float, color:TColor=null, style:int=0, doDraw:int=1, special:float=-1.0)
+		'backup current setting
+		local fontStyle:TBitmapFontStyle = new TBitmapFontStyle.Push(FName, FSize, FStyle, color)
+		'backup current setting
+		'TBitmapFontStyle.Push(FName, FSize, FStyle, color)
+
+		local vec:TVec2D = __drawStyled(text, x, y, color, style, doDraw, special, fontStyle)
+
+		'restore backup
+		'fontStyle.Reset()
+
+		return vec
+	End Method
+
+
+	Method __drawStyled:TVec2D(text:String,x:Float,y:Float, color:TColor=null, style:int=0, doDraw:int=1, special:float=-1.0, fontStyle:TBitmapFontStyle)
 		if special = -1 then special = 1 '100%
 
 		if drawAtFixedPoints
@@ -646,7 +749,9 @@ Type TBitmapFont
 			height:+ 1
 			if doDraw
 				SetAlpha float(special * 0.5 * oldColor.a)
-				draw(text, x, y+1, TColor.clWhite)
+				fontStyle.ignoreColorTag :+ 1
+				__draw(text, x, y+1, TColor.clWhite, doDraw, fontStyle)
+				fontStyle.ignoreColorTag :- 1
 			endif
 		'shadow
 		else if style = STYLE_SHADOW
@@ -654,90 +759,36 @@ Type TBitmapFont
 			width:+1
 			if doDraw
 				SetAlpha special*0.5*oldColor.a
-				draw(text, x+1,y+1, TColor.clBlack)
+				fontStyle.ignoreColorTag :+ 1
+				__draw(text, x+1,y+1, TColor.clBlack, doDraw, fontStyle)
+				fontStyle.ignoreColorTag :- 1
 			endif
 		'glow
 		else if style = STYLE_GLOW
 			if doDraw
+				fontStyle.ignoreColorTag :+ 1
 				SetColor 0,0,0
 				SetAlpha special*0.25*oldColor.a
-				draw(text, x-2,y)
-				draw(text, x+2,y)
-				draw(text, x,y-2)
-				draw(text, x,y+2)
+				__draw(text, x-2,y, ,doDraw, fontStyle)
+				__draw(text, x+2,y, ,doDraw, fontStyle)
+				__draw(text, x,y-2, ,doDraw, fontStyle)
+				__draw(text, x,y+2, ,doDraw, fontStyle)
 				SetAlpha special*0.5*oldColor.a
-				draw(text, x+1,y+1)
-				draw(text, x-1,y-1)
+				__draw(text, x+1,y+1, ,doDraw, fontStyle)
+				__draw(text, x-1,y-1, ,doDraw, fontStyle)
+				fontStyle.ignoreColorTag :- 1
 			endif
 		endif
 
 		if oldColor then SetAlpha oldColor.a
-		local result:TVec2D = draw(text,x,y, color, doDraw)
+		local result:TVec2D = __draw(text,x,y, color, doDraw, fontStyle)
 
 		if oldColor then oldColor.SetRGBA()
 		return result
 	End Method
-
-
-	Method drawWithBG:TVec2D(value:String, x:Int, y:Int, bgAlpha:Float = 0.3, bgCol:Int = 0, style:int=0)
-		Local OldAlpha:Float = GetAlpha()
-		Local color:TColor = new TColor.Get()
-		local dimension:TVec2D = drawStyled(value,0,0, null, style,0)
-		SetAlpha bgAlpha
-		SetColor bgCol, bgCol, bgCol
-		DrawRect(x, y, dimension.GetX(), dimension.GetY())
-		color.setRGBA()
-		return drawStyled(value, x, y, color, style)
-	End Method
-
-
-	'can adjust used font or color
-	Method ProcessCommand:int(command:string, payload:string, font:TBitmapFont var , color:TColor var , colorOriginal:TColor, styleDisplaceY:int var)
-		if color
-			if command = "color"
-				local colors:string[] = payload.split(",")
-				if colors.length >= 3
-					color.r = int(colors[0])
-					color.g = int(colors[1])
-					color.b = int(colors[2])
-					if colors.length >= 4
-						color.a = int(colors[3]) / 255.0
-					else
-						color.a = 1.0
-					endif
-				endif
-				color.SetRGBA()
-			endif
-			if command = "/color"
-				color.r = colorOriginal.r
-				color.g = colorOriginal.g
-				color.b = colorOriginal.b
-				color.a = colorOriginal.a
-				color.SetRGBA()
-			endif
-		endif
-
-		if command = "b" then font = GetBitmapFontManager().Get(FName, FSize, BOLDFONT)
-		if command = "/b" then font = self
-
-		if command = "bi" then font = GetBitmapFontManager().Get(FName, FSize, BOLDFONT | ITALICFONT)
-		if command = "/bi" then font = self
-
-		if command = "i" then font = GetBitmapFontManager().Get(FName, FSize, ITALICFONT)
-		if command = "/i" then font = self
-
-		'adjust line height if another font is selected
-		if font <> self
-			styleDisplaceY = (getMaxCharHeight() - font.getMaxCharHeight())
-		else
-			'reset displace
-			styleDisplaceY = 0
-		endif
-		if not font then font = self
-	End Method
-
-
-	Method draw:TVec2D(text:String,x:Float,y:Float, color:TColor=null, doDraw:int=TRUE)
+	
+	
+	Method __draw:TVec2D(text:String,x:Float,y:Float, color:TColor=null, doDraw:int=TRUE, fontStyle:TBitmapFontStyle)
 		local width:float = 0.0
 		local height:float = 0.0
 		local textLines:string[]	= text.replace(chr(13), "~n").split("~n")
@@ -756,7 +807,6 @@ Type TBitmapFont
 			'black text is default
 '			if not color then color = TColor.Create(0,0,0)
 			if color then color.SetRGBA()
-
 		endif
 		'set the lineHeight before the "for-loop" so it has a set
 		'value if a line "in the middle" just consists of spaces/nothing
@@ -774,12 +824,18 @@ Type TBitmapFont
 		local charCode:int
 		local displayCharCode:int 'if char is not found
 		local charBefore:int
-		local font:TBitmapFont = self 'by default this font is responsible
-		local colorOriginal:TColor = null
 		local rotation:int = GetRotation()
 		local sprite:TSprite
 		local styleDisplaceY:int = 0
+		'cache
+		local font:TBitmapFont = fontStyle.GetFont()
+'		if not color then color = new TColor.Get()
+
+		'store current color
+		fontStyle.PushColor(color)
+
 		For text:string = eachin textLines
+		
 			'except first line (maybe only one line) - add extra spacing
 			'between lines
 			if currentLine > 0 then height:+ ceil( lineHeight* (font.lineHeightModifier-1.0) )
@@ -809,8 +865,16 @@ Type TBitmapFont
 						currentControlCommand = commandData[0]
 						if commandData.length>1 then currentControlCommandPayload = commandData[1]
 
-						if color and not colorOriginal then colorOriginal = color.copy()
-						ProcessCommand(currentControlCommand, currentControlCommandPayload, font, color, colorOriginal, styleDisplaceY)
+						if doDraw
+							ProcessCommand(currentControlCommand, currentControlCommandPayload, fontStyle)
+							if fontStyle.GetColor()
+								color = fontStyle.GetColor().Copy()
+								color.SetRGBA()
+							endif
+						endif
+						'cache font to speed up processing
+						font = fontStyle.GetFont()
+
 						'reset
 						currentControlCommand = ""
 						currentControlCommandPayload = ""
@@ -850,7 +914,7 @@ Type TBitmapFont
 							sprite = TSprite(font.charsSprites.ValueForKey(string(displayCharCode)))
 							if sprite
 								if drawToPixmap
-									sprite.DrawOnImage(drawToPixmap, int(x+lineWidth+tx), int(y+height+ty+styleDisplaceY - font.displaceY), -1, null, color)
+									sprite.DrawOnImage(drawToPixmap, int(pixmapOrigin.x + x+lineWidth+tx), int(pixmapOrigin.y + y+height+ty+styleDisplaceY - font.displaceY), -1, null, color)
 								else
 									sprite.Draw(int(x+lineWidth+tx), int(y+height+ty+styleDisplaceY - font.displaceY))
 								endif
@@ -886,6 +950,8 @@ Type TBitmapFont
 		'restore color
 		if doDraw then oldColor.SetRGBA()
 
+		fontStyle.PopColor()
+
 		return new TVec2D.Init(width, height)
 	End Method
 
@@ -899,6 +965,116 @@ DISABLECACHE
 	End Function
 EndRem
 End Type
+
+
+Type TBitmapFontStyle
+	Field fontNames:TList = CreateList()
+	Field fontSizes:TList = CreateList()
+	'one counter for each style (italicfont, boldfont)
+	Field fontStyles:int[2]
+	Field colors:TList = CreateList()
+	Field ignoreColorTag:int = False
+	Field ignoreStyleTags:int = False
+	Global styleDisplaceY:int = 0
+
+	Method Reset()
+		fontNames.Clear()
+		fontSizes.Clear()
+		fontStyles[0] = 0
+		fontStyles[1] = 0
+		colors.Clear()
+		styleDisplaceY = 0
+	End Method
+	
+
+	Method Push:TBitMapFontStyle(fName:string, fSize:int, fStyle:int, color:TColor)
+		PushFontName(fName)
+		PushFontSize(fSize)
+		PushFontStyle(fStyle)
+		PushColor(color)
+		return self
+	End Method
+	
+
+	Method PushColor( color:TColor )
+		'reuse the last one
+		if not color then color = GetColor()
+
+		colors.AddLast( color )
+	End Method
+
+
+	Method PopColor:TColor()
+		return TColor(colors.RemoveLast())
+	End Method
+
+
+	Method PushFontStyle( style:int )
+		if (style & BOLDFONT) > 0 then fontStyles[0] :+ 1
+		if (style & ITALICFONT) > 0 then fontStyles[1] :+ 1
+	End Method
+
+
+	Method PopFontStyle:int( style:int )
+		if (style & BOLDFONT) > 0 then fontStyles[0] = Max(0, fontStyles[0] - 1)
+		if (style & ITALICFONT) > 0 then fontStyles[1] = Max(0, fontStyles[1] - 1)
+
+		Return GetFontStyle()
+	End Method
+
+
+	Method PushFontSize( size:int )
+		if not size then size = GetFontSize()
+
+		fontSizes.AddLast( string(size) )
+	End Method
+
+
+	Method PopFontSize:int()
+		return int(string(fontSizes.RemoveLast()))
+	End Method
+
+
+	Method PushFontName( name:string)
+		fontNames.AddLast( name )
+	End Method
+
+
+	Method PopFontname:string()
+		return string(fontNames.RemoveLast())
+	End Method
+
+
+	Method GetColor:TColor()
+		local col:TColor = TColor(colors.Last())
+		if not col then col = new TColor.Get()
+		return col
+	End Method
+
+
+	Method GetFontName:string()
+		return string(fontNames.Last())
+	End Method
+
+
+	Method GetFontSize:int()
+		return int(string(fontSizes.Last()))
+	End Method
+
+	
+	Method GetFontStyle:int()
+		local style:int = 0
+		if fontStyles[0] > 0 then style :| BOLDFONT
+		if fontStyles[1] > 0 then style :| ITALICFONT
+		return style
+	End Method
+	
+
+	Method GetFont:TBitmapfont()
+		return GetBitmapFontManager().Get(GetFontName(), GetFontSize(), GetFontStyle())
+	End Method
+End Type
+
 
 
 
