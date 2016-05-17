@@ -1,4 +1,4 @@
-SuperStrict
+﻿SuperStrict
 'keep it small
 Framework Brl.StandardIO
 Import Brl.GLMax2D
@@ -14,9 +14,18 @@ local lastCycleTime:Double = -1
 local direction:int = 1
 local x:float = 0.0
 
-local f:TBitmapFont = GetBitmapFontManager().Get("Default", 12)
+Local font:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/sourcesans/SourceSansPro-Regular.ttf", 12, SMOOTHFONT)
+Local fontB:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/sourcesans/SourceSansPro-Bold.ttf", 12, SMOOTHFONT | BOLDFONT)
+Local fontBI:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/sourcesans/SourceSansPro-BoldIt.ttf", 12, SMOOTHFONT | BOLDFONT | ITALICFONT)
+Local fontI:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/sourcesans/SourceSansPro-It.ttf", 12, SMOOTHFONT | ITALICFONT)
+'also set as imagefont
+'SetImageFont(font.FImageFont)
 
-While not KeyHit(KEY_ESCAPE)
+
+local f:TBitmapFont = GetBitmapFontManager().Get("Default", 12)
+local appExit:int = False
+
+While not KeyHit(KEY_ESCAPE) and not appExit
 	'compute cycle time
 	if lastCycleTime = -1 then lastCycleTime = Millisecs()
 	cycleTime = Millisecs() - lastCycleTime
@@ -43,5 +52,17 @@ While not KeyHit(KEY_ESCAPE)
 
 	f.DrawBlock("Bounce", 150, 100, 200, 200, new TVec2D.Init(x, 0.3))
 
+	GetBitmapFont("Default",13).DrawBlock("Long text missing some stuff? Does it eat characters, or not?", 500,200, 98,250, null, TColor.clWhite)
+
+	GetBitmapFont("Default",13).DrawBlock("Showing some line-breaking stuff. Does it eat characters, or not?", 500,400, 130,250, null, TColor.clWhite)
+
+	GetBitmapFont("Default",13).DrawBlock("Let's test a bit |b|bold |color=255,0,0|Text |color=255,255,0|or|/color| |i|italic bold|/color| one|/i||/b|. Yeah!", 10,400, 120,250, Null,TColor.Create(175,175,140))
+
 	Flip -1
+rem
+	Repeat
+		if KeyHit(KEY_ESCAPE) then appExit=True;exit
+		delay(25)
+	until appExit
+endrem
 Wend
