@@ -19,11 +19,11 @@ Import "../../base.gfx.gui.window.modal.bmx"
 Import "../../base.util.interpolation.bmx"
 Import "app.screen.bmx"
 
-Type TScreenMainMenu extends TScreenMenuBase
-	Field LogoFadeInFirstCall:int = 0
+Type TScreenMainMenu Extends TScreenMenuBase
+	Field LogoFadeInFirstCall:Int = 0
 	'store it so we can check for existence later on
-	global modalDialogue:TGUIModalWindow
-	global guiChat:TGUIChat
+	Global modalDialogue:TGUIModalWindow
+	Global guiChat:TGUIChat
 	Global sliderLabelH:TGUILabel
 	Global sliderLabelV:TGUILabel
 
@@ -34,50 +34,50 @@ Type TScreenMainMenu extends TScreenMenuBase
 		TGUIButton.SetTypeFont( GetBitmapFontManager().Get("Default", 14, BOLDFONT) )
 
 
-		local button:TGUIButton = new TGUIButton.Create(new TVec2D.Init(20,20), new TVec2D.Init(130,-1), "Clickeriki?", self.GetName())
-		local input:TGUIInput = new TGUIInput.Create(new TVec2D.Init(20,55), new TVec2D.Init(130,-1), "empty", 20, self.GetName())
-		input.SetOverlay("gfx_gui_icon_arrowRight")
+		Local button:TGUIButton = New TGUIButton.Create(New TVec2D.Init(20,20), New TVec2D.Init(130,-1), "Clickeriki?", Self.GetName())
+		Local Input:TGUIInput = New TGUIInput.Create(New TVec2D.Init(20,55), New TVec2D.Init(130,-1), "empty", 20, Self.GetName())
+		Input.SetOverlay("gfx_gui_icon_arrowRight")
 
 
-		local arrow:TGUIArrowButton = new TGUIArrowButton.Create(new TVec2D.Init(155,20), null, "left", self.GetName())
-		local checkbox:TGUICheckBox = new TGUICheckBox.Create(new TVec2D.Init(155,55), new TVec2D.Init(120, -1), "checkbox", self.GetName())
+		Local arrow:TGUIArrowButton = New TGUIArrowButton.Create(New TVec2D.Init(155,20), Null, "left", Self.GetName())
+		Local checkbox:TGUICheckBox = New TGUICheckBox.Create(New TVec2D.Init(155,55), New TVec2D.Init(120, -1), "checkbox", Self.GetName())
 
-		local text:TGUITextbox = new TGUITextbox.Create(new TVec2D.Init(20,90), new TVec2D.Init(100,100), "I am a multiline textbox. Not pretty but nice to have.", self.GetName())
-		local panel:TGUIPanel = new TGUIPanel.Create(new TVec2D.Init(20,250), new TVec2D.Init(150, 180), self.GetName())
-		panel.SetBackground( new TGUIBackgroundBox.Create(null, null) )
+		Local text:TGUITextbox = New TGUITextbox.Create(New TVec2D.Init(20,90), New TVec2D.Init(100,100), "I am a multiline textbox. Not pretty but nice to have.", Self.GetName())
+		Local panel:TGUIPanel = New TGUIPanel.Create(New TVec2D.Init(20,250), New TVec2D.Init(150, 180), Self.GetName())
+		panel.SetBackground( New TGUIBackgroundBox.Create(Null, Null) )
 		panel.SetValue("press |b|space|/b| to go to next screen.~n~npress |b|T|/b| to add a toastmessage.")
 
-		local baseList:TGUIListBase = new TGUIListBase.Create(new TVec2D.Init(20,450), new TVec2D.Init(130,80), self.GetName())
+		Local baseList:TGUIListBase = New TGUIListBase.Create(New TVec2D.Init(20,450), New TVec2D.Init(130,80), Self.GetName())
 		'add some items to that list
-		for local i:int = 1 to 10
+		For Local i:Int = 1 To 10
 			'base items do not have a size - so we have to give a manual one
-			local entry:TGUIListItem = new TGUIListItem.Create(null, new TVec2D.Init(100, 20), "basetest "+i)
+			Local entry:TGUIListItem = New TGUIListItem.Create(Null, New TVec2D.Init(100, 20), "basetest "+i)
 			'draw a beautiful rectangle as background
 			entry._customDrawBackground = DrawListEntryBackground
 			baseList.AddItem( entry )
 		Next
 
 
-		local selectList:TGUISelectList = new TGUISelectList.Create(new TVec2D.Init(200,450), new TVec2D.Init(130,80), self.GetName())
+		Local selectList:TGUISelectList = New TGUISelectList.Create(New TVec2D.Init(200,450), New TVec2D.Init(130,80), Self.GetName())
 		'add some items to that list
-		for local i:int = 1 to 5 '10
+		For Local i:Int = 1 To 5 '10
 			'base items do not have a size - so we have to give a manual one
-			local entry:TGUISelectListItem = new TGUISelectListItem.Create(null, new TVec2D.Init(100, 20), "selecttest "+i)
+			Local entry:TGUISelectListItem = New TGUISelectListItem.Create(Null, New TVec2D.Init(100, 20), "selecttest "+i)
 			'draw a beautiful rectangle as background
 			entry._customDrawBackground = DrawListEntryBackground
 			selectList.AddItem( entry )
 		Next
 
 
-		local slotList:TGUISlotList = new TGUISlotList.Create(new TVec2D.Init(350,450), new TVec2D.Init(130,120), self.GetName())
+		Local slotList:TGUISlotList = New TGUISlotList.Create(New TVec2D.Init(350,450), New TVec2D.Init(130,120), Self.GetName())
 		slotList.SetSlotMinDimension(130, 20)
 		'uncomment the following to make dropped items occupy the first
 		'free slot
 		'slotList.SetAutofillSlots(true)
 		slotList.SetItemLimit(5) 'max 5 items
 		'add some items to that list
-		for local i:int = 1 to 3
-			local entry:TGUIListItem = new TGUIListItem.Create(null, new TVec2D.Init(130,20), "slottest "+i)
+		For Local i:Int = 1 To 3
+			Local entry:TGUIListItem = New TGUIListItem.Create(Null, New TVec2D.Init(130,20), "slottest "+i)
 			'draw a beautiful rectangle as background
 			entry._customDrawBackground = DrawListEntryBackground
 			slotList.SetItemToSlot( entry, i )
@@ -89,14 +89,14 @@ Type TScreenMainMenu extends TScreenMenuBase
 		'imageButton.SetAutoSizeMode( TGUIButton.AUTO_SIZE_MODE_SPRITE )
 
 		'a simple window
-		local window:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(590,250), new TVec2D.Init(200,150), self.GetName())
+		Local window:TGuiWindowBase = New TGUIWindowBase.Create(New TVec2D.Init(590,250), New TVec2D.Init(200,150), Self.GetName())
 		'as content area starts to late for automatic caption positioning
 		'we set a specific area to use
-		window.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
+		window.SetCaptionArea(New TRectangle.Init(-1,5,-1,25))
 		window.SetCaption("testwindow")
 		window.SetValue("content")
 
-rem
+Rem
 		'a simple window
 		local window2:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(50,50), new TVec2D.Init(500,300), self.GetName())
 		'as content area starts to late for automatic caption positioning
@@ -107,50 +107,50 @@ rem
 endrem
 		
 		'a modal dialogue
-		local createModalDialogueButton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(590,20), new TVec2D.Init(200,-1), "create modal window", self.GetName())
+		Local createModalDialogueButton:TGUIButton = New TGUIButton.Create(New TVec2D.Init(590,20), New TVec2D.Init(200,-1), "create modal window", Self.GetName())
 		'handle clicking on that button
 		EventManager.RegisterListenerFunction("guiobject.onclick", onClickCreateModalDialogue, createModalDialogueButton)
 
 
 
-		local dropdown:TGUIDropDown = new TGUIDropDown.Create(new TVec2D.Init(590,450), new TVec2D.Init(200,-1), "Sprache", 128, self.GetName())
+		Local dropdown:TGUIDropDown = New TGUIDropDown.Create(New TVec2D.Init(590,450), New TVec2D.Init(200,-1), "Sprache", 128, Self.GetName())
 		'add some items to that list
-		for local i:int = 1 to 10
+		For Local i:Int = 1 To 10
 			'base items do not have a size - so we have to give a manual one
-			dropdown.AddItem( new TGUIDropDownItem.Create(null, null, "dropdown "+i) )
+			dropdown.AddItem( New TGUIDropDownItem.Create(Null, Null, "dropdown "+i) )
 		Next
 
 
-		guiChat = new TGUIChat.Create(new TVec2D.Init(200,300), new TVec2D.Init(300,120), self.GetName())
+		guiChat = New TGUIChat.Create(New TVec2D.Init(200,300), New TVec2D.Init(300,120), Self.GetName())
 
 
 
 		'horizontals
-		local slider:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,140), New TVec2D.Init(150,25), "40", "mainmenu")
+		Local slider:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,140), New TVec2D.Init(150,25), "40", "mainmenu")
 		slider.SetValueRange(0,100)
 		slider.steps = 0
 		sliderLabelH = New TGUILabel.Create(New TVec2D.Init(640,227), "", TColor.clBlack, "mainmenu")
 
-		local slider2:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,110), New TVec2D.Init(150,25), "40", "mainmenu")
+		Local slider2:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,110), New TVec2D.Init(150,25), "40", "mainmenu")
 		slider2.SetValueRange(0,10)
 		slider2.steps = 5
 		slider2.SetRenderMode(TGUISlider.RENDERMODE_DISCRETE)
 
-		local slider2a:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,170), New TVec2D.Init(150,25), "40", "mainmenu")
+		Local slider2a:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,170), New TVec2D.Init(150,25), "40", "mainmenu")
 		slider2a.SetValueRange(0,10)
 		slider2a.steps = 5
 		slider2a.SetValue(2)
 		slider2a.SetDirection(TGUISlider.DIRECTION_LEFT)
 		slider2a.SetRenderMode(TGUISlider.RENDERMODE_DISCRETE)
 
-		local slider2b:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,200), New TVec2D.Init(150,25), "40", "mainmenu")
+		Local slider2b:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,200), New TVec2D.Init(150,25), "40", "mainmenu")
 		slider2b.SetValueRange(0,10)
 		slider2b.steps = 5
 		slider2b.SetDirection(TGUISlider.DIRECTION_LEFT)
 		slider2b.SetRenderMode(TGUISlider.RENDERMODE_CONTINUOUS)
 
 		
-		local slider2c:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,60), New TVec2D.Init(150,40), "40", "mainmenu")
+		Local slider2c:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,60), New TVec2D.Init(150,40), "40", "mainmenu")
 		slider2c.SetValueRange(0,10)
 		slider2c.steps = 5
 		slider2c._gaugeOffset.SetY(12)
@@ -165,7 +165,7 @@ endrem
 
 		'verticals
 		'discrete up
-		local slider3:TGUISlider = New TGUISlider.Create(New TVec2D.Init(510,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		Local slider3:TGUISlider = New TGUISlider.Create(New TVec2D.Init(510,75), New TVec2D.Init(25,150), "40", "mainmenu")
 		slider3.SetValueRange(0,10)
 		slider3.SetValue(3)
 		slider3.steps = 5
@@ -173,21 +173,21 @@ endrem
 		slider3.SetDirection(TGUISlider.DIRECTION_UP)
 
 		'smooth down
-		local slider3a:TGUISlider = New TGUISlider.Create(New TVec2D.Init(540,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		Local slider3a:TGUISlider = New TGUISlider.Create(New TVec2D.Init(540,75), New TVec2D.Init(25,150), "40", "mainmenu")
 		slider3a.SetValueRange(0,10)
 		slider3a.steps = 0
 		slider3a.SetDirection(TGUISlider.DIRECTION_UP)
 
 
 		'discrete down
-		local slider3b:TGUISlider = New TGUISlider.Create(New TVec2D.Init(570,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		Local slider3b:TGUISlider = New TGUISlider.Create(New TVec2D.Init(570,75), New TVec2D.Init(25,150), "40", "mainmenu")
 		slider3b.SetValueRange(0,10)
 		slider3b.steps = 5
 		slider3b.SetRenderMode(TGUISlider.RENDERMODE_DISCRETE)
 		slider3b.SetDirection(TGUISlider.DIRECTION_DOWN)
 
 		'smooth down
-		local slider3c:TGUISlider = New TGUISlider.Create(New TVec2D.Init(600,75), New TVec2D.Init(25,150), "40", "mainmenu")
+		Local slider3c:TGUISlider = New TGUISlider.Create(New TVec2D.Init(600,75), New TVec2D.Init(25,150), "40", "mainmenu")
 		slider3c.SetValueRange(0,10)
 		slider3c.steps = 0
 		slider3c.SetDirection(TGUISlider.DIRECTION_DOWN)
@@ -212,67 +212,67 @@ endrem
 
 
 	Function onChangeSliderV:Int( triggerEvent:TEventBase )
-		local slider:TGUISlider = TGUISlider(triggerEvent.GetSender())
-		if not slider then return False
+		Local slider:TGUISlider = TGUISlider(triggerEvent.GetSender())
+		If Not slider Then Return False
 
 		sliderLabelV.SetValue( slider.GetValue() )
 	End Function
 
 
 	Function onChangeSliderH:Int( triggerEvent:TEventBase )
-		local slider:TGUISlider = TGUISlider(triggerEvent.GetSender())
-		if not slider then return False
+		Local slider:TGUISlider = TGUISlider(triggerEvent.GetSender())
+		If Not slider Then Return False
 
 		sliderLabelH.SetValue( slider.GetValue() )
 	End Function
 
 
 	Function onClickCreateModalDialogue:Int(triggerEvent:TEventBase)
-		modalDialogue = new TGUIModalWindow.Create(new TVec2D, new TVec2D.Init(400,250), "SYSTEM")
+		modalDialogue = New TGUIModalWindow.Create(New TVec2D, New TVec2D.Init(400,250), "SYSTEM")
 		modalDialogue.SetDialogueType(2)
 		'as content area starts to late for automatic caption positioning
 		'we set a specific area to use
-		modalDialogue.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
+		modalDialogue.SetCaptionArea(New TRectangle.Init(-1,5,-1,25))
 		modalDialogue.SetCaptionAndValue("test modal window", "test content")
 
-		print "created modal dialogue"
+		Print "created modal dialogue"
 	End Function
 
 
 	Function onClickAGuiElement:Int(triggerEvent:TEventBase)
-		local obj:TGUIObject = TGUIObject(triggerEvent.GetSender())
-		print "a gui element of type "+ obj.GetClassName() + " was clicked"
+		Local obj:TGUIObject = TGUIObject(triggerEvent.GetSender())
+		Print "a gui element of type "+ obj.GetClassName() + " was clicked"
 	End Function
 
 
 	Function onClickOnAButton:Int(triggerEvent:TEventBase)
 		'sender in this case is the gui object
 		'cast as button to see if it is a button (or extends from one)
-		local button:TGUIButton = TGuiButton(triggerEvent.GetSender())
+		Local button:TGUIButton = TGuiButton(triggerEvent.GetSender())
 		'not interested in other widgets
-		if not button then return FALSE
+		If Not button Then Return False
 
-		local mouseButton:Int = triggerEvent.GetData().GetInt("button")
-		print "a TGUIButton just got clicked with mouse button "+mouseButton
+		Local mouseButton:Int = triggerEvent.GetData().GetInt("button")
+		Print "a TGUIButton just got clicked with mouse button "+mouseButton
 	End Function
 
 
 	Function onClickMyButton:Int(triggerEvent:TEventBase)
 		'sender in this case is the gui object
 		'cast as button to see if it is a button (or extends from one)
-		local button:TGUIButton = TGuiButton(triggerEvent.GetSender())
+		Local button:TGUIButton = TGuiButton(triggerEvent.GetSender())
 		'not interested in other widgets
-		if not button then return FALSE
+		If Not button Then Return False
 
-		local mouseButton:Int = triggerEvent.GetData().GetInt("button")
-		print "my button just got clicked with mouse button "+mouseButton
+		Local mouseButton:Int = triggerEvent.GetData().GetInt("button")
+		Print "my button just got clicked with mouse button "+mouseButton
 	End Function
 
 
-	Function DrawListEntryBackground(obj:TGUIObject)
+	Function DrawListEntryBackground:Int(obj:TGUIObject)
 		Local atPoint:TVec2D = obj.GetScreenPos()
 
-		local oldCol:TColor = new TColor.Get()
+		Local oldCol:TColor = New TColor.Get()
 
 		Local maxWidth:Int = obj.GetParent().getContentScreenWidth() - obj.rect.getX()
 
@@ -287,13 +287,13 @@ endrem
 
 
 		'hovered
-		if obj.isHovered()
+		If obj.isHovered()
 			SetBlend LightBlend
 			SetAlpha 0.25 * GetAlpha()
 			DrawRect(atPoint.GetX() + 1, atPoint.GetY() + 1, maxWidth-2, obj.rect.getH()-2)
 			SetAlpha 4 * GetAlpha()
 			SetBlend AlphaBlend
-		endif
+		EndIf
 
 		oldCol.SetRGBA()
 
@@ -311,39 +311,39 @@ endrem
 	Method Update:Int()
 		If KeyManager.IsHit(KEY_SPACE)
 			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("room1") )
-		Endif
-
-		If KeyManager.IsHit(KEY_C)
-			EventManager.triggerEvent( TEventSimple.Create( "chat.onAddEntry", new TData.AddNumber("senderID", 1).AddNumber("channels", guiChat.getChannelsFromText("text")).AddString("text", rand(10000)) , guiChat ) )
 		EndIf
 
-		GuiManager.Update(self.name)
+		If KeyManager.IsHit(KEY_C)
+			EventManager.triggerEvent( TEventSimple.Create( "chat.onAddEntry", New TData.AddNumber("senderID", 1).AddNumber("channels", guiChat.getChannelsFromText("text")).AddString("text", Rand(10000)) , guiChat ) )
+		EndIf
+
+		GuiManager.Update(Self.name)
 	End Method
 
 
-	Field logoAnimStart:int = 0
-	Field logoAnimTime:int = 1500
-	Field logoScale:float = 0.0
+	Field logoAnimStart:Int = 0
+	Field logoAnimTime:Int = 1500
+	Field logoScale:Float = 0.0
 
-	Method Render:int()
+	Method Render:Int()
 		Super.Render()
 
-		local logo:TSprite = GetSpriteFromRegistry("gfx_startscreen_logo")
-		if logo
-			if logoAnimStart = 0 then logoAnimStart = Millisecs()
-			logoScale = TInterpolation.BackOut(0.0, 1.0, Min(logoAnimTime, Millisecs() - logoAnimStart), logoAnimTime)
-			logoScale :* TInterpolation.BounceOut(0.0, 1.0, Min(logoAnimTime, Millisecs() - logoAnimStart), logoAnimTime)
+		Local logo:TSprite = GetSpriteFromRegistry("gfx_startscreen_logo")
+		If logo
+			If logoAnimStart = 0 Then logoAnimStart = MilliSecs()
+			logoScale = TInterpolation.BackOut(0.0, 1.0, Min(logoAnimTime, MilliSecs() - logoAnimStart), logoAnimTime)
+			logoScale :* TInterpolation.BounceOut(0.0, 1.0, Min(logoAnimTime, MilliSecs() - logoAnimStart), logoAnimTime)
 
-			local oldAlpha:float = GetAlpha()
-			SetAlpha TInterpolation.RegularOut(0.0, 1.0, Min(0.5*logoAnimTime, Millisecs() - logoAnimStart), 0.5*logoAnimTime)
+			Local oldAlpha:Float = GetAlpha()
+			SetAlpha Float(TInterpolation.RegularOut(0.0, 1.0, Min(0.5*logoAnimTime, MilliSecs() - logoAnimStart), 0.5*logoAnimTime))
 
-			logo.Draw( GraphicsWidth()/2, 150, -1, new TVec2D.Init(0.5, 0.5), logoScale)
+			logo.Draw( GraphicsWidth()/2, 150, -1, New TVec2D.Init(0.5, 0.5), logoScale)
 			SetAlpha oldAlpha
-		Endif
+		EndIf
 
 
 
-		GuiManager.Draw(self.name)
+		GuiManager.Draw(Self.name)
 	End Method
 End Type
 
@@ -374,7 +374,7 @@ Type TGUIChat Extends TGUIPanel
 	Method Create:TGUIChat(pos:TVec2D, dimension:TVec2D, limitState:String = "")
 		Super.Create(pos, dimension, limitState)
 
-		guiList = New TGUIListBase.Create(new TVec2D.Init(0,0), new TVec2D.Init(GetContentScreenWidth(),GetContentScreenHeight()), limitState)
+		guiList = New TGUIListBase.Create(New TVec2D.Init(0,0), New TVec2D.Init(GetContentScreenWidth(),GetContentScreenHeight()), limitState)
 		guiList.setOption(GUI_OBJECT_ACCEPTS_DROP, False)
 		guiList.SetAutoSortItems(False)
 		guiList.SetAcceptDrop("")
@@ -382,9 +382,9 @@ Type TGUIChat Extends TGUIPanel
 		guiList.SetAutoScroll(True)
 		guiList.SetBackground(Null)
 
-		self.className = "TGUIChat"
+		Self.className = "TGUIChat"
 
-		guiInput = New TGUIInput.Create(new TVec2D.Init(0, dimension.y),new TVec2D.Init(dimension.x,-1), "", 32, limitState)
+		guiInput = New TGUIInput.Create(New TVec2D.Init(0, dimension.y),New TVec2D.Init(dimension.x,-1), "", 32, limitState)
 		guiInput.setParent(Self)
 
 		'resize base and move child elements
@@ -447,7 +447,7 @@ Type TGUIChat Extends TGUIPanel
 		Local sendToChannels:Int = guiChat.getChannelsFromText(guiInput.value)
 		'- step B) is emitting the event "for all"
 		'  (the listeners have to handle if they want or ignore the line
-		EventManager.triggerEvent( TEventSimple.Create( "chat.onAddEntry", new TData.AddNumber("senderID", 1).AddNumber("channels", sendToChannels).AddString("text",guiInput.value) , guiChat ) )
+		EventManager.triggerEvent( TEventSimple.Create( "chat.onAddEntry", New TData.AddNumber("senderID", 1).AddNumber("channels", sendToChannels).AddString("text",guiInput.value) , guiChat ) )
 
 		'avoid getting the enter-key registered multiple times
 		'which leads to "flickering"
@@ -529,7 +529,7 @@ Type TGUIChat Extends TGUIPanel
 		Local textColor:TColor	= TColor( data.get("textColor", TColor.clWhite) )
 		Local senderID:Int		= data.getInt("senderID", 0)
 		Local senderName:String	= "test"
-		Local senderColor:TColor= new TColor.CreateGrey(150)
+		Local senderColor:TColor= New TColor.CreateGrey(150)
 
 		'finally add to the chat box
 		Local entry:TGUIChatEntry = New TGUIChatEntry.CreateSimple(text, textColor, senderName, senderColor, Null )
@@ -539,7 +539,7 @@ Type TGUIChat Extends TGUIPanel
 	End Method
 
 
-	Method SetPadding:Int(top:Int,Left:Int,bottom:Int,Right:Int)
+	Method SetPadding:Int(top:Float,Left:Float,bottom:Float,Right:Float)
 		GetPadding().setTLBR(top,Left,bottom,Right)
 		resize()
 	End Method
@@ -588,7 +588,7 @@ Type TGUIChatEntry Extends TGUIListItem
 
 
 	Method CreateSimple:TGUIChatEntry(text:String, textColor:TColor, senderName:String, senderColor:TColor, lifetime:Int=Null)
-		Create(null,null, text)
+		Create(Null,Null, text)
 		SetLifetime(lifeTime)
 		SetShowtime(lifeTime)
 		SetSender(senderName, senderColor)
@@ -599,7 +599,7 @@ Type TGUIChatEntry Extends TGUIListItem
 	End Method
 
 
-    Method Create:TGUIChatEntry(pos:TVec2D=null, dimension:TVec2D=null, value:String="")
+    Method Create:TGUIChatEntry(pos:TVec2D=Null, dimension:TVec2D=Null, value:String="")
 		'no "super.Create..." as we do not need events and dragable and...
    		Super.CreateBase(pos, dimension, "")
 
@@ -615,7 +615,7 @@ Type TGUIChatEntry Extends TGUIListItem
 
 
 	Method getDimension:TVec2D()
-		Local move:TVec2D = new TVec2D.Init(0,0)
+		Local move:TVec2D = New TVec2D.Init(0,0)
 		If Data.getString("senderName",Null)
 			Local senderColor:TColor = TColor(Data.get("senderColor"))
 			If Not senderColor Then senderColor = TColor.Create(0,0,0)
@@ -627,11 +627,11 @@ Type TGUIChatEntry Extends TGUIListItem
 		'available width is parentsDimension minus startingpoint
 		Local parentPanel:TGUIScrollablePanel = TGUIScrollablePanel(GetParent("tguiscrollablepanel"))
 		Local maxWidth:Int
-		if parentPanel
+		If parentPanel
 			maxWidth = parentPanel.GetContentScreenWidth() - rect.getX()
-		else
+		Else
 			maxWidth = GetParent().GetContentScreenWidth() - rect.getX()
-		endif
+		EndIf
 		Local maxHeight:Int = 2000 'more than 2000 pixel is a really long text
 
 		Local dimension:TVec2D = GetBitmapFontManager().baseFont.drawBlock(GetValue(), getScreenX()+move.x, getScreenY()+move.y, maxWidth-move.X, maxHeight, Null, Null, 2, 0)
@@ -680,7 +680,7 @@ Type TGUIChatEntry Extends TGUIListItem
 		'local maxWidth:int = self.getParentWidth("tguiscrollablepanel")-self.rect.getX()
 		Local maxHeight:Int = 2000 'more than 2000 pixel is a really long text
 
-		Local move:TVec2D = new TVec2D.Init(0,0)
+		Local move:TVec2D = New TVec2D.Init(0,0)
 		Local senderColor:TColor = TColor(Self.Data.get("senderColor"))
 		If Not senderColor Then senderColor = TColor.Create(0,0,0)
 		move = GetBitmapFontManager().baseFont.drawStyled(Self.Data.getString("senderName", "")+":", Self.getScreenX(), Self.getScreenY(), senderColor, 2, 1)
