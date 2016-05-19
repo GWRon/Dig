@@ -35,10 +35,13 @@ Rem
 	====================================================================
 EndRem
 SuperStrict
-?bmxng
-Import BRL.GLMax2D
-'Import sdl.gl2sdlmax2d
-'Import pub.opengles
+Import brl.Graphics
+Import brl.glmax2d
+
+?android
+'Import BRL.GLMax2D
+Import sdl.gl2sdlmax2d
+Import pub.opengles
 ?
 ?MacOs
 Import BRL.GLMax2D
@@ -51,6 +54,8 @@ Import BRL.GLMax2D
 ?
 
 Import "base.util.virtualgraphics.bmx"
+Import "base.util.logger.bmx"
+
 
 Type TGraphicsManager
 	Field fullscreen:Int	= 0
@@ -62,7 +67,7 @@ Type TGraphicsManager
 	Field designedHeight:Int= -1
 	Field hertz:Int			= 60
 	Field vsync:Int			= True
-	Field flags:Int			= GRAPHICS_BACKBUFFER '0 'GRAPHICS_BACKBUFFER | GRAPHICS_ALPHABUFFER '& GRAPHICS_ACCUMBUFFER & GRAPHICS_DEPTHBUFFER
+	Field flags:Int			= 0 'GRAPHICS_BACKBUFFER '0 'GRAPHICS_BACKBUFFER | GRAPHICS_ALPHABUFFER '& GRAPHICS_ACCUMBUFFER & GRAPHICS_DEPTHBUFFER
 	Global _instance:TGraphicsManager
 	Global _g:TGraphics
 	Global RENDERER_NAMES:String[] = [	"OpenGL",..
@@ -108,11 +113,11 @@ Type TGraphicsManager
 	'ATTENTION: there is no guarantee that it works flawless on
 	'all computers (graphics context/images might have to be
 	'initialized again)
-	Method SetFullscreen:Int(bool:Int = True)
+	Method SetFullscreen:Int(bool:Int = True, reInitGraphics:int = True)
 		If fullscreen <> bool
 			fullscreen = bool
 			'create a new graphics object if already in graphics mode
-			If _g Then InitGraphics()
+			If _g and reInitGraphics Then InitGraphics()
 
 			Return True
 		EndIf
@@ -220,9 +225,14 @@ Type TGraphicsManager
 
 
 	Method InitGraphics:Int()
+		TLogger.Log("GraphicsManager.InitGraphics()", "Initializing graphics.", LOG_DEBUG)
+
 		'initialize virtual graphics only when "InitGraphics()" is run
 		'for the first time
 		If Not _g Then InitVirtualGraphics()
+
+		'close old one
+		if _g then CloseGraphics(_g)
 
 		'needed to allow ?win32 + ?bmxng
 		?win32
@@ -230,6 +240,14 @@ Type TGraphicsManager
 		?Not win32
 		_InitGraphicsDefault()
 		?
+		If Not _g
+			TLogger.Log("GraphicsManager.InitGraphics()", "Failed to initialize graphics.", LOG_ERROR)
+			Throw "Failed to initialize graphics! No render engine available."
+			end
+		endif
+
+		'now "renderer" contains the ID of the used renderer
+		TLogger.Log("GraphicsManager.InitGraphics()", "Initialized graphics with ~q"+GetRendererName()+"~q.", LOG_DEBUG)
 
 
 		SetBlend ALPHABLEND
@@ -238,6 +256,7 @@ Type TGraphicsManager
 
 		'virtual resolution
 		SetVirtualGraphics(GetWidth(), GetHeight(), False)
+		TLogger.Log("GraphicsManager.InitGraphics()", "Initialized virtual graphics (for optional letterboxes).", LOG_DEBUG)
 	End Method
 
 
@@ -245,15 +264,17 @@ Type TGraphicsManager
 		Select renderer
 			'buffered gl?
 			?android
-			Default SetGraphicsDriver GL2Max2DDriver()
+			Default
+				TLogger.Log("GraphicsManager.InitGraphics()", "SetGraphicsDriver ~qGL2SDL~q.", LOG_DEBUG)
+				SetGraphicsDriver GL2Max2DDriver()
 			?Not android
-			Default SetGraphicsDriver GLMax2DDriver()
+			Default
+				TLogger.Log("GraphicsManager.InitGraphics()", "SetGraphicsDriver ~qOpenGL~q.", LOG_DEBUG)
+				SetGraphicsDriver GLMax2DDriver()
 			?
-		EndSelect
+		End Select
 
 		_g = Graphics(realWidth, realHeight, colorDepth*fullScreen, hertz, flags)
-
-		If Not _g Then Throw "Graphics initiation error! no render engine available."
 	End Method
 
 
@@ -263,6 +284,8 @@ Type TGraphicsManager
 		'done in base.util.graphicsmanager.win32.bmx
 		'alternatively to "_g = Func(_g,...)"
 		'SetRenderWin32 could also use "_g:TGraphics var"
+		'attention: renderer is passed by referenced (might be changed)
+		'           during execution of SetRendererWin32(...)
 		_g = SetRendererWin32(_g, renderer, realWidth, realHeight, colorDepth, fullScreen, hertz, flags)
 		?
 	End Method
