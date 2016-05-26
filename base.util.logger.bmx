@@ -170,7 +170,20 @@ Type TLogger
 			message = StringHelper.RemoveUmlauts(message)
 			?
 
-			print "[" + CurrentTime() + "] " + debugtext + Upper(showFunctionText) + ": " + message
+			local text:string = "[" + CurrentTime() + "] " + debugtext + Upper(showFunctionText) + ": " + message
+			?android
+				if debugType & LOG_DEBUG
+					'debug not shown in normal logcat
+					'LogDebug(SDL_LOG_CATEGORY_APPLICATION, text)
+					LogInfo(SDL_LOG_CATEGORY_APPLICATION, text)
+				elseif debugType & LOG_WARNING
+					LogWarn(SDL_LOG_CATEGORY_APPLICATION, text)
+				else
+					LogInfo(SDL_LOG_CATEGORY_APPLICATION, text)
+				endif
+			?not android
+				print text
+			?
 		endif
 	End Function
 
