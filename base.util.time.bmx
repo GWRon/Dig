@@ -44,7 +44,9 @@ Rem
 	====================================================================
 EndRem
 SuperStrict
-Import Brl.retro
+Import Brl.Blitz 'for millisecs()
+Import Brl.Random 'for rand()
+
 
 
 

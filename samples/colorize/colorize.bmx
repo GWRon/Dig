@@ -111,6 +111,11 @@ Function WorldRender:int()
 	Next
 	SetColor 255,255,255
 
+
+	mySprites[0].Draw(0, GetGraphicsManager().GetHeight(), 0, ALIGN_LEFT_BOTTOM)
+	mySprites[0].Draw(GetGraphicsManager().GetWidth(), GetGraphicsManager().GetHeight(), 5, ALIGN_RIGHT_BOTTOM)
+
+
 	GetGraphicsManager().Flip()
 End Function
 
