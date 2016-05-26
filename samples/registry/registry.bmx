@@ -9,7 +9,7 @@ Import "../../base.util.registry.spriteentityloader.bmx"
 Import "../../base.util.graphicsmanager.bmx"
 
 'init graphics
-GetGraphicsManager().SetResolution(640,480)
+GetGraphicsManager().SetResolution(1280,720)
 GetGraphicsManager().InitGraphics()
 'assign update/render functions to delta timer
 GetDeltaTimer().Init(30,30)
@@ -23,10 +23,6 @@ Local registryLoader:TRegistryLoader = New TRegistryLoader
 '-> all resources can get loaded with "relative paths"
 'registryLoader.baseURI = "../"
 
-'afterwards we can display background images and cursors
-'"TRUE" indicates that the content has to get loaded immediately
-registryLoader.LoadFromXML("res/config/startup.xml", True)
-
 'load that directly too, so we do not need to update and check for unloaded
 registryLoader.LoadFromXML("res/config/myresources.xml", True)
 
@@ -34,21 +30,35 @@ Global mySpriteEntity:TSpriteEntity = GetSpriteEntityFromRegistry("figureSpriteE
 Global mySprite:TSprite = GetSpriteFromRegistry("figureSprite")
 
 Function WorldUpdate:Int()
-	mySpriteEntity.Update()
+	If mySpriteEntity
+		mySpriteEntity.Update()
+	EndIf
 End Function
 
 Function WorldRender:Int()
 	SetClsColor 150,150,150
 	Cls
-	mySpriteEntity.Render()
-	mySprite.Draw(100,100,4)
+	If mySpriteEntity Then mySpriteEntity.Render()
+	If mySprite Then mySprite.Draw(100,100,4)
+
+	DrawText("mySprite: "+(mySprite <> Null), 10,10)
+	DrawText("mySpriteEntity: "+(mySpriteEntity <> Null), 10,24)
+
+	Local y:Int = 0
+	For Local s:String = EachIn AppLog.Strings
+		DrawText(s, 0, 40 + y)
+		y:+ 11
+	Next
+
 	GetGraphicsManager().Flip()
 End Function
 
 
-
+?Not android
+Const KEY_BROWSER_BACK:Int = 0
+?
 
 'simple loop
 Repeat
 	GetDeltaTimer().Loop()
-Until KeyHit(KEY_ESCAPE)
+Until KeyHit(KEY_ESCAPE) Or KeyHit(KEY_BROWSER_BACK)

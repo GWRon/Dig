@@ -1,37 +1,11 @@
 <?xml version="1.0"?>
 <tvt>
 	<resources>
-		<sprite name="figureSprite" url="../__res/gfx/spielfigur_hausmeister.png" x="0" y="0" w="765" h="44" cw="51" ch="44" f="15" />
+		<sprite name="figureSprite" url="res/gfx/spielfigur_hausmeister.png" x="0" y="0" w="765" h="44" cw="51" ch="44" f="15" />
 		
-		<spriteentity name="OLDfigureSpriteEntity" sprite="figureSprite" x="100">
-			<spriteframeanimations guid="default_walkAnimation" currentAnimationName="walkRight">
-				<spriteframeanimation name="walkRight" frames="0::1::2::3" framesTime="0.2::0.2::0.2::0.2" />
-				<spriteframeanimation name="walkLeft" frames="4::5::6::7" framesTime="0.2" />
-			</spriteframeanimations>
-
-			<children>
-				<!-- place another sprite as child a bit offset to the parent -->
-				<spriteentity name="figureSpriteEntity2" sprite="figureSprite" offsetLeft="10" offsetTop="20">
-					<spriteframeanimations currentAnimationName="walkLeft">
-						<spriteframeanimation name="walkRight" frames="0::1::2::3" framesTime="0.2::0.2::0.2::0.2" />
-						<spriteframeanimation name="walkLeft" frames="4::5::6::7" framesTime="0.2" />
-					</spriteframeanimations>
-				</spriteentity>
-				<!-- place another sprite as child a bit offset to the parent -->
-				<spriteentity name="figureSpriteEntity3" sprite="figureSprite" offsetLeft="10" offsetTop="50">
-					<spriteframeanimations currentAnimationName="stand">
-						<spriteframeanimation name="stand" frames="8::9" framesTime="0.8::0.2" />
-					</spriteframeanimations>
-				</spriteentity>
-			</children>
-		</spriteentity>
-
-
-
-
 		<!-- MOVIEAGENCY -->
 		<spritepack name="screen_movieagency_elements">
- 			<url>screen_movieagency_elements.png</url>
+ 			<url>res/gfx/screen_movieagency_elements.png</url>
 			<children>
 				<child name="gfx_auctionmovie" 						x="0"	y="450"	w="256"	h="55" />
 				<child name="gfx_movieagency_vendor"	 			x="0"	y="0"	w="190"	h="220" />
