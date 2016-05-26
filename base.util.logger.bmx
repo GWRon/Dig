@@ -38,6 +38,10 @@ SuperStrict
 Import BRL.LinkedList
 Import BRL.Retro		'for lset()
 Import BRL.System		'for currenttime()
+?android
+'needed to be able to retrieve android's internal storage path 
+Import Sdl.sdl
+?
 Import "base.util.string.bmx"
 
 'create a basic log file
@@ -190,6 +194,10 @@ Type TLogFile
 	Function Create:TLogFile(title:string, filename:string, immediateWrite:int = True)
 		local obj:TLogFile = new TLogFile
 		obj.title = title
+		?android
+			'prefix with the path to the internal storage
+			filename = AndroidGetInternalStoragePath()+"/"+filename
+		?
 		obj.filename = filename
 		obj.immediateWrite = immediateWrite
 
