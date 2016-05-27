@@ -2,7 +2,6 @@ SuperStrict
 
 'keep it small
 Framework BRL.standardIO
-'Import pub.opengles
 Import "../../base.framework.graphicalapp.bmx"
 Import "../../base.util.registry.bmx"
 Import "../../base.util.registry.imageloader.bmx"
@@ -29,7 +28,9 @@ Type TMyApp Extends TGraphicalApp
 		gm.SetResolution(800, 600)
 		gm.SetDesignedResolution(800,600)
 		'gm.SetFullscreen(True)
-		gm.InitGraphics()	
+		'only need to init graphics again if we changed resolution,
+		'else it is already called by "Super.Prepare()"
+		'gm.InitGraphics()	
 
 		'we use a full screen background - so no cls needed
 		autoCls = True
@@ -117,7 +118,7 @@ Type TMyApp Extends TGraphicalApp
 				toast.SetCloseAtWorldTime( GetWorldTime().GetTimeGone() + Rand(60,120))
 			EndIf
 
-			rem
+			Rem
 			Select Rand(0,3)
 				Case 0
 					GetToastMessageCollection().AddMessage(toast, "TOPLEFT")

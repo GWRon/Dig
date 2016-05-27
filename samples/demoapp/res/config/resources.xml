@@ -2,7 +2,7 @@
 <tvt>
 	<!-- files to load at all -->
 	<resources>
-		<file name="resource_gui" url="../__res/config/gui.xml" />
-		<file name="resource_toastmessage" url="../__res/config/toastmessage.xml" />
+		<file name="resource_gui" url="res/config/gui.xml" />
+		<file name="resource_toastmessage" url="res/config/toastmessage.xml" />
 	</resources>
 </tvt>
