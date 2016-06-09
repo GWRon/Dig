@@ -44,7 +44,7 @@ Type TGUIScroller Extends TGUIobject
 		self.setOption(GUI_OBJECT_CAN_GAIN_FOCUS, False)
 
 		'style myself - aligns buttons
-		onAppearanceChanged()
+		onStatusAppearanceChange()
 
 
 		'set the parent of the buttons so they inherit visible state etc.
@@ -80,7 +80,7 @@ Type TGUIScroller Extends TGUIobject
 
 
 	'override default
-	Method onAppearanceChanged:int()
+	Method onStatusAppearanceChange:int()
 		rect.position.setXY(GetParent().rect.getW() - guiButtonMinus.rect.getW(),0)
 
 		'this also aligns the buttons
@@ -280,6 +280,7 @@ Type TGUIScroller Extends TGUIobject
 						case GUI_OBJECT_ORIENTATION_HORIZONTAL
 							if progressRect.GetW() > 0
 								'subtract progress start from position
+								clickPos.X :- progressRect.GetX()
 								progress = clickPos.x / progressRect.GetW()
 							endif
 						case GUI_OBJECT_ORIENTATION_VERTICAL
