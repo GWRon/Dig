@@ -114,22 +114,28 @@ Type TLogger
 	'                   so a LOG_AI|LOG_DEBUG will only get logged if BOTH are enabled
 	Function Log(functiontext:String = "", message:String, debugType:int=LOG_DEBUG, exactTypeRequired:int=FALSE)
 		Local debugtext:String = ""
-		If debugType & LOG_ERROR Then debugtext :+ "ERROR "
-		If debugType & LOG_WARNING Then debugtext :+ "WARNING "
-		If debugType & LOG_INFO Then debugtext :+ "INFO "
-		If debugType & LOG_DEV Then debugtext :+ "DEV "
-		If debugType & LOG_DEBUG Then debugtext :+ "DEBUG "
 		If debugType & LOG_LOADING Then debugtext :+ "LOAD "
 		If debugType & LOG_GAME Then debugtext :+ "GAME "
 		If debugType & LOG_AI Then debugtext :+ "AI "
 		If debugType & LOG_XML Then debugtext :+ "XML "
 		If debugType & LOG_NETWORK Then debugtext :+ "NET "
-		If debugType & LOG_SAVELOAD Then debugtext :+  "SAVELOAD "
-		if len(debugText) < MODE_LENGTH
+		If debugType & LOG_SAVELOAD Then debugtext :+  "SAVE "
+
+		If debugType & LOG_DEV Then debugtext :+ "DEV "
+		If debugType & LOG_DEBUG Then debugtext :+ "DBG "
+		'can only be one of them - sorted by priority
+		If debugType & LOG_ERROR
+			debugtext :+ "ERR "
+		ElseIf debugType & LOG_WARNING
+			debugtext :+ "WRN "
+		ElseIf debugType & LOG_INFO
+			debugtext :+ "INFO "
+		EndIf
+'		if len(debugText) < MODE_LENGTH
 			debugtext = LSet(debugtext, MODE_LENGTH) + " | "
-		else
-			debugtext = debugtext + " | "
-		endif
+'		else
+'			debugtext = debugtext + " | "
+'		endif
 
 		local showFunctionText:string = ""
 		local doLog:int = FALSE
