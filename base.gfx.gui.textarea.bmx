@@ -8,6 +8,7 @@ Type TGUITextArea Extends TGUIobject
 	Field guiTextPanel:TGUIScrollablePanel = Null
 	Field guiScrollerH:TGUIScroller = Null
 	Field guiScrollerV:TGUIScroller	= Null
+	Field _textLinesCache:string[]
 	Field _textDimension:TVec2D = new TVec2D.Init(200, 1200)
 	Field _textCacheImage:TImage
 	Field _textCacheImageVisibleMin:TVec2D = new TVec2D
@@ -16,10 +17,14 @@ Type TGUITextArea Extends TGUIobject
 	'pre-cached content both directions of each axis
 	Field _textCacheImagePreload:TVec2D = new TVec2D.Init(150,150)
 	Field _textCacheImageValid:int = False
+	Field textColor:TColor = TColor.Create(0,0,0,1.0)
 	Field backgroundColor:TColor = TColor.Create(0,0,0,0)
 	Field backgroundColorHovered:TColor	= TColor.Create(0,0,0,0)
 	Field _mouseOverArea:Int = False
 	Field _wordwrap:int = False
+	Field _fixedLineHeight:Int = 0
+	Field _verticalScrollerAllowed:int = True 
+	Field _horizontalScrollerAllowed:int = True 
 
 
     Method Create:TGUITextArea(position:TVec2D = null, dimension:TVec2D = null, limitState:String = "")
@@ -193,16 +198,31 @@ Type TGUITextArea Extends TGUIobject
 	End Method
 
 
+	Method SetFixedLineHeight(lineHeight:int = -1)
+		if lineHeight <> _fixedLineHeight
+			_fixedLineHeight = lineHeight
+			ResetTextCache()
+		endif
+	End Method
+
+
 	Method SetWordwrap(enable:int = True)
 		if _wordwrap = enable then return
 
 		_wordwrap = enable
 		ResetTextCache()
-		UpdateContent()
+'		UpdateContent()
+	End Method
+
+
+	Method GetLineHeight:Float()
+		if _fixedLineHeight = -1 then return GetFont().GetMaxCharHeight()
+		return _fixedLineHeight
 	End Method
 
 
 	Method ResetTextCache()
+		_textLinesCache = new String[0]
 		_textDimension = null
 		_textCacheImageValid = False
 	End Method
@@ -216,8 +236,28 @@ Type TGUITextArea Extends TGUIobject
 	End Method
 
 
+	Method GetValueLines:string[]()
+		if not _textLinesCache or (value.length > 0 and _textLinesCache.length = 0)
+			Local lineHeight:float = GetFont().getMaxCharHeight()
+			_textLinesCache = GetFont().TextToMultiLine(value, 0, 0, lineHeight)
+		endif
+		return _textLinesCache
+	End Method
+
+
 	Method GenerateTextCache()
 		local createNew:int = False
+		local linesHeight:int = GetValueLines().length * GetFont().getMaxCharHeight()
+		'everything fits on the screen
+		if linesHeight < guiTextPanel.GetScreenHeight()
+			_textCacheImagePreload.SetY(25)
+		'much to scroll?
+		elseif linesHeight > guiTextPanel.GetScreenHeight() * 10
+			_textCacheImagePreload.SetY( MathHelper.Clamp(linesHeight * 10, 150, 400) )
+		else
+			_textCacheImagePreload.SetY( 150 )
+		endif
+		
 		local texHeight:int = Min(GetTextDimension().GetY(), guiTextPanel.GetScreenHeight()) + 2*_textCacheImagePreload.GetIntY()
 		local texWidth:int = Min(GetTextDimension().GetX(), guiTextPanel.GetScreenWidth()) + 2*_textCacheImagePreload.GetIntX()
 
@@ -239,7 +279,8 @@ Type TGUITextArea Extends TGUIobject
 		'draw it offset by the top-cacheimage-size
 		local offsetX:int = guiTextPanel.scrollPosition.GetX() + _textCacheImagePreload.GetIntX()
 		local offsetY:int = guiTextPanel.scrollPosition.GetY() + _textCacheImagePreload.GetIntY()
-		GetFont().DrawBlock(value, offsetX, offsetY, Max(GetTextDimension().GetX(), -1), Max(GetTextDimension().GetY(), -1))
+		
+		GetFont().DrawLinesBlock(GetValueLines(), offsetX, offsetY, Max(GetTextDimension().GetX(), -1), Max(GetTextDimension().GetY(), -1), , textColor, 0, true, 1.0, True, False, _fixedLineHeight)
 		TBitmapFont.setRenderTarget(null)
 
 		'refresh area / scroll coordinates
@@ -300,8 +341,8 @@ Type TGUITextArea Extends TGUIobject
 
 		'if not all entries fit on the panel, enable scroller
 		SetScrollerState(..
-			_textDimension.getX() > guiTextPanel.GetScreenWidth(), ..
-			_textDimension.getY() > guiTextPanel.GetScreenHeight() ..
+			_horizontalScrollerAllowed and (_textDimension.getX() > guiTextPanel.GetScreenWidth()), ..
+			_verticalScrollerAllowed and (_textDimension.getY() > guiTextPanel.GetScreenHeight()) ..
 		)
 		GetTextDimension()
 'print "                textDimension2= "+_textDimension.getIntX()+"x"+_textDimension.getIntY()
@@ -475,9 +516,9 @@ Type TGUITextArea Extends TGUIobject
 			_textDimension = new TVec2D
 			if _wordwrap
 				_textDimension.SetX( guiTextPanel.GetContentScreenWidth() )
-				_textDimension.SetY( GetFont().GetBlockHeight(value, _textDimension.GetX(), -1) )
+				_textDimension.SetY( GetFont().GetBlockHeight(value, _textDimension.GetX(), -1, _fixedLineHeight) )
 			else
-				local dim:TVec2D = GetFont().getBlockDimension(value, 3500, -1)
+				local dim:TVec2D = GetFont().getBlockDimension(value, 3500, -1, _fixedLineHeight)
 				_textDimension.SetXY( dim.GetX(), dim.GetY() )
 			endif
 		endif
@@ -508,6 +549,8 @@ Type TGUITextArea Extends TGUIobject
 		'refresh cache (maybe we got a new font?)
 		RefreshScrollLimits()
 		GenerateTextCache()
+
+		return True
 	End Method
 	
 
