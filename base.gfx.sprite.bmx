@@ -459,6 +459,8 @@ Type TSprite
 		'give back whole image if no frames are configured
 		if frames <= 0 then frame = -1
 
+		if not parent.image then Throw "TSprite.GetPixmap() failed: invalid parent.image"
+
 		Local DestPixmap:TPixmap
 		if frame >= 0
 			DestPixmap = LockImage(parent.image, 0, False, True).Window(int(area.GetX() + frame * framew), int(area.GetY()), framew, int(area.GetH()))
@@ -851,6 +853,9 @@ endrem
 			DrawSubImageRect(parent.image, Float(floor(targetCopy.GetX())), Float(floor(targetCopy.GetY())), Float(ceil(targetCopy.GetW())), Float(ceil(targetCopy.GetH())), Float(area.GetX() + sourceCopy.GetX()), Float(area.GetY() + sourceCopy.GetY()), sourceCopy.GetW(), sourceCopy.GetH())
 		else
 			DrawSubImageRect(parent.image, Float(floor(targetCopy.GetX())), Float(floor(targetCopy.GetY())), Float(ceil(targetCopy.GetW())), Float(ceil(targetCopy.GetH())), Float(area.GetX() + sourceCopy.GetX()), Float(area.GetY() + sourceCopy.GetY()), sourceCopy.GetW(), sourceCopy.GetH())
+
+			'TODO: for "target = image" use DrawImageOnImage() and stretch
+			'via "ResizePixmap()"
 		endif
 	End Method
 
@@ -936,19 +941,26 @@ endrem
 '		Y:- offset.GetBottom() * scale
 
 
+		local offsetX:int = int(alignX * area.GetW())
+		local offsetY:int = int(alignY * area.GetH())
+
 		'for a correct rotation calculation
 		if scale <> 1.0 then SetScale(scale, scale)
 		if rotated
 			SetRotation(-rotated)
-			'GetHeight() returns the width for a 90° rotated element
 			if rotated = 90
-				y :+ GetHeight(False) * scale
-
-				'switch alignments
-				local old:float = alignX
-				alignX = alignY
-				alignY = old
+				offsetX = -int((alignY-1) * area.GetW())
+				offsetY =  int( alignX    * area.GetH())
+			elseif rotated = -90
+				offsetX = int((1-alignY) * area.GetW())
+				offsetY = int((1-alignX) * area.GetH())
 			endif
+		endif
+
+
+		if ninePatchEnabled
+			offsetX :- 2 * NINEPATCH_MARKER_WIDTH
+			offsetY :- 2 * NINEPATCH_MARKER_WIDTH
 		endif
 
 
@@ -966,8 +978,8 @@ endrem
 							 area.GetY() + NINEPATCH_MARKER_WIDTH,..
 							 area.GetW() - 2 * NINEPATCH_MARKER_WIDTH,..
 							 area.GetH() - 2 * NINEPATCH_MARKER_WIDTH,..
-							 int(alignX * (area.GetW() - 2 * NINEPATCH_MARKER_WIDTH)), ..
-							 int(alignY * (area.GetH() - 2 * NINEPATCH_MARKER_WIDTH)), ..
+							 offsetX,..
+							 offsetY,..
 							 0)
 			else
 				DrawSubImageRect(parent.image,..
@@ -979,8 +991,8 @@ endrem
 							 area.GetY(),..
 							 area.GetW(),..
 							 area.GetH(),..
-							 int(alignX * area.GetW()), ..
-							 int(alignY * area.GetH()), ..
+							 offsetX,..
+							 offsetY,..
 							 0)
 			endif
 		Else
