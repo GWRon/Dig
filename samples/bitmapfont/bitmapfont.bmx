@@ -58,6 +58,19 @@ While not KeyHit(KEY_ESCAPE) and not appExit
 
 	GetBitmapFont("Default",13).DrawBlock("Let's test a bit |b|bold |color=255,0,0|Text |color=255,255,0|or|/color| |i|italic bold|/color| one|/i||/b|. Yeah!", 10,400, 120,250, Null,TColor.Create(175,175,140))
 
+
+	local t:string = "Let's test if |b|bold |color=255,0,0|colored |color=255,255,0|or|/color| |i|italic bold|/color| Text|/i||/b| leads to incorrect dimensions!"
+	SetColor 150,150,150
+	DrawRect(10, 10, GetBitmapFont("Default",13).GetWidth(t), GetBitmapFont("Default",13).GetMaxCharHeight())
+	SetColor 255,255,255
+	GetBitmapFont("Default",13).DrawBlock(t, 10,10, 450,150, Null,TColor.clWhite)
+
+	t = "Let's test if bold colored or italic bold Text leads to incorrect dimensions!"
+	SetColor 150,150,150
+	DrawRect(10, 40, GetBitmapFont("Default",13).GetWidth(t), GetBitmapFont("Default",13).GetMaxCharHeight())
+	SetColor 255,255,255
+	GetBitmapFont("Default",13).DrawBlock(t, 10,40, 450,150, Null,TColor.clWhite)
+
 	Flip -1
 rem
 	Repeat
