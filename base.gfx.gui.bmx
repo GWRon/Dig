@@ -72,9 +72,9 @@ Type TGUIManager
 	Field UpdateState_mouseButtonDown:Int[]
 	Field UpdateState_mouseButtonHit:Int[]
 	Field UpdateState_mouseScrollwheelMovement:Int = 0
-	Field UpdateState_foundHitObject:Int[] = [0,0,0]
-	Field UpdateState_foundHoverObject:Int = False
-	Field UpdateState_foundFocusObject:Int = False
+	Field UpdateState_foundHitObject:TGUIObject[] = new TGUIObject[3] '[null,null,null]
+	Field UpdateState_foundHoverObject:TGUIObject = null
+	Field UpdateState_foundFocusObject:TGUIObject = null
 
 	'=== PRIVATE PROPERTIES ===
 
@@ -158,7 +158,9 @@ Type TGUIManager
 		obj.setOption(GUI_OBJECT_DRAGGED, False)
 		obj._timeDragged = 0
 		ListDragged.Remove(obj)
-		ListDragged.sort(False, SortObjects)
+		'removing should not need a sort-call as the rest is still
+		'sorted
+		'ListDragged.sort(False, SortObjects)
 
 		Return True
 	End Method
@@ -424,7 +426,7 @@ endrem
 
 	Method SetFocus:Int(obj:TGUIObject)
 		'in all cases: set the foundFocus for this cycle
-		If obj Then UpdateState_foundFocusObject = True
+		If obj Then UpdateState_foundFocusObject = obj
 
 		'skip setting focus if already focused
 		If TGUIObject.GetFocusedObject() = obj Then Return False
@@ -455,9 +457,9 @@ endrem
 		UpdateState_mouseButtonDown = MOUSEMANAGER.GetAllStatusDown()
 		UpdateState_mouseButtonHit = MOUSEMANAGER.GetAllStatusHit() 'single and double clicks!
 
-		UpdateState_foundFocusObject = False
-		UpdateState_foundHitObject = [0,0,0]
-		UpdateState_foundHoverObject = False
+		UpdateState_foundFocusObject = null
+		UpdateState_foundHitObject = new TGUIObject[3] '[null,null,null]
+		UpdateState_foundHoverObject = null
 	End Method
 
 
@@ -1788,7 +1790,7 @@ Type TGUIobject
 						EventManager.triggerEvent( TEventSimple.Create( "guiobject.OnMouseEnter", Null, Self ) )
 						SetHovered(True)
 					EndIf
-					GUIManager.UpdateState_foundHoverObject = True
+					GUIManager.UpdateState_foundHoverObject = self
 				EndIf
 				'create event: onmouseover
 				Local mouseOverEvent:TEventSimple = TEventSimple.Create("guiobject.OnMouseOver", New TData.Add("coord", New TVec2D.Init(MouseManager.x, MouseManager.y)), Self )
@@ -1824,7 +1826,7 @@ Type TGUIobject
 							GUIManager.UpdateState_mouseButtonHit[2] = False
 						EndIf
 
-						GUIManager.UpdateState_foundHitObject[2 -1] = True
+						GUIManager.UpdateState_foundHitObject[2 -1] = self
 					EndIf
 
 
@@ -1890,7 +1892,7 @@ Type TGUIobject
 								'Ronny: 2014/05/11 - commented out, still needed?
 								'If Not HasFocus() Then GUIManager.ResetFocus()
 
-								GUIManager.UpdateState_foundHitObject[0] = True
+								GUIManager.UpdateState_foundHitObject[0] = self
 							EndIf
 						EndIf
 					EndIf
