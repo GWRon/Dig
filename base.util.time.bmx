@@ -44,9 +44,7 @@ Rem
 	====================================================================
 EndRem
 SuperStrict
-Import Brl.Blitz 'for millisecs()
-Import Brl.Random 'for rand()
-
+Import Brl.retro
 
 
 
@@ -66,9 +64,9 @@ Type Time
 		'http://www.blitzbasic.com/Community/post.php?topic=84114&post=950107
 
 		'Convert to 32-bit unsigned
-		Local Milli:Long = Long(Millisecs()) + 2147483648
+		Local Milli:Long = Long(Millisecs()) + 2147483648:Long
 		 'Accumulate 2^32
-		If Milli < LastMilliSeconds Then MilliSeconds :+ 4294967296
+		If Milli < LastMilliSeconds Then MilliSeconds :+ 4294967296:long
 
 		LastMilliSeconds = Milli
 		Return MilliSeconds + Milli
@@ -96,6 +94,9 @@ Type Time
 	
 	
 
+	'%H ... 24 Hour | %I ... 12 Hour
+	'%M ... Minutes
+	'%S ... Seconds
 	Function GetSystemTime:String(format:String="%d %B %Y")
 		Local time:Byte[256]
 		Local buff:Byte[256]

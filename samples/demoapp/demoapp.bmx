@@ -13,11 +13,13 @@ Import "app.screen.mainmenu.bmx"
 Import "app.screen.room.bmx"
 Import "app.toastmessage.bmx"
 
+
 Global MyApp:TMyApp = New TMyApp
 MyApp.debugLevel = 1
 
 Type TMyApp Extends TGraphicalApp
 	Field mouseCursorState:Int = 0
+	Field guiSystemState:TLowerString = TLowerString.Create("SYSTEM")
 
 	Method Prepare:Int()
 		Super.Prepare()
@@ -87,7 +89,7 @@ Type TMyApp Extends TGraphicalApp
 
 		'=== UPDATE GUI ===
 		'system wide gui elements
-		GuiManager.Update("SYSTEM")
+		GuiManager.Update( guiSystemState )
 
 		'run parental update (screen handling)
 		Super.Update()
@@ -145,7 +147,7 @@ Type TMyApp Extends TGraphicalApp
 
 		'=== RENDER GUI ===
 		'system wide gui elements
-		GuiManager.Draw("SYSTEM")
+		GuiManager.Draw( guiSystemState )
 	End Method
 
 

@@ -96,15 +96,15 @@ Type TScreenMainMenu Extends TScreenMenuBase
 		window.SetCaption("testwindow")
 		window.SetValue("content")
 
-Rem
+'Rem
 		'a simple window
 		local window2:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(50,50), new TVec2D.Init(500,300), self.GetName())
 		'as content area starts to late for automatic caption positioning
 		'we set a specific area to use
 		window2.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
 		window2.SetCaption("testwindow")
-		window2.SetValue(LoadText("anleitung.txt"))
-endrem
+		window2.SetValue(LoadText("Spielanleitung.txt"))
+'endrem
 		
 		'a modal dialogue
 		Local createModalDialogueButton:TGUIButton = New TGUIButton.Create(New TVec2D.Init(590,20), New TVec2D.Init(200,-1), "create modal window", Self.GetName())
@@ -317,9 +317,12 @@ endrem
 			EventManager.triggerEvent( TEventSimple.Create( "chat.onAddEntry", New TData.AddNumber("senderID", 1).AddNumber("channels", guiChat.getChannelsFromText("text")).AddString("text", Rand(10000)) , guiChat ) )
 		EndIf
 
-		GuiManager.Update(Self.name)
+		if not guiState then guiState = TLowerString.Create(Self.name)
+
+		GuiManager.Update(guiState)
 	End Method
 
+	Field guiState:TLowerString
 
 	Field logoAnimStart:Int = 0
 	Field logoAnimTime:Int = 1500
@@ -342,8 +345,9 @@ endrem
 		EndIf
 
 
+		if not guiState then guiState = TLowerString.Create(Self.name)
 
-		GuiManager.Draw(Self.name)
+		GuiManager.Draw(guiState)
 	End Method
 End Type
 
