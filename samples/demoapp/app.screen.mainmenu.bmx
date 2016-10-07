@@ -14,6 +14,7 @@ Import "../../base.gfx.gui.list.selectlist.bmx"
 Import "../../base.gfx.gui.list.slotlist.bmx"
 Import "../../base.gfx.gui.dropdown.bmx"
 Import "../../base.gfx.gui.slider.bmx"
+Import "../../base.gfx.gui.textarea.bmx"
 Import "../../base.gfx.gui.window.base.bmx"
 Import "../../base.gfx.gui.window.modal.bmx"
 Import "../../base.util.interpolation.bmx"
@@ -96,15 +97,25 @@ Type TScreenMainMenu Extends TScreenMenuBase
 		window.SetCaption("testwindow")
 		window.SetValue("content")
 
-'Rem
+
 		'a simple window
-		local window2:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(50,50), new TVec2D.Init(500,300), self.GetName())
+		'which gets an textarea appended
+		local window2:TGuiWindowBase = new TGUIWindowBase.Create(new TVec2D.Init(10,50), new TVec2D.Init(495,300), self.GetName())
 		'as content area starts to late for automatic caption positioning
 		'we set a specific area to use
 		window2.SetCaptionArea(new TRectangle.Init(-1,5,-1,25))
 		window2.SetCaption("testwindow")
-		window2.SetValue(LoadText("Spielanleitung.txt"))
-'endrem
+
+		Local windowCanvas:TGUIObject = window2.GetGuiContent()
+		local guiTextArea:TGUITextArea = New TGUITextArea.Create(New TVec2D.Init(0,0), New TVec2D.Init(window2.GetContentScreenWidth()-25, window2.GetContentScreenHeight() - 45), self.GetName())
+		'guiTextArea.Move(0,0)
+		guiTextArea.SetFont( GetBitmapFont("default", 14) )
+		guiTextArea.textColor = TColor.clBlack.Copy()
+		guiTextArea.SetWordWrap(True)
+		guiTextArea.SetValue( LoadText("Spielanleitung.txt") )
+		windowCanvas.AddChild(guiTextArea)
+		window2.Resize(-1,-1)
+
 		
 		'a modal dialogue
 		Local createModalDialogueButton:TGUIButton = New TGUIButton.Create(New TVec2D.Init(590,20), New TVec2D.Init(200,-1), "create modal window", Self.GetName())
