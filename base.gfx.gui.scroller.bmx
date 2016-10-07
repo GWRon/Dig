@@ -19,6 +19,7 @@ Type TGUIScrollerBase extends TGUIobject
 	Field guiButtonPlus:TGUIArrowButton	= Null
 	Field minValue:Double = 0
 	Field maxValue:Double = 100
+	Field begunAMouseDown:int = False
 	Field currentValue:Double
 	Field _orientation:int = GUI_OBJECT_ORIENTATION_VERTICAL
 
@@ -209,9 +210,7 @@ Type TGUIScrollerBase extends TGUIobject
 			EndIf
 		EndIf
 
-
-		'avoid long left-mousebutton clicks
-		MouseManager.ResetLongClicked(1, True)
+		guiScroller.begunAMouseDown = True
 
 		'emit event that the scroller position has changed
 		If sender = guiScroller.guiButtonMinus or sender = guiScroller.guiButtonPlus
@@ -238,6 +237,28 @@ Type TGUIScrollerBase extends TGUIobject
 		endif
 	End Method
 
+
+	Method ScrollerHasFocus:int()
+		return HasFocus() or guiButtonMinus.HasFocus() or guiButtonPlus.HasFocus()
+	End Method
+
+
+	Method Update:int()
+		Super.Update()
+
+		if begunAMouseDown
+			if not MouseManager.IsDown(1)
+				begunAMouseDown = False
+			'avoid long left-mousebutton clicks
+			'(do it in an "update" so it also handles "mousedown"
+			' as long as the gui object has focus - else you "long click"
+			' as soon as you leave the scroller for a short time, while the
+			' mouse is still down )
+			elseif ScrollerHasFocus()
+				MouseManager.ResetLongClicked(1, True)
+			endif
+		endif
+	End Method
 End Type
 
 
@@ -293,6 +314,8 @@ Type TGUIScroller Extends TGUIScrollerBase
 
 		guiScroller.SetRelativeValue( sender.GetRelativeValue() )
 
+		if MouseManager.IsDown(1) then guiScroller.begunAMouseDown = true
+
 		'inform others (equally to up/down-buttonclicks)
 		EventManager.triggerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("changeType", "percentage").AddNumber("percentage", sender.GetRelativeValue()).Add("sendingSlider", sender), guiScroller ) )
 	End Function
@@ -320,9 +343,13 @@ Type TGUIScroller Extends TGUIScrollerBase
 	End Method
 
 
+	Method ScrollerHasFocus:int()
+		return Super.ScrollerHasFocus() or scrollHandle.HasFocus()
+	End Method
+	
+
 	Method DrawContent()
 	End Method
-
 End Type
 
 
