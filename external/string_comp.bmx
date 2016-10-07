@@ -25,7 +25,7 @@ Import "string_comp.c"
 Type TLowerString
 
 	Field orig:String
-	Field data:Byte Ptr
+	Field data:Byte Ptr {nosave}
 
 	Function Create:TLowerString(s:String)
 		Local this:TLowerString = New TLowerString
@@ -44,15 +44,51 @@ Type TLowerString
 	Method HasSplitFieldInSplitText:Int(srcSplit:String, txt:String, txtSplit:String)
 		Return bmx_stringcomp_equals_split_in_split(data, srcSplit, txt, txtSplit)
 	End Method
+
+	Method Compare:Int(obj:Object)
+		If obj <> Self Then
+			Local ls:TLowerString = TLowerString(obj)
+			If ls Then
+				Return bmx_stringcomp_compare_lowerstring(data, ls.data)
+			End If
+			If String(obj) Then
+				Return bmx_stringcomp_compare_string(data, obj)
+			End If
+		End If
+		Return 0
+	End Method
+	
+	Method Find:Int(txt:String, pos:Int = 0)
+		Return bmx_stringcomp_find(data, txt, pos)
+	End Method
 	
 	Method ToString:String()
 		Return orig
 	End Method
 
 	Method Delete()
-		bmx_stringcomp_free(data)
+		if data then
+			bmx_stringcomp_free(data)
+			data = null
+		end if
 	End Method
-	
+
+	Method StartsWithLower:Int(txt:String)
+		Return bmx_stringcomp_startswith(data, txt)
+	End Method
+
+	'=== serialization stuff ===
+	Method SerializeTLowerStringToString:string()
+		return orig
+	End Method
+
+	Method DeSerializeTLowerStringFromString(text:String)
+		'get rid of old objects to avoid mem leaks
+		if data then bmx_stringcomp_free(data)
+
+		orig = text
+		data = bmx_stringcomp_init(text)
+	End Method
 End Type
 
 Extern
@@ -61,4 +97,10 @@ Extern
 	Function bmx_stringcomp_free(handle:Byte Ptr)
 	
 	Function bmx_stringcomp_equals_split_in_split:Int(handle:Byte Ptr, srcSplit:String, txt:String, txtSplit:String)
+	
+	Function bmx_stringcomp_compare_string:Int(handle:Byte Ptr, obj:Object)
+	Function bmx_stringcomp_compare_lowerstring:Int(handle:Byte Ptr, data:Byte Ptr)
+	Function bmx_stringcomp_find:Int(handle:Byte Ptr, txt:String, pos:Int)
+	
+	function bmx_stringcomp_startswith:int(handle:byte ptr, txt:String)
 End Extern
