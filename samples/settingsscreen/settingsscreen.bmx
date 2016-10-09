@@ -33,6 +33,7 @@ Type TMyApp extends TGraphicalApp
 	Field configBase:TData = new TData
 	'configuration containing base + user
 	Field config:TData = new TData
+	Field LS_System:TLowerString = TLowerString.Create("system")
 
 
 	Method Prepare:int()
@@ -73,7 +74,7 @@ Type TMyApp extends TGraphicalApp
 
 		'=== UPDATE GUI ===
 		'system wide gui elements
-		GuiManager.Update("SYSTEM")
+		GuiManager.Update( LS_System )
 
 		'run parental update (screen handling)
 		Super.Update()
@@ -89,7 +90,7 @@ Type TMyApp extends TGraphicalApp
 	Method RenderContent:Int()
 		'=== RENDER GUI ===
 		'system wide gui elements
-		GuiManager.Draw("SYSTEM")
+		GuiManager.Draw( LS_System )
 	End Method
 
 
@@ -406,6 +407,7 @@ End Type
 Type TSettingsScreen extends TScreen
 	'store it so we can check for existence later on
 	global settingsWindow:TSettingsWindow
+	Field LS_settingsscreen:TLowerString
 
 	Method Setup:Int()
 		local button:TGUIButton = new TGUIButton.Create(new TVec2D.Init(20,20), new TVec2D.Init(130,-1), "Open Settings", self.GetName())
@@ -418,20 +420,37 @@ Type TSettingsScreen extends TScreen
 			local item:TGUISpriteDropDownItem = new TGUISpriteDropDownItem.Create(null, null, languageText[i])
 			item.SetValueColor(TColor.clBlack)
 			item.data.Add("value", languageValue[i])
+			item.data.Add("languageCode", languageValue[i])
 			item.data.add("spriteName", "flag_"+languageValue[i])
 			dropdownLanguage.AddItem(item)
 			if itemHeight = 0 then itemHeight = item.GetScreenHeight()
 		Next
-		GuiManager.SortLists()
+		'GuiManager.SortLists()
 		'we want to have 4 items visible at once
 		dropdownLanguage.SetListContentHeight(itemHeight * 4)
 
+		LS_settingsscreen = TLowerString.Create(self.name)
 
 		'a modal dialogue
 		'handle clicking on the button
 		EventManager.RegisterListenerFunction("guiobject.onclick", onClickCreateModalDialogue, button)
 		'handle saving applying
 		EventManager.RegisterListenerFunction("guiModalWindow.onClose", onCloseModalDialogue)
+
+		EventManager.registerListenerMethod("GUIDropDown.onSelectEntry", Self, "onSelectLanguageEntry", dropdownLanguage)
+	End Method
+
+
+	'handle clicks on the buttons
+	Method onSelectLanguageEntry:Int(triggerEvent:TEventBase)
+		Local languageEntry:TGUIObject = TGUIObject(triggerEvent.GetReceiver())
+		If Not languageEntry Then Return False
+
+		'App.SetLanguage(languageEntry.data.GetString("languageCode", "en"))
+		'auto save to user settings
+		'App.SaveSettings(App.config)
+
+		print "CHANGED LANGUAGE DROPDOWN: " +languageEntry.data.GetString("languageCode", "en")
 	End Method
 
 
@@ -490,7 +509,7 @@ Type TSettingsScreen extends TScreen
 
 
 	Method Update:Int()
-		GuiManager.Update(self.name)
+		GuiManager.Update( LS_settingsscreen )
 	End Method
 
 
@@ -498,7 +517,7 @@ Type TSettingsScreen extends TScreen
 		Cls
 		GetSpriteFromRegistry("gfx_startscreen").Draw(0,0)
 
-		GuiManager.Draw(self.name)
+		GuiManager.Draw( LS_settingsscreen )
 	End Method
 End Type
 
