@@ -146,6 +146,7 @@ Type TGUIScrollerBase extends TGUIobject
 
 
 	Method GetRelativeValue:Float()
+		if maxValue = minValue then return 0
 		return Min(1.0, Max(0.0, currentValue / (maxValue - minValue)))
 	End Method
 
@@ -154,7 +155,6 @@ Type TGUIScrollerBase extends TGUIobject
 		SetCurrentValue(percentage * (maxValue - minValue))
 		return currentValue
 	End Method
-
 
 
 	Method SetOrientation:int(orientation:Int=0)
@@ -249,12 +249,9 @@ Type TGUIScrollerBase extends TGUIobject
 		if begunAMouseDown
 			if not MouseManager.IsDown(1)
 				begunAMouseDown = False
-			'avoid long left-mousebutton clicks
-			'(do it in an "update" so it also handles "mousedown"
-			' as long as the gui object has focus - else you "long click"
-			' as soon as you leave the scroller for a short time, while the
-			' mouse is still down )
-			elseif ScrollerHasFocus()
+			else
+				'(do it in an "update" so it also handles "mousedown"
+				'avoid long left-mousebutton clicks
 				MouseManager.ResetLongClicked(1, True)
 			endif
 		endif
@@ -321,6 +318,25 @@ Type TGUIScroller Extends TGUIScrollerBase
 	End Function
 
 
+	Method SetCurrentValue(currentValue:Double)
+		Super.SetCurrentValue(currentValue)
+		'move handle accordingly
+		if scrollHandle then scrollHandle.SetRelativeValue( GetRelativeValue() )
+	End Method
+
+
+	'overridden
+	'set scroll handle too
+	Method SetRelativeValue:Double(percentage:Float)
+		Super.SetRelativeValue(percentage)
+
+		'move handle accordingly
+		if scrollHandle then scrollHandle.SetRelativeValue( GetRelativeValue() )
+
+		return currentValue
+	End Method
+
+
 	Method Resize(w:Float = 0, h:Float = 0)
 		Super.Resize(w, h)
 
@@ -340,6 +356,14 @@ Type TGUIScroller Extends TGUIScrollerBase
 					scrollHandle.SetDirection(TGUISlider.DIRECTION_DOWN)
 			End Select
 		endif
+	End Method
+
+
+	'override to also check handle
+	Method IsAppearanceChanged:int()
+		if scrollHandle and scrollHandle.isAppearanceChanged() then return TRUE
+
+		return Super.isAppearanceChanged()
 	End Method
 
 
