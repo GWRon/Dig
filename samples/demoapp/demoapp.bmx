@@ -106,33 +106,33 @@ Type TMyApp Extends TGraphicalApp
 
 
 	Method GenerateRandomToast()
-			Local toast:TAppToastMessage = New TAppToastMessage
-			toast.SetLifeTime( Rand(10000,15000)/1000.0 )
-			toast.SetMessageType(Rand(0,3))
-			toast.SetPriority(Rand(0,10))
-			toast.SetCaption("Testnachricht" + MilliSecs())
-			toast.SetText("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam")
+		Local toast:TAppToastMessage = New TAppToastMessage
+		toast.SetLifeTime( Rand(10000,15000)/1000.0 )
+		toast.SetMessageType(Rand(0,3))
+		toast.SetPriority(Rand(0,10))
+		toast.SetCaption("Testnachricht" + MilliSecs())
+		toast.SetText("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam")
 
-			If Rand(0,1) = 1
-				toast.SetCaption("Lorem ipsum dolor sit amet")
-				toast.SetLifeTime(-1)
-				'close in 1 worldTime minute
-				toast.SetCloseAtWorldTime( GetWorldTime().GetTimeGone() + Rand(60,120))
-			EndIf
+		If Rand(0,1) = 1
+			toast.SetCaption("Lorem ipsum dolor sit amet")
+			toast.SetLifeTime(-1)
+			'close in 1 worldTime minute
+			toast.SetCloseAtWorldTime( GetWorldTime().GetTimeGone() + Rand(60,120))
+		EndIf
 
-			Rem
-			Select Rand(0,3)
-				Case 0
-					GetToastMessageCollection().AddMessage(toast, "TOPLEFT")
-				Case 1
-					GetToastMessageCollection().AddMessage(toast, "TOPRIGHT")
-				Case 2
-					GetToastMessageCollection().AddMessage(toast, "BOTTOMLEFT")
-				Case 3
-					GetToastMessageCollection().AddMessage(toast, "BOTTOMRIGHT")
-			EndSelect
-			endrem
-			GetToastMessageCollection().AddMessage(toast, "BOTTOMRIGHT")
+		Rem
+		Select Rand(0,3)
+			Case 0
+				GetToastMessageCollection().AddMessage(toast, "TOPLEFT")
+			Case 1
+				GetToastMessageCollection().AddMessage(toast, "TOPRIGHT")
+			Case 2
+				GetToastMessageCollection().AddMessage(toast, "BOTTOMLEFT")
+			Case 3
+				GetToastMessageCollection().AddMessage(toast, "BOTTOMRIGHT")
+		EndSelect
+		endrem
+		GetToastMessageCollection().AddMessage(toast, "BOTTOMRIGHT")
 	End Method
 
 

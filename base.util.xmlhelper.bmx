@@ -188,27 +188,34 @@ end rem
 	Function LoadAllValuesToData:TData(node:TXmlNode, data:TData, ignoreNames:String[] = Null)
 		If Not node Then Return data
 
-
 		'=== ATTRIBUTES ===
-		Local att:TList = node.GetAttributeList()
-		For Local attribute:TxmlBase = EachIn att
+		For Local attribute:TxmlAttribute = EachIn node.GetAttributeList()
 			If StringHelper.InArray(attribute.GetName(), ignoreNames, False) Then Continue
-
 			data.Add(attribute.GetName(), node.GetAttribute(attribute.GetName()))
 		Next
 
 
 		'=== CHILD ELEMENTS ===
 		For Local subNode:TxmlNode = EachIn GetNodeChildElements(node)
+			local children:int = subNode.GetAttributeList().Count()
+			if children = 0
+				local childList:TList = subNode.GetChildren()
+				if childList then children = childList.Count()
+			endif
+			
 			If StringHelper.InArray(subNode.GetName(), ignoreNames, False) Then Continue
 
-			If dataLS.EqualsLower(subNode.getName())
+			If dataLS.EqualsLower(subNode.getName()) or children > 0
 				Local subData:TData = New TData
 				LoadAllValuesToData(subNode, subData, ignoreNames)
-				data.Add(dataLS, subData)
-			EndIf
-
-			data.Add(subNode.getName(), subNode.getContent())
+				if dataLS.EqualsLower(subNode.getName())
+					data.Add(dataLS, subData)
+				else
+					data.Add(subNode.getName(), subData)
+				endif
+			else
+				data.Add(subNode.getName(), subNode.getContent())
+			endif
 		Next
 		Return data
 	End Function

@@ -4,10 +4,10 @@ SuperStrict
 Framework BRL.standardIO
 Import "../../base.framework.graphicalapp.bmx"
 
-Global MyApp:TMyApp = new TMyApp
+Global MyApp:TMyApp = New TMyApp
 
-Type TMyApp extends TGraphicalApp
-	Method RenderContent:int()
+Type TMyApp Extends TGraphicalApp
+	Method RenderContent:Int()
 		DrawText("FPS: "+ GetDeltaTimer().currentFPS, 100,100)
 		DrawText("UPS: "+ GetDeltaTimer().currentUPS, 100,120)
 
