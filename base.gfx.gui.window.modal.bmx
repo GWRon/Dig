@@ -123,10 +123,10 @@ Type TGUIModalWindow Extends TGUIWindowBase
 		Super.Resize(w, h)
 		'move button
 		If buttons.length = 1
-			buttons[0].rect.position.setXY(rect.GetW()/2 - buttons[0].rect.GetW()/2, GetScreenHeight() - 45)
+			buttons[0].rect.position.setXY(rect.GetW()/2 - buttons[0].rect.GetW()/2, GetScreenHeight() - 49)
 		ElseIf buttons.length = 2
-			buttons[0].rect.position.setXY(rect.GetW()/2 - buttons[0].rect.GetW() - 10, GetScreenHeight() - 45)
-			buttons[1].rect.position.setXY(rect.GetW()/2 + 10, GetScreenHeight() - 45)
+			buttons[0].rect.position.setXY(rect.GetW()/2 - buttons[0].rect.GetW() - 10, GetScreenHeight() - 49)
+			buttons[1].rect.position.setXY(rect.GetW()/2 + 10, GetScreenHeight() - 49)
 		EndIf
 
 		Recenter()

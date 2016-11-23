@@ -177,8 +177,8 @@ Type TGUISlider extends TGUIObject
 		
 		'only adjust when different
 		if value <> string(newValueD)
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onChangeValue", null, self ) )
 			value = newValueD
+			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onChangeValue", null, self ) )
 		endif
 	End Method
 
@@ -318,6 +318,9 @@ Type TGUISlider extends TGUIObject
 
 
 	Method onClick:Int(triggerEvent:TEventBase)
+		'only if left button was used
+		if triggerEvent.GetData().GetInt("button",0) <> 1 then return False
+		
 		'only if not already handling the same situation with mouseDown
 		if not MouseIsDown Then SetValueByMouse
 
@@ -587,6 +590,14 @@ Type TGUISlider extends TGUIObject
 		DrawGauge(atPoint)
 		SetAlpha oldCol.a * GetScreenAlpha()
 		DrawHandle(atPoint)
+
+		?debug
+		SetColor 0,0,0
+		DrawRect(GetScreenX()+40, GetScreenY(), 100,20)
+		SetAlpha 1.0
+		SetColor 255,255,255
+		DrawText(GetValue()+" : " + Left(value, 6), GetScreenX()+42, GetScreenY()+2)
+		?
 
 		oldCol.SetRGBA()
 	End Method

@@ -238,7 +238,9 @@ Type TGUIManager
 
 	Method RestrictViewport(x:Int,y:Int,w:Int,h:Int)
 		TRenderConfig.Push()
-		GetGraphicsManager().SetViewport(x,y,w,h)
+		if w > 0 and h > 0
+			GetGraphicsManager().SetViewport(x,y,w,h)
+		endif
 	End Method
 
 
@@ -987,7 +989,7 @@ Type TGUIobject
 
 	Method RestrictViewport:Int()
 		Local screenRect:TRectangle = GetScreenRect()
-		If screenRect
+		If screenRect and screenRect.GetW() > 0 and screenRect.GetH() > 0
 			GUIManager.RestrictViewport(..
 				Int(screenRect.getX()), ..
 				Int(screenRect.getY()), ..
@@ -1726,11 +1728,12 @@ Type TGUIobject
 		'   moment the "click" begun
 		Local mousePos:TVec2D = New TVec2D.Init(MouseManager.x, MouseManager.y)
 		If MouseManager.IsClicked(1) Or MouseManager.GetClicks(1) > 0
-			mousePos = MouseManager.GetClickPosition(1)
+			if MouseManager.GetClickPosition(1)
+				mousePos = MouseManager.GetClickPosition(1)
+			endif
 		EndIf
 
 		Local containsMouse:Int = containsXY(mousePos.x, mousePos.y)
-
 
 		'=== HANDLE MOUSE OVER ===
 
