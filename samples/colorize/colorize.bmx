@@ -83,7 +83,10 @@ Function WorldRender:Int()
 		'draw the sprite alone
 		myEntity[i].sprite.Draw(200,50 + 50*i, (updateCount/10) Mod 11)
 		myEntity[i].Render()
-		DrawImage(myEntity[i].sprite.GetImage(), 250,50 + 50*i)
+		'do not do this - as it creates new images each "render frame"
+		'(a lot of textures - and plenty to do for the garbage collector)
+		'DrawImage(myEntity[i].sprite.GetImage(), 250,50 + 50*i)
+		DrawImage(myImages[i], 250,50 + 50*i)
 		DrawImage(myGradients[i], 520,50 + 50*i)
 	Next
 
