@@ -1,18 +1,23 @@
 SuperStrict
 Framework Brl.StandardIO
+?bmxng
+'ng already handles that stuff
+Import Brl.Reflection
+?Not bmxng
 Import "../../external/reflectionExtended/reflection.bmx"
-'Import Brl.Reflection 'the modded one!
+?
+
 
 Type TMyType
 	Field B:Int[0]
-	Global C:int = 3
+	Global C:Int = 3
 End Type
-global my:TMyType = new TMyType
+Global my:TMyType = New TMyType
 
-print "Definition: TMyType.B type="+TTypeID.ForObject(my).FindField("B").TypeID().name()
-print "Content:            B type="+TTypeID.ForObject(my.B).name()
+Print "Definition: TMyType.B type="+TTypeId.ForObject(my).FindField("B").TypeID().name()
+Print "Content:            B type="+TTypeId.ForObject(my.B).name()
 
-local a:string
-print "Content:            a type="+TTypeID.ForObject(a).name()
+Local a:String
+Print "Content:            a type="+TTypeId.ForObject(a).name()
 'TTypeID.ForObject(a).Set(a, "HI")
 'print "Content:            a type="+TTypeID.ForObject(a).name()

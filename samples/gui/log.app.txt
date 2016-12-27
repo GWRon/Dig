@@ -1,2 +1,0 @@
-App Log v1.0
-[15:32:00] LOAD     | TEVENTMANAGER.INIT(): OK
