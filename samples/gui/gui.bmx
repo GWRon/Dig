@@ -18,7 +18,7 @@ MyApp.debugLevel = 1
 'kickoff
 MyApp.SetTitle("GUI widgets")
 MyApp.Run()
-end
+End
 
 
 
@@ -27,6 +27,7 @@ end
 
 Type TMyApp Extends TGraphicalApp
 	Field mouseCursorState:Int = 0
+	Field guiSystemState:TLowerString = TLowerString.Create("SYSTEM")
 
 
 	Method Prepare:Int()
@@ -39,9 +40,8 @@ Type TMyApp Extends TGraphicalApp
 		'gm.InitGraphics()
 
 		GetDeltatimer().Init(30, -1)
-		GetGraphicsManager().SetVsync(FALSE)
+		GetGraphicsManager().SetVsync(False)
 		GetGraphicsManager().SetResolution(800,600)
-		GetGraphicsManager().InitGraphics()	
 
 		'we use a full screen background - so no cls needed
 		autoCls = True
@@ -66,7 +66,7 @@ Type TMyApp Extends TGraphicalApp
 
 		'=== UPDATE GUI ===
 		'system wide gui elements
-		GuiManager.Update("SYSTEM")
+		GuiManager.Update( guiSystemState )
 
 		'run parental update (screen handling)
 		Super.Update()
@@ -87,7 +87,7 @@ Type TMyApp Extends TGraphicalApp
 	Method RenderContent:Int()
 		'=== RENDER GUI ===
 		'system wide gui elements
-		GuiManager.Draw("SYSTEM")
+		GuiManager.Draw( guiSystemState )
 	End Method
 
 
