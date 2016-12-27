@@ -1,4 +1,4 @@
-﻿SuperStrict
+SuperStrict
 'keep it small
 Framework Brl.StandardIO
 Import Brl.GLMax2D
@@ -9,10 +9,10 @@ Import "../../base.gfx.bitmapfont.bmx"
 Graphics 640,480,0, 60
 SetBlend(ALPHABLEND)
 
-local cycleTime:Double = 0
-local lastCycleTime:Double = -1
-local direction:int = 1
-local x:float = 0.0
+Local cycleTime:Double = 0
+Local lastCycleTime:Double = -1
+Local direction:Int = 1
+Local x:Float = 0.0
 
 Local font:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/sourcesans/SourceSansPro-Regular.ttf", 12, SMOOTHFONT)
 Local fontB:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/sourcesans/SourceSansPro-Bold.ttf", 12, SMOOTHFONT | BOLDFONT)
@@ -22,21 +22,21 @@ Local fontI:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/s
 'SetImageFont(font.FImageFont)
 
 
-local f:TBitmapFont = GetBitmapFontManager().Get("Default", 12)
-local appExit:int = False
+Local f:TBitmapFont = GetBitmapFontManager().Get("Default", 12)
+Local appExit:Int = False
 
-While not KeyHit(KEY_ESCAPE) and not appExit
+While Not KeyHit(KEY_ESCAPE) And Not appExit
 	'compute cycle time
-	if lastCycleTime = -1 then lastCycleTime = Millisecs()
-	cycleTime = Millisecs() - lastCycleTime
-	lastCycleTime = Millisecs()
+	If lastCycleTime = -1 Then lastCycleTime = MilliSecs()
+	cycleTime = MilliSecs() - lastCycleTime
+	lastCycleTime = MilliSecs()
 
 	Cls
 
 	SetColor 255,100,100
 	SetAlpha 0.3
 	DrawRect(150,100,200,200)
-	Setalpha 1.0
+	SetAlpha 1.0
 	SetColor 255,255,255
 
 	f.DrawBlock("Left Top", 150, 100, 200, 200, ALIGN_LEFT_TOP)
@@ -47,19 +47,19 @@ While not KeyHit(KEY_ESCAPE) and not appExit
 
 	'calc current position of dynamic text thingie
 	x :+ direction * (cycleTime / 1000.0) 'in ms
-	if x >= 1.0 then direction = -1
-	if x <= 0 then direction = 1
+	If x >= 1.0 Then direction = -1
+	If x <= 0 Then direction = 1
 
-	f.DrawBlock("Bounce", 150, 100, 200, 200, new TVec2D.Init(x, 0.3))
+	f.DrawBlock("Bounce", 150, 100, 200, 200, New TVec2D.Init(x, 0.3))
 
-	GetBitmapFont("Default",13).DrawBlock("Long text missing some stuff? Does it eat characters, or not?", 500,200, 98,250, null, TColor.clWhite)
+	GetBitmapFont("Default",13).DrawBlock("Long text missing some stuff? Does it eat characters, or not?", 500,200, 98,250, Null, TColor.clWhite)
 
-	GetBitmapFont("Default",13).DrawBlock("Showing some line-breaking stuff. Does it eat characters, or not?", 500,400, 130,250, null, TColor.clWhite)
+	GetBitmapFont("Default",13).DrawBlock("Showing some line-breaking stuff. Does it eat characters, or not?", 500,400, 130,250, Null, TColor.clWhite)
 
 	GetBitmapFont("Default",13).DrawBlock("Let's test a bit |b|bold |color=255,0,0|Text |color=255,255,0|or|/color| |i|italic bold|/color| one|/i||/b|. Yeah!", 10,400, 120,250, Null,TColor.Create(175,175,140))
 
 
-	local t:string = "Let's test if |b|bold |color=255,0,0|colored |color=255,255,0|or|/color| |i|italic bold|/color| Text|/i||/b| leads to incorrect dimensions!"
+	Local t:String = "Let's test if |b|bold |color=255,0,0|colored |color=255,255,0|or|/color| |i|italic bold|/color| Text|/i||/b| leads to incorrect dimensions!"
 	SetColor 150,150,150
 	DrawRect(10, 10, GetBitmapFont("Default",13).GetWidth(t), GetBitmapFont("Default",13).GetMaxCharHeight())
 	SetColor 255,255,255
@@ -72,7 +72,7 @@ While not KeyHit(KEY_ESCAPE) and not appExit
 	GetBitmapFont("Default",13).DrawBlock(t, 10,40, 450,150, Null,TColor.clWhite)
 
 	Flip -1
-rem
+Rem
 	Repeat
 		if KeyHit(KEY_ESCAPE) then appExit=True;exit
 		delay(25)
