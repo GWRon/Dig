@@ -32,10 +32,14 @@ Type TScreenGui Extends TScreen
 
 		Local guiRowX1:Int = 70
 
-		Local button:TGUIButton = New TGUIButton.Create(New TVec2D.Init(guiRowX1, 20), New TVec2D.Init(130,-1), "Clickeriki?", Self.GetName())
-		Local Input:TGUIInput = New TGUIInput.Create(New TVec2D.Init(guiRowX1, 55), New TVec2D.Init(130,-1), "empty", 20, Self.GetName())
-		Input.SetOverlay("gfx_gui_icon_arrowRight")
+		Local button:TGUIButton = New TGUIButton.Create(New TVec2D.Init(guiRowX1, 20), New TVec2D.Init(130,-1), "Sample Button", Self.GetName())
+		button.SetTooltip( new TGUITooltipBase.Initialize("A button click", "Clicking on a button might lead to a longer life...might!", new TRectangle.Init(0,0,250,-1)) )
 
+		Local guiInput:TGUIInput = New TGUIInput.Create(New TVec2D.Init(guiRowX1, 55), New TVec2D.Init(130,-1), "empty", 20, Self.GetName())
+		guiInput.SetOverlay("gfx_gui_icon_arrowRight")
+		guiInput.SetTooltip( new TGUITooltipBase.Initialize("A name,", "a name. A kingdom for a name!", new TRectangle.Init(0,0,-1,-1)) )
+		guiInput.GetTooltip().SetOrientationPreset("RIGHT", 5)
+		
 
 		Local dropdown:TGUIDropDown = New TGUIDropDown.Create(New TVec2D.Init(guiRowX1,90), New TVec2D.Init(130,-1), "Sprache", 128, Self.GetName())
 		'add some items to that list

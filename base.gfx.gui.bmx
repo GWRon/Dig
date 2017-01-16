@@ -14,6 +14,9 @@ Import "base.util.localization.bmx"
 Import "base.util.registry.bmx"
 Import "base.util.event.bmx"
 Import "base.util.time.bmx"
+Import "base.gfx.tooltip.base.bmx"
+
+Import "base.util.registry.spriteloader.bmx"
 
 Import "base.gfx.renderconfig.bmx"
 
@@ -557,6 +560,13 @@ endrem
 				'if obj._lastUpdateTick = _lastUpdateTick then continue
 				'obj._lastUpdateTick = _lastUpdateTick
 				obj.Update()
+				'if there is a tooltip, update it.
+				'We handle it that way to be able to "group/order" tooltip updates
+				if obj._tooltip
+					'update hovered state
+					obj._tooltip.SetOption(TTooltipBase.OPTION_MANUALLY_HOVERED, obj.IsHovered())
+					obj._tooltip.Update()
+				endif
 				'fire event
 				EventManager.triggerEvent( TEventSimple.Create( "guiobject.onUpdate", Null, obj ) )
 			Wend
@@ -577,6 +587,7 @@ endrem
 
 
 		If GUIMANAGER_TYPES_NONDRAGGED & drawTypes
+			local activeTooltips:TList = CreateList()
 			For Local obj:TGUIobject = EachIn List
 				'all special objects get drawn separately
 				If ListDragged.contains(obj) Then Continue
@@ -596,8 +607,17 @@ endrem
 
 				If Not(obj._flags & GUI_OBJECT_ENABLED) Then SetAlpha 2.0*GetAlpha()
 
+				If obj._tooltip and (obj._flags & GUI_OBJECT_ENABLED)
+					activeTooltips.AddLast(obj._tooltip)
+				EndIf
+
 				'fire event
 				EventManager.triggerEvent( TEventSimple.Create( "guiobject.onDraw", Null, obj ) )
+			Next
+
+			'TODO: sort by lastActive state?
+			For local t:TTooltipBase = EachIn activeTooltips
+				t.Render()
 			Next
 		EndIf
 
@@ -648,6 +668,7 @@ Type TGUIobject
 	Field mouseIsClicked:TVec2D	= Null			'null = not clicked
 	Field mouseIsDown:TVec2D = New TVec2D.Init(-1,-1)
 	Field screenRect:TRectangle
+	Field _tooltip:TTooltipBase = Null
 	Field _children:TList = Null
 	Field _childrenReversed:TList = Null
 	Field _id:Int
@@ -768,6 +789,26 @@ Type TGUIobject
 		EndIf
 
 		Return newFont
+	End Method
+
+
+	Method SetTooltip(t:TTooltipBase, setTooltipParent:int = True)
+		self._tooltip = t
+
+		if self._tooltip
+			'ATTENTION: reference, not copy!
+			if setTooltipParent then self._tooltip.parentArea = self.rect
+
+			'the gui object updates hovered state to only hover if the
+			'widget is hovered (avoids drawing tooltips for window _and_
+			'a child button) 
+			self._tooltip.SetOption(TTooltipBase.OPTION_MANUAL_HOVER_CHECK, true)
+		endif
+	End Method
+
+
+	Method GetTooltip:TTooltipBase()
+		return self._tooltip
 	End Method
 
 
@@ -1664,6 +1705,12 @@ Type TGUIobject
 				DrawOverlay()
 			EndIf
 		EndIf
+
+
+		'=== HANDLE TOOLTIP ===
+		if _tooltip and not hasOption(GUI_OBJECT_MANAGED) and not hasOption(GUI_OBJECT_DRAGGED)
+			_tooltip.Render()
+		endif
 	End Method
 
 
@@ -1960,6 +2007,15 @@ Type TGUIobject
 				EndIf
 			EndIf
 		EndIf
+
+
+		'=== HANDLE TOOLTIP ===
+		if _tooltip and not hasOption(GUI_OBJECT_MANAGED) and not hasOption(GUI_OBJECT_DRAGGED)
+			'update hovered state
+			_tooltip.SetOption(TTooltipBase.OPTION_MANUALLY_HOVERED, IsHovered())
+
+			_tooltip.Update()
+		endif
 	End Method
 
 
@@ -2057,5 +2113,183 @@ Type TGUISimpleRect Extends TGUIobject
 		SetAlpha 0.5
 		DrawRect(Self.GetScreenX(), Self.GetScreenY(), Self.GetScreenWidth(), Self.GetScreenHeight())
 		SetAlpha 1.0
+	End Method
+End Type
+
+
+
+Type TGUITooltipBase Extends TTooltipBase
+	Field bgSpriteName:String = "gfx_gui_tooltip.bg"
+	Field _bgSprite:TSprite
+	'caches calculated content padding (max of default padding and bgSprite-padding)
+	Field _effectiveContentPadding:TRectangle
+	Field _arrowType:int = ARROW_DOWN
+
+	Global _defaultOffset:TVec2D = new TVec2D.Init(0,-5)
+	Const ARROW_NONE:int = 0
+	Const ARROW_LEFT:int = 1
+	Const ARROW_RIGHT:int = 2
+	Const ARROW_UP:int = 3
+	Const ARROW_DOWN:int = 4
+
+
+	Method Initialize:TGUITooltipBase(title:String="", content:String="unknown", area:TRectangle)
+		super.Initialize(title, content, area)
+		return self
+	End Method
+
+	
+	'override
+	Method GetOffset:TVec2D()
+		if offset then return offset
+
+		return _defaultOffset
+	End Method
+
+
+	'override
+	Method GetContentPadding:TRectangle()
+		if not _effectiveContentPadding
+			local contentPadding:TRectangle = Super.GetContentPadding()
+			local bgSpritePadding:TRectangle = GetBGSprite().GetNinePatchContentBorder()
+			_effectiveContentPadding = new TRectangle
+			_effectiveContentPadding.SetLeft( Max( contentPadding.GetLeft(), bgSpritePadding.GetLeft()) )
+			_effectiveContentPadding.SetRight( Max( contentPadding.GetRight(), bgSpritePadding.GetRight()) )
+			_effectiveContentPadding.SetTop( Max( contentPadding.GetTop(), bgSpritePadding.GetTop()) )
+			_effectiveContentPadding.SetBottom( Max( contentPadding.GetBottom(), bgSpritePadding.GetBottom()) )
+		endif	
+		return _effectiveContentPadding
+	End Method
+
+
+	'override to set arrow too
+	Method SetOrientationPreset(direction:string="TOP", distance:int = 0)
+		Super.SetOrientationPreset(direction, distance)
+
+		Select direction.ToUpper()
+			case "LEFT"
+				_arrowType = ARROW_RIGHT
+			case "RIGHT"
+				_arrowType = ARROW_LEFT
+			case "BOTTOM"
+				_arrowType = ARROW_UP
+			default
+				_arrowType = ARROW_DOWN
+		End Select
+	End Method
+
+
+	'acts as cache
+	Method GetBGSprite:TSprite()
+		'refresh cache if not set or wrong sprite name
+		if not _bgsprite or _bgsprite.GetName() <> bgSpriteName
+			_bgSprite = GetSpriteFromRegistry(bgSpriteName)
+			'new -non default- sprite: adjust appearance
+			if _bgSprite.GetName() <> "defaultsprite"
+				_effectiveContentPadding = Null
+				'SetAppearanceChanged(TRUE)
+			endif
+		endif
+		return _bgSprite
+	End Method
+
+
+	'override to fetch background sprite - so it can calculate padding
+	'correctly
+	Method Update:Int()
+		GetBGSprite()
+
+		Super.Update()
+	End Method
+	
+
+	'override: render a themed background
+	Method _DrawBackground:int(x:int, y:int, w:int, h:int)
+		if _customDrawBackground then return _customDrawBackground(self, x, y, w, h)
+
+		GetBGSprite().DrawArea(x,y,w,h)
+'		DrawRect(x,y,w,h)
+		
+		_DrawArrow(x,y,w,h)
+	End Method
+
+
+	Method _DrawArrow:int(x:int, y:int, w:int, h:int)
+		if _arrowType <> ARROW_NONE
+			local useArrowType:int = _arrowType
+			if HasOption(OPTION_MIRRORED_RENDER_POSITION)
+				Select _arrowType
+					case ARROW_UP
+						useArrowType = ARROW_DOWN
+					case ARROW_DOWN
+						useArrowType = ARROW_UP
+					case ARROW_LEFT
+						useArrowType = ARROW_RIGHT
+					case ARROW_RIGHT
+						useArrowType = ARROW_LEFT
+				End Select
+			endif
+
+			'TODO: GetArrowSprite()-cache
+
+			Select useArrowType
+				case ARROW_UP
+					if parentArea 
+						local scrX:int = GetScreenX()
+						local scrW:int = GetScreenWidth()
+						if _effectiveContentPadding
+							scrX :+ _effectiveContentPadding.GetLeft()
+							scrW :- _effectiveContentPadding.GetLeft() - _effectiveContentPadding.GetRight()
+						endif
+						local minX:int = Max(scrX, parentArea.GetX())
+						local maxX:int = Min(scrX + scrW, parentArea.GetX2())
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.up").Draw(0.5 * (minx + maxX), GetScreenY(), -1, ALIGN_CENTER_BOTTOM)
+					else
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.up").Draw(GetScreenX() + 0.5 * GetScreenWidth(), GetScreenY(), -1, ALIGN_CENTER_BOTTOM)
+					endif
+				case ARROW_DOWN
+					if parentArea 
+						local scrX:int = GetScreenX()
+						local scrW:int = GetScreenWidth()
+						if _effectiveContentPadding
+							scrX :+ _effectiveContentPadding.GetLeft()
+							scrW :- _effectiveContentPadding.GetLeft() - _effectiveContentPadding.GetRight()
+						endif
+						local minX:int = Max(scrX, parentArea.GetX())
+						local maxX:int = Min(scrX + scrW, parentArea.GetX2())
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.down").Draw(0.5 * (minx + maxX), GetScreenY() + GetScreenHeight(), -1, ALIGN_CENTER_TOP)
+					else
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.down").Draw(GetScreenX() + 0.5 * GetScreenWidth(), GetScreenY() + GetScreenHeight(), -1, ALIGN_CENTER_TOP)
+					endif
+				case ARROW_LEFT
+					if parentArea 
+						local scrY:int = GetScreenY()
+						local scrH:int = GetScreenHeight()
+						if _effectiveContentPadding
+							scrY :+ _effectiveContentPadding.GetTop()
+							scrH :- _effectiveContentPadding.GetBottom() - _effectiveContentPadding.GetTop()
+						endif
+						local minY:int = Max(scrY, parentArea.GetY())
+						local maxY:int = Min(scrY + scrH, parentArea.GetY2())
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.left").Draw(GetScreenX(), 0.5 * (minY + maxY), -1, ALIGN_RIGHT_CENTER)
+					else
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.left").Draw(GetScreenX(), GetScreenY() + 0.5 * GetScreenHeight(), -1, ALIGN_RIGHT_CENTER)
+					endif
+				case ARROW_RIGHT
+					if parentArea 
+						local scrY:int = GetScreenY()
+						local scrH:int = GetScreenHeight()
+						if _effectiveContentPadding
+							scrY :+ _effectiveContentPadding.GetTop()
+							scrH :- _effectiveContentPadding.GetBottom() - _effectiveContentPadding.GetTop()
+						endif
+						local minY:int = Max(scrY, parentArea.GetY())
+						local maxY:int = Min(scrY + scrH, parentArea.GetY2())
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.right").Draw(GetScreenX() + GetScreenWidth(), 0.5 * (minY + maxY), -1, ALIGN_LEFT_CENTER)
+					else
+						GetSpriteFromRegistry("gfx_gui_tooltip.arrow.right").Draw(GetScreenX() + GetScreenWidth(), GetScreenY() + 0.5 * GetScreenHeight(), -1, ALIGN_LEFT_CENTER)
+					endif
+			End Select
+		endif
 	End Method
 End Type
