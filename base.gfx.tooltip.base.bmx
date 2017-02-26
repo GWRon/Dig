@@ -4,12 +4,47 @@ Rem
 	===========================================================
 End Rem
 SuperStrict
+Import Brl.Map
 Import "base.util.graphicsmanager.bmx"
 Import "base.util.deltatimer.bmx"
 Import "base.util.rectangle.bmx"
 Import "base.util.color.bmx"
 Import "base.util.helper.bmx"
 Import "base.gfx.bitmapfont.bmx"
+
+
+Type TTooltipBaseGroup
+	Field entries:TMap = new TMap
+
+	Method Add(name:object, tooltip:TTooltipBase)
+		local key:TLowerString = TLowerString(name)
+		if key
+			entries.Insert(key, tooltip)
+		else
+			entries.Insert(TLowerString.Create(string(name)), tooltip)
+		endif
+	End Method
+
+
+	Method Get:TTooltipBase(key:TLowerString)
+		return TTooltipBase(entries.ValueForKey(key))
+	End Method
+
+
+	Method Update:int()
+		For local t:TTooltipBase = EachIn entries.Values()
+			t.Update()
+		Next
+	End Method
+
+
+	Method Render:Int(xOffset:Int = 0, yOffset:Int=0)
+		For local t:TTooltipBase = EachIn entries.Values()
+			t.Render(xOffset, yOffset)
+		Next
+	End Method
+End Type
+
 
 
 
@@ -38,9 +73,9 @@ Type TTooltipBase
 
 	Field title:String
 	Field content:String
-	Field _minTitleDim:TVec2D = new TVec2D.Init(160,0)
+	Field _minTitleDim:TVec2D ' = new TVec2D.Init(160,0)
 	Field _maxTitleDim:TVec2D
-	Field _minContentDim:TVec2D = new TVec2D.Init(160,0)
+	Field _minContentDim:TVec2D ' = new TVec2D.Init(160,0)
 	Field _maxContentDim:TVec2D
 
 	Field titleColor:TColor = TColor.Create(50,50,50)
@@ -575,11 +610,11 @@ Type TTooltipBase
 		local oldCol:TColor = new TColor.Get()
 		if IsFadingOut()
 			'fade out a bit faster ... ^3
-			SetAlpha oldCol.a * (1.0-GetStepProgress())^2
+			SetAlpha oldCol.a * float((1.0-GetStepProgress())^2)
 		endif
 
 		_DrawBackground(boxX, boxY, boxWidth, boxHeight)
-		_DrawForeground(boxX + padding.GetLeft(), boxY + padding.GetTop(), boxWidth - padding.GetLeft() - padding.GetRight(), boxHeight - padding.GetTop() - padding.GetBottom())
+		_DrawForeground(boxX + int(padding.GetLeft()), boxY + int(padding.GetTop()), boxWidth - int(padding.GetLeft() - padding.GetRight()), boxHeight - int(padding.GetTop() - padding.GetBottom()))
 
 		SetAlpha oldCol.a
 
