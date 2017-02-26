@@ -89,6 +89,14 @@ Type TToastMessageCollection extends TRenderableEntity
 
 	'=== UTILITY FUNCTIONS ===
 
+	'removes all message in all spawn points
+	Method RemoveAllMessages:Int()
+		for local spawnPoint:TToastMessageSpawnPoint = EachIn spawnPoints.Values()
+			spawnPoint.RemoveAllMessages()
+		next
+	End Method
+
+
 	'add a point for messages to spawn from
 	Method AddSpawnPoint:Int(spawnPoint:TToastMessageSpawnPoint)
 		spawnPoint.SetParent(self)
@@ -120,6 +128,10 @@ Type TToastMessageCollection extends TRenderableEntity
 		if not spawnPoint then return False
 
 		spawnPoint.AddMessage(message)
+
+		'send out event - eg for sounds
+		EventManager.triggerEvent(TEventSimple.Create("ToastMessageCollection.onAddMessage", new TData.Add("spawnPoint", spawnPoint), null, message ))
+
 		return True
 	End Method
 
@@ -133,6 +145,10 @@ Type TToastMessageCollection extends TRenderableEntity
 		if not spawnPoint then return False
 
 		spawnPoint.AddMessageFirst(message)
+
+		'send out event - eg for sounds
+		EventManager.triggerEvent(TEventSimple.Create("ToastMessageCollection.onAddMessage", new TData.Add("spawnPoint", spawnPoint), null, message ))
+
 		return True
 	End Method
 
@@ -220,9 +236,6 @@ Type TToastMessageSpawnPoint extends TEntity
 		message.SetParent(self)
 
 		messages.AddLast(message)
-
-		'send out event - eg for sounds
-		EventManager.triggerEvent(TEventSimple.Create("ToastMessageCollection.onAddMessage", new TData.Add("spawnPoint", self), null, message ))
 		return True
 	End Method
 
@@ -235,6 +248,11 @@ Type TToastMessageSpawnPoint extends TEntity
 
 		messages.AddFirst(message)
 		return True
+	End Method
+
+
+	Method RemoveAllMessages:Int()
+		messages.Clear()
 	End Method
 
 
