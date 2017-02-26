@@ -4,7 +4,7 @@ SuperStrict
 Framework BRL.standardIO
 Import "../../base.framework.graphicalapp.bmx"
 
-Global MyApp:TMyApp = new TMyApp
+Global MyApp:TMyApp = New TMyApp
 MouseManager._ignoreFirstClick = True
 'kickoff
 MyApp.SetTitle("Demoapp")
@@ -13,26 +13,26 @@ MyApp.Run()
 
 
 
-Type TMyApp extends TGraphicalApp
-	Method Update:int()
+Type TMyApp Extends TGraphicalApp
+	Method Update:Int()
 '		MouseManager.Update()
 '		KeyManager.Update()
 		Super.Update()
 
 		TMouseAction.UpdateAll()
 
-		if MouseManager.IsDown(1)
+		If MouseManager.IsDown(1)
 			TMouseAction.Add(-1,-1, 1) 'trail
-		endif
-		if MouseManager.IsShortClicked(1) then TMouseAction.Add(-1,-1, 2)
-		if MouseManager.IsLongClicked(1) then TMouseAction.Add(-1,-1, 3)
-		if MouseManager.IsDoubleClicked(1) then TMouseAction.Add(-1,-1, 4)
-		if MouseManager.IsHit(1) then TMouseAction.Add(-1,-1, 5)
+		EndIf
+		If MouseManager.IsShortClicked(1) Then TMouseAction.Add(-1,-1, 2)
+		If MouseManager.IsLongClicked(1) Then TMouseAction.Add(-1,-1, 3)
+		If MouseManager.IsDoubleClicked(1) Then TMouseAction.Add(-1,-1, 4)
+		If MouseManager.IsHit(1) Then TMouseAction.Add(-1,-1, 5)
 
 '		if KeyManager.IsHit(KEY_ESCAPE) then exit
 	End Method
 
-	Method RenderContent:int()
+	Method RenderContent:Int()
 		DrawText("FPS: "+ GetDeltaTimer().currentFPS, 20,100)
 		DrawText("UPS: "+ GetDeltaTimer().currentUPS, 20,120)
 
@@ -60,7 +60,7 @@ Type TMyApp extends TGraphicalApp
 
 
 		SetColor 150,100,100
-		DrawOval(MouseX()-3, Mousey()-3, 6,6)
+		DrawOval(MouseX()-3, MouseY()-3, 6,6)
 		SetColor 255,255,255
 		DrawOval(MouseManager.x-3, MouseManager.y-3, 6,6)
 	End Method
@@ -68,61 +68,61 @@ End Type
 
 
 Type TMouseAction
-	Field x:int, y:int
-	Field kind:int
+	Field x:Int, y:Int
+	Field kind:Int
 	Global lastTrail:TMouseAction
 	Global list:TList = CreateList()
 
-	Function Add:TMouseAction(x:int, y:int, kind:int)
-		if x < 0 then x = MouseManager.x
-		if y < 0 then y = MouseManager.y
+	Function Add:TMouseAction(x:Int, y:Int, kind:Int)
+		If x < 0 Then x = MouseManager.x
+		If y < 0 Then y = MouseManager.y
 
 		'last = current -> skip
-		if kind = 1 and lastTrail and lastTrail.x = x and lastTrail.y = y then return Null
+		If kind = 1 And lastTrail And lastTrail.x = x And lastTrail.y = y Then Return Null
 
-		local obj:TMouseAction = new TMouseAction
+		Local obj:TMouseAction = New TMouseAction
 		obj.x = x
 		obj.y = y
 		obj.kind = kind
 
-		if kind = 1 then lastTrail = obj
+		If kind = 1 Then lastTrail = obj
 
 		list.AddLast(obj)
-		return obj
+		Return obj
 	End Function
 
 	Method Draw(previous:TMouseAction)
-		if kind = 1 'mouse trail
-			if previous
+		If kind = 1 'mouse trail
+			If previous
 				DrawLine(previous.x, previous.y, x, y)
-			else
+			Else
 				Plot(x, y)
-			endif
-		elseif kind = 2 'clicks
+			EndIf
+		ElseIf kind = 2 'clicks
 			SetColor 100,100,150
 			DrawOval(x-10, y-10, 20,20)
 			DrawText ("Click", x-10,y-24)
-		elseif kind = 3 'long clicks
+		ElseIf kind = 3 'long clicks
 			SetColor 100,150,150
 			DrawOval(x-8, y-8, 16,16)
 			DrawText ("Long", x-45,y-4)
-		elseif kind = 4 'double clicks
+		ElseIf kind = 4 'double clicks
 			SetColor 150,100,150
 			DrawOval(x-6, y-6, 12,12)
 			DrawText ("Dbl", x+20,y-4)
-		elseif kind = 5 'hits
+		ElseIf kind = 5 'hits
 			SetColor 100,150,100
 			DrawOval(x-4, y-4, 8,8)
 			DrawText ("Hit", x-9,y+12)
-		endif
+		EndIf
 		SetColor 255,255,255
 	End Method
 
 	Function DrawAll()
-		local previousTrail:TMouseAction
-		For local a:TMouseAction = Eachin list
+		Local previousTrail:TMouseAction
+		For Local a:TMouseAction = EachIn list
 			a.Draw(previousTrail)
-			if a.kind = 1 then previousTrail = a
+			If a.kind = 1 Then previousTrail = a
 		Next
 	End Function
 

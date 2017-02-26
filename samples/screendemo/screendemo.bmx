@@ -8,22 +8,22 @@ Import "../../base.util.registry.imageloader.bmx"
 Import "../../base.gfx.bitmapfont.bmx"
 Import "../../base.gfx.sprite.particle.bmx"
 
-Global MyApp:TMyApp = new TMyApp
+Global MyApp:TMyApp = New TMyApp
 MyApp.debugLevel = 1
 
-Type TMyApp extends TGraphicalApp
-	Field mouseCursorState:int = 0
+Type TMyApp Extends TGraphicalApp
+	Field mouseCursorState:Int = 0
 
 
-	Method Prepare:int()
-		super.Prepare()
+	Method Prepare:Int()
+		Super.Prepare()
 		'we use a full screen background - so no cls needed
 		autoCls = False
 
 		'=== CREATE DEMO SCREENS ===
-		GetScreenManager().Set(new TScreenMainMenu.Init("mainmenu"))
-		GetScreenManager().Set(new TScreenInGame.Init("screen1"))
-		GetScreenManager().Set(new TScreenInGame.Init("screen2"))
+		GetScreenManager().Set(New TScreenMainMenu.Init("mainmenu"))
+		GetScreenManager().Set(New TScreenInGame.Init("screen1"))
+		GetScreenManager().Set(New TScreenInGame.Init("screen2"))
 		'set the active one
 		GetScreenManager().SetCurrent( GetScreenManager().Get("mainmenu") )
 	End Method
@@ -49,42 +49,42 @@ Type TMyApp extends TGraphicalApp
 End Type
 
 
-Type TScreenInGame extends TScreen
-	Field col:int = 0
+Type TScreenInGame Extends TScreen
+	Field col:Int = 0
 
-	Method Init:TScreenInGame(name:string)
+	Method Init:TScreenInGame(name:String)
 		Super.Init(name)
 
 		col = 200
-		if name = "screen1" then col = 100
-		return self
+		If name = "screen1" Then col = 100
+		Return Self
 	End Method
 
 
-	Method Update:int()
+	Method Update:Int()
 		If Keymanager.IsHit(KEY_2)
-			if name = "screen1"
+			If name = "screen1"
 				GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("screen2") )
-			else
+			Else
 				GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("screen1") )
-			endif
+			EndIf
 		ElseIf Keymanager.IsHit(KEY_3)
 			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("mainmenu") )
-		Endif
+		EndIf
 	End Method
 
 
-	Method Render:int()
+	Method Render:Int()
 		SetClsColor col,col,col
 		Cls
 		SetClsColor 0,0,0
 
-		DrawText("Ingame screen: " +self.name, 50,50)
-		if name = "screen1"
+		DrawText("Ingame screen: " +Self.name, 50,50)
+		If name = "screen1"
 			DrawText("Key ~q2~q to go to screen2", 50, 70)
-		else
+		Else
 			DrawText("Key ~q2~q to go to screen1", 50, 70)
-		endif
+		EndIf
 		DrawText("Key ~q3~q to go to mainmenu", 50, 90)
 
 		'option 1 - there are some other inbuild render calls
@@ -98,25 +98,25 @@ Type TScreenInGame extends TScreen
 	Method RenderInterface:Int()
 		'store old color - so we do not have to care for alpha
 		'of fading screens or other modificators
-		local col:TColor = new TColor.Get()
+		Local col:TColor = New TColor.Get()
 		SetColor 150,0,0
-		Setalpha 0.5 * col.a 'half of the alpha of before
+		SetAlpha 0.5 * col.a 'half of the alpha of before
 		DrawRect(0, 0, 100, GraphicsHeight())
-		DrawRect(100, 0, Graphicswidth(), 50)
+		DrawRect(100, 0, GraphicsWidth(), 50)
 		col.SetRGBA()
 	End Method
 
 
 	'overwrite the function of TScreen - TGraphicalApp-Apps call this
 	'automatically
-	Method ExtraRender:int()
+	Method ExtraRender:Int()
 		'store old color - so we do not have to care for alpha
 		'of fading screens or other modificators
-		local col:TColor = new TColor.Get()
+		Local col:TColor = New TColor.Get()
 		SetColor 0,150,0
-		Setalpha 0.5 * col.a 'half of the alpha of before
+		SetAlpha 0.5 * col.a 'half of the alpha of before
 		DrawRect(GraphicsWidth()-100, 50, 100, GraphicsHeight()-50)
-		DrawRect(100, GraphicsHeight()-50, Graphicswidth()-200, 50)
+		DrawRect(100, GraphicsHeight()-50, GraphicsWidth()-200, 50)
 		col.SetRGBA()
 	End Method
 
@@ -124,13 +124,13 @@ End Type
 
 
 'base all outofgame-menus share
-Type TScreenMenuBase extends TScreen
+Type TScreenMenuBase Extends TScreen
 
-	Method Update:int()
+	Method Update:Int()
 		'
 	End Method
 
-	Method Render:int()
+	Method Render:Int()
 		'draw a background on all menus
 		SetColor(100,0,50)
 		DrawRect(0,0, GraphicsWidth(), GraphicsHeight())
@@ -139,13 +139,13 @@ Type TScreenMenuBase extends TScreen
 End Type
 
 
-Type TScreenMainMenu extends TScreenMenuBase
+Type TScreenMainMenu Extends TScreenMenuBase
 	Field smokeEmitter:TSpriteParticleEmitter
 
-	Method Init:TScreenMainMenu(name:string)
+	Method Init:TScreenMainMenu(name:String)
 		Super.Init(name)
 
-		local smokeConfig:TData = new TData
+		Local smokeConfig:TData = New TData
 '		smokeConfig.Add("sprite", GetSpriteFromRegistry("gfx_tex_smoke"))
 		smokeConfig.AddNumber("velocityMin", 5.0)
 		smokeConfig.AddNumber("velocityMax", 35.0)
@@ -158,19 +158,19 @@ Type TScreenMainMenu extends TScreenMenuBase
 		smokeConfig.AddNumber("xRange", 2)
 		smokeConfig.AddNumber("yRange", 2)
 
-		local emitterConfig:TData = new TData
-		emitterConfig.Add("area", new TRectangle.Init(69, 335, 0, 0))
+		Local emitterConfig:TData = New TData
+		emitterConfig.Add("area", New TRectangle.Init(69, 335, 0, 0))
 		emitterConfig.AddNumber("particleLimit", 100)
 		emitterConfig.AddNumber("spawnEveryMin", 0.35)
 		emitterConfig.AddNumber("spawnEveryMax", 0.60)
 
-		smokeEmitter = new TSpriteParticleEmitter.Init(emitterConfig, smokeConfig)
+		smokeEmitter = New TSpriteParticleEmitter.Init(emitterConfig, smokeConfig)
 
-		return self
+		Return Self
 	End Method
 
 
-	Method Render:int()
+	Method Render:Int()
 		'also call the render-function of TScreenMenuBase
 		Super.Render()
 
@@ -181,7 +181,7 @@ Type TScreenMainMenu extends TScreenMenuBase
 	EndMethod
 
 
-	Method Update:int()
+	Method Update:Int()
 		If Keymanager.IsHit(KEY_1)
 			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("screen1") )
 		EndIf
