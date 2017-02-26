@@ -21,9 +21,27 @@ Local fontI:TBitmapFont = GetBitmapFontManager().Add("Default", "../__res/font/s
 'also set as imagefont
 'SetImageFont(font.FImageFont)
 
-
 Local f:TBitmapFont = GetBitmapFontManager().Get("Default", 12)
 Local appExit:Int = False
+
+
+'render some text into a new image
+local pix:TPixmap = CreatePixmap(130,50, PF_RGBA8888)
+pix.ClearPixels(0)
+local img:TImage = LoadImage(pix)
+Local hintColor:TColor = New TColor.Create(130,130,130)
+Local hintColorGood:TColor = New TColor.Create(230,90,90)
+TBitmapFont.setRenderTarget(pix)
+SetAlpha 0.75
+fontB.DrawBlock("normal", 0, 0, 100, 15, ALIGN_LEFT_CENTER, hintColor)
+SetAlpha 1.0
+font.DrawBlock("farbig", 0, 15, 100, 15, ALIGN_LEFT_CENTER, hintColorGood)
+
+'GetBitmapFont("Default",13).DrawBlock("Rendered to |b|an |color=255,0,100|image |/color||/b| instead of the |i|screen|/i||/b|.", 0,0, 130,50, Null,TColor.Create(175,175,140))
+SetAlpha 1.0
+TBitmapFont.setRenderTarget(null)
+
+
 
 While Not KeyHit(KEY_ESCAPE) And Not appExit
 	'compute cycle time
@@ -70,6 +88,11 @@ While Not KeyHit(KEY_ESCAPE) And Not appExit
 	DrawRect(10, 40, GetBitmapFont("Default",13).GetWidth(t), GetBitmapFont("Default",13).GetMaxCharHeight())
 	SetColor 255,255,255
 	GetBitmapFont("Default",13).DrawBlock(t, 10,40, 450,150, Null,TColor.clWhite)
+
+	if img
+		f.Draw("Rendered To Texture:", 10,315)
+		DrawImage(img, 10, 330)
+	endif
 
 	Flip -1
 Rem
