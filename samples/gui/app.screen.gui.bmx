@@ -35,7 +35,7 @@ Type TScreenGui Extends TScreen
 		Local button:TGUIButton = New TGUIButton.Create(New TVec2D.Init(guiRowX1, 20), New TVec2D.Init(130,-1), "Sample Button", Self.GetName())
 		button.SetTooltip( new TGUITooltipBase.Initialize("A button click", "Clicking on a button might lead to a longer life...might!", new TRectangle.Init(0,0,250,-1)) )
 
-		Local guiInput:TGUIInput = New TGUIInput.Create(New TVec2D.Init(guiRowX1, 55), New TVec2D.Init(130,-1), "empty", 20, Self.GetName())
+		Local guiInput:TGUIInput = New TGUIInput.Create(New TVec2D.Init(guiRowX1, 55), New TVec2D.Init(130,-1), "a name, a kingdom for a name", 20, Self.GetName())
 		guiInput.SetOverlay("gfx_gui_icon_arrowRight")
 		guiInput.SetTooltip( new TGUITooltipBase.Initialize("A name,", "a name. A kingdom for a name!", new TRectangle.Init(0,0,-1,-1)) )
 		guiInput.GetTooltip().SetOrientationPreset("RIGHT", 5)
@@ -82,8 +82,20 @@ Type TScreenGui Extends TScreen
 		slotList.SetItemLimit(5) 'max 5 items
 		'add some items to that list
 		For Local i:Int = 1 To 3
-			slotList.SetItemToSlot( New TGUIListItem.Create(Null, New TVec2D.Init(130,20), "slottest "+i), i )
+			slotList.SetItemToSlot( New TGUIListItem.Create(Null, New TVec2D.Init(130,20), "slottest "+i), i-1 )
 		Next
+
+		Local slotScrollList:TGUISlotList = New TGUISlotList.Create(New TVec2D.Init(500,450), New TVec2D.Init(130,120), Self.GetName())
+		slotScrollList.SetSlotMinDimension(130, 20)
+		'uncomment the following to make dropped items occupy the first
+		'free slot
+		'slotList.SetAutofillSlots(true)
+		slotScrollList.SetItemLimit(10) 'max 5 items
+		'add some items to that list
+		For Local i:Int = 1 To 8
+			slotScrollList.SetItemToSlot( New TGUIListItem.Create(Null, New TVec2D.Init(130,20), "scrolltest "+i), i-1 )
+		Next
+			slotScrollList.SetItemToSlot( New TGUIListItem.Create(Null, New TVec2D.Init(130,20), "special"), 9 )
 
 		'uncomment to have a simple image button
 		'local imageButton:TGUIButton = new TGUIButton.Create(new TVec2D.Init(0,0), null, self.GetName())
@@ -162,9 +174,9 @@ Type TScreenGui Extends TScreen
 
 
 	Method Update:Int()
-		If KeyManager.IsHit(KEY_SPACE)
-			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("room1") )
-		EndIf
+'		If KeyManager.IsHit(KEY_SPACE)
+'			GetScreenManager().GetCurrent().FadeToScreen( GetScreenManager().Get("room1") )
+'		EndIf
 
 		If Not guiState Then guiState = TLowerString.Create(Self.name)
 		GuiManager.Update(guiState)
