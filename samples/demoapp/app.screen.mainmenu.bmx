@@ -124,7 +124,7 @@ Type TScreenMainMenu Extends TScreenMenuBase
 
 
 
-		Local dropdown:TGUIDropDown = New TGUIDropDown.Create(New TVec2D.Init(590,450), New TVec2D.Init(200,-1), "Sprache", 128, Self.GetName())
+		Local dropdown:TGUIDropDown = New TGUIDropDown.Create(New TVec2D.Init(590,400), New TVec2D.Init(200,-1), "Sprache", 128, Self.GetName())
 		'add some items to that list
 		For Local i:Int = 1 To 10
 			'base items do not have a size - so we have to give a manual one

@@ -294,6 +294,9 @@ Type TGUISlotList Extends TGUIListBase
 		
 		Self._slots[slot] = item
 
+		'resize item
+		if item then item.onParentResize()
+
 		if item
 			EventManager.triggerEvent(TEventSimple.Create("guiList.AddedItem", new TData.Add("item", item).AddNumber("slot",slot) , Self))
 		elseif slotItem
@@ -464,7 +467,7 @@ Type TGUISlotList Extends TGUIListBase
 
 			Local atPoint:TVec2D = GetScreenPos()
 			'restrict by scrollable panel - if not possible, there is no "space left"
-			If guiEntriesPanel.RestrictViewport()
+			If RestrictViewport()
 				Local pos:TVec3D = Null
 				For Local i:Int = 0 To Self._slots.length-1
 				SetAlpha 0.3
@@ -556,5 +559,17 @@ Type TGUISlotList Extends TGUIListBase
 			if _slots[i] then return TGUIListItem(_slots[i])
 		next
 		return null
+	End Method
+
+
+	'override
+	Method GetLastItemY:int()
+		if not _fixedSlotDimension
+			local i:TGUIListItem = GetLastItem()
+			if i then return i.GetScreenY()
+			return 0
+		else
+			return (_slots.length-1) * int(_slotMinDimension.GetY())
+		endif
 	End Method
 End Type

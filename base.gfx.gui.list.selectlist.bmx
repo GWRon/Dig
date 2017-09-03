@@ -70,6 +70,9 @@ Type TGUISelectList Extends TGUIListBase
 		Local entry:TGUIListItem = TGUIListItem( triggerEvent.getSender() )
 		If Not entry Then Return False
 
+		'ignore entries of other lists
+		if entry._parent <> self.guiEntriesPanel then Return False
+
 		'default to left button if nothing was sent
 		local button:int = triggerEvent.GetData().GetInt("button", 1)
 		if button = 1
@@ -127,7 +130,8 @@ Type TGUISelectListItem Extends TGUIListItem
 		local oldCol:TColor = new TColor.Get()
 
 		'available width is parentsDimension minus startingpoint
-		Local maxWidth:Int = GetParent().getContentScreenWidth() - rect.getX()
+		'Local maxWidth:Int = GetParent().getContentScreenWidth() - rect.getX()
+		Local maxWidth:Int = GetScreenWidth()
 		If isHovered()
 			SetColor 250,210,100
 			DrawRect(getScreenX(), getScreenY(), maxWidth, getScreenHeight())
