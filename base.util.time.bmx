@@ -169,13 +169,22 @@ Type TIntervalTimer
 
 
 	Function Create:TIntervalTimer(interval:int, actionTime:int = 0, randomnessMin:int = 0, randomnessMax:int = 0)
-		local obj:TIntervalTimer = new TIntervalTimer
-		obj.interval = interval
-		obj.actionTime = actionTime
-		obj.SetRandomness(randomnessMin, randomnessMax)
+		return new TIntervalTimer.Init(interval, actionTime, randomnessMin, randomnessMax)
+	End Function
+
+
+	Method Init:TIntervalTimer(interval:int, actionTime:int = 0, randomnessMin:int = 0, randomnessMax:int = 0)
+		self.interval = interval
+		self.actionTime = actionTime
+		self.SetRandomness(randomnessMin, randomnessMax)
 		'set timer
-		obj.reset()
-		return obj
+		self.reset()
+		return self
+	End Method
+
+
+	Function _GetTimeGone:Long()
+		return Time.GetTimeGone()
 	End Function
 
 
@@ -205,14 +214,14 @@ Type TIntervalTimer
 	'returns TRUE if interval is gone (ignores action time)
 	'action time could be eg. "show text for actiontime-seconds EVERY interval-seconds"
 	Method doAction:int()
-		local timeLeft:Double = Time.GetTimeGone() - (timer + GetInterval() )
+		local timeLeft:Double = _GetTimeGone() - (timer + GetInterval() )
 		return ( timeLeft > 0 AND timeLeft < actionTime )
 	End Method
 
 
 	'returns TRUE if interval and duration is gone (ignores duration)
 	Method isExpired:int()
-		return ( timer + GetInterval() + actionTime <= Time.GetTimeGone() )
+		return ( timer + GetInterval() + actionTime <= _GetTimeGone() )
 	End Method
 
 
@@ -223,13 +232,23 @@ Type TIntervalTimer
 	End Method
 
 
+	Method getTimeUntilActionInPercents:Float()
+		return 1.0 - Min(1.0, Max(0.0, getTimeUntilAction() / GetInterval()))
+	End Method
+
+
 	Method getTimeUntilExpire:Double()
-		return timer + GetInterval() + actionTime - Time.GetTimeGone()
+		return timer + GetInterval() + actionTime - _GetTimeGone()
+	End Method
+
+
+	Method getTimeUntilAction:Double()
+		return timer + GetInterval() - _GetTimeGone()
 	End Method
 
 
 	Method reachedHalftime:int()
-		return ( timer + 0.5*(GetInterval() + actionTime) <= Time.GetTimeGone() )
+		return ( timer + 0.5*(GetInterval() + actionTime) <= _GetTimeGone() )
 	End Method
 
 
@@ -241,6 +260,6 @@ Type TIntervalTimer
 	Method reset()
 		intervalToUse = interval + rand(randomnessMin, randomnessMax)
 
-		timer = Time.GetTimeGone()
+		timer = _GetTimeGone()
 	End Method
 End Type
