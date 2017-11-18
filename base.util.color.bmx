@@ -50,6 +50,11 @@ Type TColor
 	End Method
 
 
+	Method ToRGBString:string(glue:string=", ")
+		return r+glue+g+glue+b
+	End Method
+	
+
 	Function FromName:TColor(name:String, alpha:float=1.0)
 		Select name.ToLower()
 				Case "red"
