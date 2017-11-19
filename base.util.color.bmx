@@ -21,28 +21,28 @@ Type TColor
 
 
 	Function Create:TColor(r:int=0,g:int=0,b:int=0,a:float=1.0)
-		local obj:TColor = new TColor
-		obj.r = r
-		obj.g = g
-		obj.b = b
-		obj.a = a
-		return obj
+		return new TColor.InitRGBA(r, g, b, a)
 	End Function
 
 
 	Function CreateGrey:TColor(grey:int=0,a:float=1.0)
-		local obj:TColor = new TColor
-		obj.r = grey
-		obj.g = grey
-		obj.b = grey
-		obj.a = a
-		return obj
+		return new TColor.InitRGBA(grey, grey, grey, a)
 	End Function
 
 
 	Function CreateFromMix:TColor(colorA:TColor, colorB:TColor, mixFactor:float = 0.5)
 		return colorA.Copy().Mix(colorB, mixFactor)
 	End Function
+
+
+	Method InitRGBA:TColor(r:int, g:int, b:int, a:float)
+		self.r = r
+		self.g = g
+		self.b = b
+		self.a = a
+
+		return self
+	End Method
 
 
 	Method ToString:string()

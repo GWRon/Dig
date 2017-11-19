@@ -47,7 +47,7 @@ Import brl.Graphics
 '?
 '?bmxng
 '?android
-Import sdl.gl2sdlmax2d
+'Import sdl.gl2sdlmax2d
 '?
 
 Import "base.util.virtualgraphics.bmx"
@@ -342,14 +342,7 @@ End Rem
 
 
 	Method EnableSmoothLines:Int()
-		If renderer = RENDERER_OPENGL Or renderer = RENDERER_GL2SDL Or renderer = RENDERER_BUFFEREDOPENGL
-			?Not android
-			GlEnable(GL_LINE_SMOOTH)
-			?
-			Return True
-		Else
-			Return False
-		EndIf
+		Return False
 	End Method
 	
 	Method CenterDisplay()

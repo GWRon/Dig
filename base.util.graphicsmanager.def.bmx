@@ -49,6 +49,7 @@ Type TGraphicsManagerDefault Extends TGraphicsManager
 		?
 	End Method
 
+
 	Method CenterDisplay()
 		If Not fullscreen Then
 			'based on "ccCentreWindowHandle(hWnD%)" from the old blitzmax forums
@@ -63,6 +64,17 @@ Type TGraphicsManagerDefault Extends TGraphicsManager
 		End If
 	End Method
 
+
+	Method EnableSmoothLines:Int()
+		If renderer = RENDERER_OPENGL Or renderer = RENDERER_GL2SDL Or renderer = RENDERER_BUFFEREDOPENGL
+			?Not android
+			GlEnable(GL_LINE_SMOOTH)
+			?
+			Return True
+		Else
+			Return False
+		EndIf
+	End Method
 End Type
 
 

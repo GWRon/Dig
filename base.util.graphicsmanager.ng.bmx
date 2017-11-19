@@ -26,6 +26,17 @@ Type TGraphicsManagerNG Extends TGraphicsManager
 		_g = Graphics(realWidth, realHeight, colorDepth*fullScreen, hertz, flags)
 	End Method
 
+
+	Method EnableSmoothLines:Int()
+		If renderer = RENDERER_OPENGL Or renderer = RENDERER_GL2SDL Or renderer = RENDERER_BUFFEREDOPENGL
+			?Not android
+			GlEnable(GL_LINE_SMOOTH)
+			?
+			Return True
+		Else
+			Return False
+		EndIf
+	End Method
 End Type
 
 'convenience function
