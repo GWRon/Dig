@@ -24,15 +24,15 @@ Type TMyApp Extends TGraphicalApp
 	Method Prepare:Int()
 		Super.Prepare()
 
-		Local gm:TGraphicsManager = TGraphicsManager.GetInstance()
+		Local gm:TGraphicsManager = GetGraphicsManager()
 		'scale everything from 800x600 to 1024x768
-		'gm.SetResolution(1024, 768)
+		'gm.SetResolution(1600, 900)
 		gm.SetResolution(800, 600)
 		gm.SetDesignedResolution(800,600)
 		'gm.SetFullscreen(True)
 		'only need to init graphics again if we changed resolution,
 		'else it is already called by "Super.Prepare()"
-		'gm.InitGraphics()	
+		gm.InitGraphics()	
 
 		'we use a full screen background - so no cls needed
 		autoCls = True
@@ -173,6 +173,8 @@ Type TMyApp Extends TGraphicalApp
 		RenderLoadingResourcesInformation()
 
 		DrawText("worldTime: "+GetWorldTime().GetFormattedTime(-1, "h:i:s")+ " at day "+GetWorldTime().GetDayOfYear()+" in "+GetWorldTime().GetYear(), 80, 0)
+
+DrawRect(0,0,1,1)
 
 		'=== DRAW MOUSE CURSOR ===
 '		GetSpriteFromRegistry("gfx_mousecursor"+mouseCursorState).Draw(MouseManager.x - 12, MouseManager.y - 3, 0)
