@@ -48,7 +48,7 @@ Type TVec2D {_exposeToLua="selected"}
 
 
 	Method ToString:String()
-		if string(int(x)) = string(x) and string(int(y)) = string(y)
+		if string(float(int(x))) = string(x) and string(float(int(y))) = string(y)
 			return int(x)+", "+int(y)
 		else
 			return x+", "+y
@@ -153,6 +153,13 @@ Type TVec2D {_exposeToLua="selected"}
 	Method SubtractVec:TVec2D(otherVec:TVec2D)
 		self.x :- otherVec.x
 		self.y :- otherVec.y
+		return self
+	End Method
+
+
+	Method MultiplyFactor:TVec2D(factor:Float)
+		self.x :* factor
+		self.y :* factor
 		return self
 	End Method
 
@@ -436,6 +443,14 @@ Type TVec3D {_exposeToLua="selected"}
 		self.x :- otherVec.x
 		self.y :- otherVec.y
 		self.z :- otherVec.z
+		return self
+	End Method
+
+
+	Method MultiplyFactor:TVec3D(factor:Float)
+		self.x :* factor
+		self.y :* factor
+		self.z :* factor
 		return self
 	End Method
 
