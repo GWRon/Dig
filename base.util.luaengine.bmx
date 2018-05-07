@@ -46,7 +46,7 @@ Rem
 	compared to the call in reflectionExtended)
 	-> imports
 	-> _invoke()
-	
+
 EndRem
 
 ?Not bmxng
@@ -62,6 +62,18 @@ Import "base.util.logger.bmx"
 Import "base.util.luaengine.c"
 
 Extern
+	Function lua_tolightobject:Object( L:Byte Ptr,index:Int )
+	Function lua_unboxobject:Object( L:Byte Ptr,index:Int)
+	?bmxng
+	Function lua_boxobject( L:Byte Ptr,obj:Object )="void lua_boxobject(BBBYTE*, BBObject*)"
+	Function lua_pushlightobject( L:Byte Ptr,obj:Object )="void lua_pushlightobject(BBBYTE*,BBObject*)"
+	Function lua_gcobject:int( L:Byte Ptr )="BBINT lua_gcobject(BBBYTE*)"
+	?not bmxng
+	Function lua_boxobject( L:Byte Ptr,obj:Object )
+	Function lua_pushlightobject( L:Byte Ptr,obj:Object )
+	Function lua_gcobject:int( L:Byte Ptr )
+	?
+rem
 ?not bmxng
 	Function lua_boxobject( L:Byte Ptr,obj:Object )
 	Function lua_unboxobject:Object( L:Byte Ptr,index:Int)
@@ -75,6 +87,7 @@ Extern
 	Function lua_tolightobject:Object( L:Byte Ptr,index:Int )
 	Function lua_gcobject:int( L:Byte Ptr )="BBINT lua_gcobject(BBBYTE*)"
 ?
+endrem
 End Extern
 'end from maxlua
 
@@ -136,7 +149,7 @@ Type TLuaEngine
 		whiteListCreated = True
 		Return True
 	End Method
-	
+
 
 	Method Delete()
 		luaL_unref(getLuaState(), LUA_REGISTRYINDEX, _functionEnvironmentRef)
@@ -161,7 +174,7 @@ Type TLuaEngine
 	'"string"= luaopen_string    "table" = luaopen_table
 	Function RegisterLibraries:Int(lua_state:Byte Ptr, libnames:String[])
 		If Not libnames Then libnames = ["all"]
-		
+
 		For Local lib:String = EachIn libnames
 			Select lib.toLower()
 				'registers all libs
@@ -287,7 +300,7 @@ Type TLuaEngine
 			lua_newtable(getLuaState())
 			return
 		endif
-		
+
 		Local size:Int = typeId.ArrayLength(obj)
 
 		lua_createtable(getLuaState(), size + 1, 0)
@@ -367,8 +380,11 @@ Type TLuaEngine
 	'adding a new method/field/func to lua
 	Method Index:Int( )
 		Local obj:Object = lua_unboxobject(getLuaState(), 1)
+		'ignore this "TLuaEngine"-instance, it is passed if Lua scripts
+		'call Lua-objects and functions ("toNumber")
+		if obj = self then Return False
+
 		Local typeId:TTypeId = TTypeId.ForObject(obj)
-		Local ident:String = lua_tostring(getLuaState(), 2)
 		'by default allow read access to lists/maps ?!
 		Local whiteListedType:Int = whiteListedTypes.contains(typeId.name().toLower())
 
@@ -381,6 +397,7 @@ Type TLuaEngine
 		'eg.: field _myPrivateField
 		'
 		'but lua needs access to global: _G
+		Local ident:String = lua_tostring(getLuaState(), 2)
 		If Chr( ident[0] ) =  "_" And ident <> "_G" Then Return False
 
 		'===== CHECK PUSHED OBJECT IS A METHOD or FUNCTION =====
@@ -508,12 +525,12 @@ Type TLuaEngine
 
 		lua_pushboolean(getLuaState(), obj1 = obj2)
 '		lua_pushinteger(getLuaState(), obj1 = obj2)
-		
+
 		return True
 		' obj1 = obj2
 	End Method
 
-	
+
 	Method NewIndex:Int( )
 		Local obj:Object = lua_unboxobject(getLuaState(), 1)
 		Local typeId:TTypeId = TTypeId.ForObject(obj)
@@ -642,7 +659,7 @@ Type TLuaEngine
 		Local func:TFunction = TFunction(funcOrMeth)
 		Local mth:TMethod = TMethod(funcOrMeth)
 		Local tys:TTypeId[]
-		
+
 		If func Then tys = func.ArgTypes()
 		If mth Then tys = mth.ArgTypes()
 		Local args:Object[tys.length]
