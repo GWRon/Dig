@@ -33,11 +33,12 @@ Type TMyApp Extends TGraphicalApp
 	Method Prepare:Int()
 		Super.Prepare()
 
-		Local gm:TGraphicsManager = TGraphicsManager.GetInstance()
+		Local gm:TGraphicsManager = GetGraphicsManager()
 		'scale everything from 800x600 to 1024x768
-		'gm.SetResolution(1024, 768)
-		'gm.SetDesignedResolution(800, 600)
-		'gm.InitGraphics()
+		'gm.SetResolution(800, 600)
+		gm.SetResolution(1600, 900)
+		gm.SetDesignedResolution(800, 600)
+		gm.InitGraphics()
 
 		GetDeltatimer().Init(30, -1)
 		GetGraphicsManager().SetVsync(False)

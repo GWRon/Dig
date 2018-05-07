@@ -24,7 +24,11 @@ local intervalTotal:Double = 2.0	'anim takes 3 seconds
 local intervalDirection:int = 1		'1 -> increase, -1 -> decrease
 local effectMode:int = 0
 
-While not (KeyHit(KEY_ESCAPE) or KeyHit(KEY_BROWSER_BACK)) 
+?bmxng
+While not (KeyHit(KEY_ESCAPE) or KeyHit(KEY_BROWSER_BACK))
+?not bmxng
+While not (KeyHit(KEY_ESCAPE))
+?
 	'compute cycle time
 	if lastCycleTime = -1 then lastCycleTime = Millisecs()
 	cycleTime = Millisecs() - lastCycleTime
