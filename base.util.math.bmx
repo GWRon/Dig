@@ -87,7 +87,7 @@ Type MathHelper
 	End Function
 
 
-	'returns whether a value between an exclusive range (&gt; &lt;)
+	'returns whether a value between an exclusive range (> <)
 	Function inExclusiveRange:Int(value:Float, minValue:Float, maxValue:Float )
 		Return value > minValue And value < maxValue
 	End Function
@@ -106,6 +106,8 @@ Type MathHelper
 
 
 	Function InIntArray:int(i:int, intArray:int[])
+		if not intArray then return False
+		
 		For local d:Int = EachIn intArray
 			if d = i then return True
 		Next
