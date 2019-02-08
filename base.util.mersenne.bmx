@@ -105,14 +105,14 @@ Function WeightedRandRange:Int(lo:int, hi:int, weight:Float = 0.5, strength:Floa
 		hi = lo
 		lo = tmp
 	endif
-	
+
 	local offset:int = 0
 	if lo < 0
 		offset = -lo
 		lo = 0
 		hi = hi + offset
 	endif
-	
+
 	'save processing time
 	if weight = 0.5 then return RandRange(lo, hi) - offset
 	if weight <= 0.0 then return lo - offset
@@ -147,7 +147,7 @@ Function WeightedRandRange:Int(lo:int, hi:int, weight:Float = 0.5, strength:Floa
 		else
 			center :- abs(1 - 2*weight)^strength * range
 		endif
-		
+
 		'the new center now defines the maximum range in both directions
 		if weight > 0.5
 			range = hi - center
@@ -159,7 +159,63 @@ Function WeightedRandRange:Int(lo:int, hi:int, weight:Float = 0.5, strength:Floa
 		hi = center + range
 		lo = center - range
 	endif
-	
+
 	return RandRange(lo, hi) - offset
 End Function
 
+
+'returns an array of random numbers (no repetitions)
+'as the costs of the no-repetition-check are directly dependend of the
+'amount it is only useful for small amount values.
+Function RandRangeArray:int[](lo:int, hi:int, amount:int = 1)
+	'if hi-lo does not contain enough possible candidates then limit
+	'amount to that
+	if hi - lo < amount then amount = hi - lo
+
+	local result:int[] = new int[amount]
+	local number:int
+	local numberOK:int
+
+	For local i:int = 0 until amount
+		repeat
+			numberOK = True
+			number = RandRange(lo, hi)
+			For local d:Int = EachIn result
+				if d = number
+					numberOK = False
+					exit
+				endif
+			Next
+		until numberOK
+		result[i] = number
+	Next
+	return result
+End Function
+
+
+'returns an array of random numbers (no repetitions)
+'as the costs of the pre-filling all indices are directly dependend of the
+'amount it is only useful for small amount values.
+Function RandRangeArray2:int[](lo:int, hi:int, amount:int = 1)
+	'if hi-lo does not contain enough possible candidates then limit
+	'amount to that
+	if hi - lo < amount then amount = hi - lo
+
+	Local all:int = hi - lo
+	Local indexes:Int[all]
+	Local iptr:Int Ptr = indexes
+	For Local i:Int = 0 Until all
+		iptr[i] = i
+	Next
+
+	Local result:int[] = new int[amount]
+	Local last:Int = all - 1
+	For Local c:Int = 0 Until amount
+		Local index:Int = RandRange(0, last)
+		result[c] = lo + iptr[index]
+
+		iptr[index] = iptr[last]
+		last :- 1
+	Next
+	return result
+End Function
