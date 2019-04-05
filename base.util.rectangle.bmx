@@ -57,6 +57,11 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
+'	Method ToIntString:String()
+'		return "xy="+position.ToIntString()+"  wh="+dimension.ToIntString()
+'	End Method
+
+
 	Method SerializeTRectangleToString:string()
 		local xS:string = position.x; if float(int(position.x)) = position.x then xS = int(position.x)
 		local yS:string = position.y; if float(int(position.y)) = position.y then yS = int(position.y)
@@ -142,6 +147,10 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
+	Method Contains:int(vec:TVec2D)
+		return containsXY( vec.GetX(), vec.GetY() )
+	End Method
+
 	'returns whether the rectangle contains a point
 	Method ContainsVec:int(vec:TVec2D) {_exposeToLua}
 		return containsXY( vec.GetX(), vec.GetY() )
@@ -192,6 +201,17 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
+	'makes sure that width and height are positive
+	Method MakeDimensionsPositive:TRectangle()
+		local minX:Float = Float( Min(GetX(), GetX2()) )
+		local maxX:Float = Float( Max(GetX(), GetX2()) )
+		local minY:Float = Float( Min(GetY(), GetY2()) )
+		local maxY:Float = Float( Max(GetY(), GetY2()) )
+		SetXYWH(minX, minY, maxX-minX, maxY-minY)
+		return self
+	End Method
+
+
 	'moves the rectangle to x,y
 	Method MoveXY:int(x:float, y:float)
 		position.AddXY(x, y)
@@ -199,7 +219,7 @@ Type TRectangle {_exposeToLua="selected"}
 
 
 	'Set the rectangles values
-	Method setXYWH(x:float, y:float, w:float, h:float)
+	Method SetXYWH(x:float, y:float, w:float, h:float)
 		position.setXY(x,y)
 		dimension.setXY(w,h)
 	End Method
@@ -251,6 +271,14 @@ Type TRectangle {_exposeToLua="selected"}
 
 	Method GetIntY:int()
 		return position.GetIntY()
+	End Method
+
+	Method GetIntX2:int()
+		return position.GetIntX() + GetIntW()
+	End Method
+
+	Method GetIntY2:int()
+		return position.GetIntY() + GetIntH()
 	End Method
 
 	Method GetIntW:int()
@@ -318,13 +346,25 @@ Type TRectangle {_exposeToLua="selected"}
 	End Method
 
 
+	Method SetX2:TRectangle(value:float)
+		dimension.SetX(value - position.x)
+		return self
+	End Method
+
+
+	Method SetY2:TRectangle(value:float)
+		dimension.SetY(value - position.y)
+		return self
+	End Method
+
+
 	Method SetXY:TRectangle(valueX:float, valueY:float)
 		SetX(valueX)
 		SetY(valueY)
 		return self
 	End Method
 
-	
+
 	Method SetWH:TRectangle(valueW:float, valueH:float)
 		SetW(valueW)
 		SetH(valueH)
@@ -366,6 +406,24 @@ Type TRectangle {_exposeToLua="selected"}
 
 	Method GetAbsoluteCenterVec:TVec2D()
 		return new TVec2D.Init(GetX() + GetW()/2, GetY() + GetH()/2)
+	End Method
+
+
+	Method Round:TRectangle()
+		position.x = int(position.x + 0.5)
+		position.y = int(position.y + 0.5)
+		dimension.x = int(dimension.x + 0.5)
+		dimension.y = int(dimension.y + 0.5)
+		return self
+	End Method
+
+
+	Method Integerize:TRectangle()
+		position.x = int(position.x)
+		position.y = int(position.y)
+		dimension.x = int(dimension.x)
+		dimension.y = int(dimension.y)
+		return self
 	End Method
 
 
