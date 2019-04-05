@@ -73,7 +73,7 @@ Type TToastMessageCollection extends TRenderableEntity
 		_eventsRegistered = True
 		return True
 	End Function
-	
+
 
 	'=== EVENT FUNCTIONS ===
 
@@ -189,7 +189,7 @@ Type TToastMessageCollection extends TRenderableEntity
 		'=== DRAW CHILDREN ===
 		RenderChildren(xOffset, yOffset, alignment)
 	End Method
-	
+
 
 	Method Update:Int()
 		if spawnPoints
@@ -326,7 +326,7 @@ Type TToastMessageSpawnPoint extends TEntity
 
 
 		if showBackground then RenderBackground(xOffset, yOffset)
-		
+
 		For local message:TToastMessage = EachIn messages
 			message.Render(xOffset, yOffset, alignment)
 		Next
@@ -337,7 +337,7 @@ Type TToastMessageSpawnPoint extends TEntity
 		'restore old render config
 		TRenderConfig.Pop()
 	End Method
-	
+
 
 	Method Update:Int()
 		For local message:TToastMessage = EachIn messages.Copy()
@@ -346,7 +346,7 @@ Type TToastMessageSpawnPoint extends TEntity
 
 		'=== UPDATE CHILDREN ===
 		UpdateChildren()
-	End Method	
+	End Method
 End Type
 
 
@@ -360,18 +360,32 @@ Type TToastMessage extends TEntity
 	'a potential canvas to draw things on
 	Field canvasImage:TImage = null
 	Field _status:Int = 1 'closed
-	'time the animation for opening/closing takes, 0 to disable 
+	'time the animation for opening/closing takes, 0 to disable
 	Field _openCloseDuration:Float = 0.25
 	Field _openCloseTimeGone:Float = 0
 	Field _lifeTime:Float = -1
 	Field _lifeTimeStartValue:Float = -1
+	Field _lifeTimeBarHeight:int = 5
+	Field _lifeTimeBarColor:TColor
+	Field _lifeTimeBarBottomY:int = 15
+	Field _textOffset:TVec2D
 	'additional data
 	Field _data:TData
 	Field _onCloseFunction:int(sender:TToastMessage)
+	Global defaultDimension:TVec2D = new TVec2D.Init(200,50)
+	Global defaultLifeTimeBarHeight:int = 10
+	Global defaultLifeTimeBarColor:TColor = TColor.clWhite
+	Global defaultLifeTimeBarBottomY:int = 15
+	Global defaultTextOffset:TVec2D = new TVec2D.Init(5,5)
 
 
 	Method New()
-		area.dimension.SetXY(200,50)
+		area.dimension = defaultDimension.Copy()
+		_lifeTimeBarHeight = defaultLifeTimeBarHeight
+		_lifeTimeBarColor = defaultLifeTimeBarColor.Copy()
+		_lifeTimeBarBottomY = defaultLifeTimeBarBottomY
+		_textOffset = defaultTextOffset.Copy()
+
 		Open()
 	End Method
 
@@ -379,7 +393,7 @@ Type TToastMessage extends TEntity
 	Method GenerateGUID:string()
 		return "toastmessage-"+id
 	End Method
-	
+
 
 	'sets a function to call when the message gets closed
 	Method SetOnCloseFunction(onCloseFunction:int(sender:TToastMessage))
@@ -403,7 +417,7 @@ Type TToastMessage extends TEntity
 		self.area.dimension.SetXY(w, h)
 	End Method
 
-	
+
 	Method SetStatus(statusCode:Int, enable:Int=True)
 		If enable
 			_status :| statusCode
@@ -488,7 +502,7 @@ Type TToastMessage extends TEntity
 			_lifeTime :- GetDeltaTimer().GetDelta()
 			if _lifeTime < 0 then Close()
 		endif
-	
+
 		'check if closing/opening finished
 		if HasStatus(TOASTMESSAGE_OPENING_OR_CLOSING)
 			_openCloseTimeGone :+ GetDeltaTimer().GetDelta()
@@ -522,14 +536,14 @@ Type TToastMessage extends TEntity
 'rem
 		else
 			DrawRect(xOffset + GetScreenX(), yOffset + GetScreenY(), area.GetW(), area.GetH())
-			SetColor 0,0,255
+			_lifeTimeBarColor.SetRGB()
 			if _lifeTime > 0
-				local lifeTimeWidth:int = GetScreenWidth() - 10
+				local lifeTimeWidth:int = GetScreenWidth() - 2 * _textOffset.GetIntX()
 				lifeTimeWidth :* GetLifeTimeProgress()
-				DrawRect(xOffset + GetScreenX() + 5, yOffset + GetScreenY() + area.GetH() - 15, lifeTimeWidth, 10)
+				DrawRect(xOffset + GetScreenX() + _textOffset.GetIntX(), yOffset + GetScreenY() + area.GetH() - _lifeTimeBarBottomY, lifeTimeWidth, _lifeTimeBarHeight)
 			endif
-			DrawText(name+" "+id, xOffset + GetScreenX() + 5, yOffset + GetScreenY() + 5)
 			SetColor 255,255,255
+			DrawText(name+" "+id, xOffset + GetScreenX() + _textOffset.GetIntX(), yOffset + GetScreenY() + _textOffset.GetIntY())
 'endrem
 		endif
 	End Method
@@ -552,13 +566,13 @@ Type TToastMessage extends TEntity
 
 		'prepare visuals (alpha)
 		local progress:Float = GetOpeningClosingProgress()
-		if HasStatus(TOASTMESSAGE_OPEN) then progress = 1 - progress 
-		
+		if HasStatus(TOASTMESSAGE_OPEN) then progress = 1 - progress
+
 		local oldAlpha:Float = GetAlpha()
 		if HasStatus(TOASTMESSAGE_OPENING_OR_CLOSING) then SetAlpha(oldAlpha * progress)
 
 		'draw the message container itself
-		Rendercontent(xOffset, yOffset)
+		RenderContent(xOffset, yOffset)
 
 		SetAlpha(oldAlpha)
 
