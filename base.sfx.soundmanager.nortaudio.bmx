@@ -1,7 +1,7 @@
 SuperStrict
 Import brl.Map
 Import brl.WAVLoader
-Import brl.OGGLoader
+'Import brl.OGGLoader 'done in soundstream
 Import "base.util.logger.bmx"
 Import "base.util.vector.bmx"
 Import "base.util.time.bmx"
@@ -169,8 +169,8 @@ Type TSoundManager
 
 
 	'use 0 to disable feature
-	Method SetAutoCrossfadeTime:int(seconds:int = 0)
-		autoCrossFadeTime = seconds
+	Method SetAutoCrossfadeTime:int(milliseconds:int = 0)
+		autoCrossFadeTime = milliseconds
 	End Method
 
 
@@ -372,7 +372,7 @@ Type TSoundManager
 				element.Update()
 			Next
 		EndIf
-
+'rem
 		If Not HasMutedMusic()
 			'Wenn der Musik-Channel nicht l�uft, dann muss nichts gemacht werden
 			If Not activeMusicChannel Then Return True
@@ -381,14 +381,12 @@ Type TSoundManager
 			If inactiveMusicStream then inactiveMusicStream.Update()
 			If activeMusicStream then activeMusicStream.Update()
 
-
 			'autocrossfade to the next song
 			if autoCrossFadeTime > 0 and autoCrossFadeNextSong and activeMusicStream
 				if activeMusicStream.loop=false and activeMusicStream.GetTimeLeft() < autoCrossFadeTime
 					PlayMusicPlaylist(GetCurrentPlaylist())
 				endif
 			endif
-
 
 			'if the music didn't stop yet
 			If activeMusicChannel.Playing()
@@ -451,6 +449,16 @@ Type TSoundManager
 			musicVolume = nextMusicVolume
 			SwitchMusicChannels()
 		EndIf
+	End Method
+
+
+	Method SetMusicVolume:int(volume:Float)
+		'disturbs fading!
+		if activeMusicChannel then activeMusicChannel.SetVolume(volume)
+		if inactiveMusicChannel then inactiveMusicChannel.SetVolume(volume)
+		musicVolume = volume
+		nextMusicVolume = volume
+		defaultMusicVolume = volume
 	End Method
 
 
