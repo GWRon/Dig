@@ -170,18 +170,17 @@ End Function
 Function RandRangeArray:int[](lo:int, hi:int, amount:int = 1)
 	'if hi-lo does not contain enough possible candidates then limit
 	'amount to that
-	if hi - lo < amount then amount = hi - lo
+	if hi - lo + 1 < amount then amount = hi - lo + 1
 
 	local result:int[] = new int[amount]
 	local number:int
 	local numberOK:int
-
 	For local i:int = 0 until amount
 		repeat
 			numberOK = True
 			number = RandRange(lo, hi)
-			For local d:Int = EachIn result
-				if d = number
+			For local j:int = 0 until i
+				if result[j] = number
 					numberOK = False
 					exit
 				endif
@@ -194,12 +193,12 @@ End Function
 
 
 'returns an array of random numbers (no repetitions)
-'as the costs of the pre-filling all indices are directly dependend of the
+'as the costs of the no-repetition-check are directly dependend of the
 'amount it is only useful for small amount values.
 Function RandRangeArray2:int[](lo:int, hi:int, amount:int = 1)
 	'if hi-lo does not contain enough possible candidates then limit
 	'amount to that
-	if hi - lo < amount then amount = hi - lo
+	if hi - lo + 1 < amount then amount = hi - lo + 1
 
 	Local all:int = hi - lo
 	Local indexes:Int[all]
