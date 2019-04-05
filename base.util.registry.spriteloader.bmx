@@ -83,7 +83,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 		fieldNames :+ ["paddingLeft", "paddingTop", "paddingRight", "paddingBottom"]
 		fieldNames :+ ["r", "g", "b"]
 		fieldNames :+ ["frames|f"]
-		fieldNames :+ ["ninepatch"]
+		fieldNames :+ ["ninepatch", "tilemode"]
 		fieldNames :+ ["rotated"]
 		TXmlHelper.LoadValuesToData(node, data, fieldNames)
 
@@ -166,7 +166,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 			TLogger.Log("TRegistrySpriteLoader.LoadSpritePackFromConfig()", "File ~q"+url+"~q is missing or corrupt.", LOG_ERROR)
 			return Null
 		endif
-		
+
 		Local spritePack:TSpritePack = new TSpritePack.Init(img, data.GetString("name"))
 		'add spritepack to asset
 		GetRegistry().Set(spritePack.name, spritePack)
@@ -217,7 +217,7 @@ Type TRegistrySpriteLoader extends TRegistryImageLoader
 				If TImage(useParent) then parentImage = TImage(useParent)
 				If TSpritePack(useParent) then parentImage = TSpritePack(useParent).image
 				If TSprite(useParent) then parentImage = TSprite(useParent).GetImage()
-				
+
 				'check prerequisites
 				If dest = "" or not parentImage then return FALSE
 
@@ -310,7 +310,7 @@ Function GetSpriteGroupFromRegistry:TSprite[](baseName:string, defaultNameOrSpri
 		if sprite then result :+ [sprite]
 	until sprite = null or number >= maxNumber
 
-	'add default one if nothing was found 
+	'add default one if nothing was found
 	if result.length = 0 and defaultNameOrSprite <> null
 		if TSprite(defaultNameOrSprite)
 			result :+ [TSprite(defaultNameOrSprite)]
