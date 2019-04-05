@@ -95,7 +95,7 @@ Type TApp
 		KeyManager.Update()
 	End Function
 
-	
+
 	Function __Update:int()
 		__UpdateInput()
 
