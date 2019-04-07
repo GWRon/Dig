@@ -8,6 +8,18 @@ Import "base.util.time.bmx"
 
 Import "base.sfx.soundstream.bmx"
 
+?threaded
+Import Brl.Threads
+?not threaded
+'externalize the threading to a c file
+Import "base.sfx.soundmanager.base.c"
+Extern "C"
+'	Function RegisterUpdateStreamManagerCallback:int( cbFunc:int())
+	Function RegisterUpdateStreamManagerCallback:int( cbFunc:Byte Ptr )
+	Function StartUpdateStreamManagerThread:int() = "startThread"
+	Function StopUpdateStreamManagerThread:int() = "stopThread"
+End Extern
+?
 
 
 Type TSoundManager
@@ -56,6 +68,12 @@ Type TSoundManager
 
 	Global audioEngineEnabled:int = True
 	Global audioEngine:String = "AUTOMATIC"
+	
+	?threaded
+	Global refillBufferMutex:TMutex = CreateMutex()
+	Global updateStreamManagerThread:TThread = new TThread
+	?
+	Global isRefillBufferRunning:Int = False
 
 
 	Function Create:TSoundManager()
@@ -65,6 +83,16 @@ Type TSoundManager
 		InitAudioEngine()
 
 		manager.defaulTSfxDynamicSettings = TSfxSettings.Create()
+		
+		?not threaded
+		'print "using external/c stream update threads"
+		RegisterUpdateStreamManagerCallback(UpdateStreamManagerCallback)
+		StartUpdateStreamManagerThread()
+		?threaded
+		'print "using internal stream update threads"
+		updateStreamManagerThread = CreateThread( UpdateStreamManagerThreadFunction, null )
+		?
+			
 		Return manager
 	End Function
 
@@ -98,7 +126,29 @@ Type TSoundManager
 
 		return True
 	End Function
+	
+	
+	?threaded
+	Function UpdateStreamManagerThreadFunction:Object( data:Object )
+		repeat
+			if instance 
+				LockMutex(refillBufferMutex)
+				instance.RefillBuffers()
+				UnLockMutex(refillBufferMutex)
+			endif
+			delay(100) 'waiting time
+		forever 
+		
+	End Function
+	?not threaded
+	Function UpdateStreamManagerCallback:int()
+		if not instance then return False
 
+		instance.RefillBuffers()
+
+		return True
+	End Function
+	?
 
 	Function InitSpecificAudioEngine:int(engine:string)
 		if engine = "AUTOMATIC" then engine = "FreeAudio"
@@ -361,7 +411,19 @@ Type TSoundManager
 	Method HasMutedSfx:Int()
 		Return Not sfxOn
 	End Method
+	
 
+	Method RefillBuffers:int()
+		'currently executed?
+		if isRefillBufferRunning then return False
+		isRefillBufferRunning = True	
+
+		If inactiveMusicStream then inactiveMusicStream.Update()
+		If activeMusicStream then activeMusicStream.Update()
+
+		isRefillBufferRunning = False
+	End Method
+	
 
 	Method Update:Int()
 		'skip updates if muted
@@ -377,9 +439,8 @@ Type TSoundManager
 			'Wenn der Musik-Channel nicht l�uft, dann muss nichts gemacht werden
 			If Not activeMusicChannel Then Return True
 
-			'refill buffers
-			If inactiveMusicStream then inactiveMusicStream.Update()
-			If activeMusicStream then activeMusicStream.Update()
+			'buffers now get refilled by a thread
+			'RefillBuffers()
 
 			'autocrossfade to the next song
 			if autoCrossFadeTime > 0 and autoCrossFadeNextSong and activeMusicStream

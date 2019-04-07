@@ -80,7 +80,7 @@ Type TDigAudioStream
 		if lastChannelTime = 0 then return 0
 		return Time.MillisecsLong() - lastChannelTime
 	End Method
-	
+
 
 	Method GetLoopedPlaytimeLeft:int()
 		return GetLoopedPlaytime() - GetLoopedTimePlayed()
@@ -152,7 +152,7 @@ Type TSoundManager
 
 	'do auto crossfade X milliseconds before song end, 0 disables
 	Field autoCrossFadeTime:Int = 1500
-	'disable to skip fading on next song switch 
+	'disable to skip fading on next song switch
 	Field autoCrossFadeNextSong:Int = True
 
 	Field defaultMusicVolume:Float = 1.0
@@ -185,7 +185,7 @@ Type TSoundManager
 
 
 		'initialize sound system
-		InitAudioEngine()
+		if audioEngineEnabled then InitAudioEngine()
 
 
 		manager.musicChannel1 = AllocChannel()
@@ -199,7 +199,7 @@ Type TSoundManager
 
 	Function SetAudioEngine:int(engine:String)
 		if engine.ToUpper() = audioEngine then return False
-		
+
 		'limit to allowed engines
 		Select engine.ToUpper()
 			Case "NONE"
@@ -472,7 +472,7 @@ Type TSoundManager
 	Method MuteMusic:Int(bool:Int=True)
 		'already muted
 		if musicOn = Not bool then return False
-		
+
 		If Not audioEngineEnabled Then Return False
 
 		If bool
@@ -578,6 +578,16 @@ Type TSoundManager
 			musicVolume = nextMusicVolume
 			SwitchMusicChannels()
 		EndIf
+	End Method
+
+
+	Method SetMusicVolume:int(volume:Float)
+		'disturbs fading!
+		if activeMusicChannel then activeMusicChannel.SetVolume(volume)
+		if inactiveMusicChannel then inactiveMusicChannel.SetVolume(volume)
+		musicVolume = volume
+		nextMusicVolume = volume
+		defaultMusicVolume = volume
 	End Method
 
 
@@ -742,7 +752,7 @@ Type TSfxChannel
 	Method PlaySfx(sfx:String, settings:TSfxSettings=Null)
 		'skip adjustments and loading the sound
 		if TSoundManager.GetInstance().HasMutedSfx() then return
-		
+
 		CurrentSfx = sfx
 		CurrentSettings = settings
 
@@ -771,7 +781,7 @@ Type TSfxChannel
 
 	Method IsActive:Int()
 		If not _channel then return False
-		
+
 		Return _channel.Playing()
 	End Method
 
@@ -831,8 +841,8 @@ Type TDynamicSfxChannel Extends TSfxChannel
 	Method AdjustSettings(isUpdate:Int)
 		'create one, so we could adjust volume etc before starting to play
 		if not _channel then GetChannel()
-		if not _channel then return 
-		
+		if not _channel then return
+
 		Local sourcePoint:TVec3D = Source.GetCenter()
 		Local receiverPoint:TVec3D = Receiver.GetCenter() 'Meistens die Position der Spielfigur
 
@@ -999,7 +1009,7 @@ Type TSoundSourceElement Extends TSoundSourcePosition
 	Method SetGUID(newGUID:String)
 		GUID = newGUID
 	End Method
-	
+
 
 	Method GetReceiver:TSoundSourcePosition()
 		Return TSoundManager.GetInstance().GetDefaultReceiver()
@@ -1025,7 +1035,7 @@ Type TSoundSourceElement Extends TSoundSourcePosition
 
 		Local channel:TSfxChannel = GetChannelForSfx(name)
 		if not channel then return
-		
+
 		Local settings:TSfxSettings = sfxSettings
 		If settings = Null Then settings = GetSfxSettings(name)
 
@@ -1063,7 +1073,7 @@ Type TSoundSourceElement Extends TSoundSourcePosition
 	Method Stop(sfx:String)
 		Local channel:TSfxChannel = GetChannelForSfx(sfx)
 		if not channel then return
-		
+
 		channel.Stop()
 	End Method
 

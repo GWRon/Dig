@@ -477,7 +477,11 @@ Type TDigAudioStreamOgg Extends TDigAudioStream
 
 
 		'=== FILL IN DATA ===
+		?bmxng
+		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset
+		?not bmxng
 		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset*4
+		?
 		'try to read the oggfile at the current position
 		Local bytesRead:Int = Read_Ogg(ogg, bufAppend, bytes)
 		If bytesRead = 0 Then Throw "Error streaming from OGG. Null bytes read."
@@ -489,7 +493,8 @@ Type TDigAudioStreamOgg Extends TDigAudioStream
 	'adjusted from brl.mod/oggloader.mod/oggloader.bmx
 	'they are "private" there... so this is needed to expose them
 	Function readfunc:Int(buf:Byte Ptr, size:Int, nmemb:Int, src:Object )
-		Return TStream(src).Read(buf, size * nmemb) / size
+		if TStream(src) then Return TStream(src).Read(buf, size * nmemb) / size
+		return 0
 	End Function
 
 
@@ -502,6 +507,7 @@ Type TDigAudioStreamOgg Extends TDigAudioStream
 		Local src:TStream=TStream(src_obj)
 		Local off:Int = off0
 ?
+		if not src then return -1
 
 	?PPC
 		off = off1
@@ -529,6 +535,7 @@ Type TDigAudioStreamOgg Extends TDigAudioStream
 ?not bmxng
 	Function tellfunc:Int(src:Object)
 ?
-		Return TStream(src).Pos()
+		If TStream(src) then Return TStream(src).Pos()
+		Return 0
 	End Function
 End Type
