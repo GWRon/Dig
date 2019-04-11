@@ -50,11 +50,19 @@ Import Pub.OggVorbis
 Import Brl.OggLoader
 Import Brl.freeaudioaudio
 Import Brl.bank
+Import Brl.blitz
 Import "base.sfx.soundmanager.base.bmx"
 
 
 ?threaded
 Import Brl.Threads
+
+OnEnd( EndStreamThreadHook )
+Function EndStreamThreadHook()
+	TSoundManager_FreeAudio.updateStreamManagerThreadEnabled = False
+End Function
+
+
 ?not threaded
 'externalize the threading to a c file
 Import "base.sfx.soundmanager.freeaudio.c"
@@ -71,6 +79,7 @@ Type TSoundManager_FreeAudio extends TSoundManager
 	?threaded
 	Global refillBufferMutex:TMutex = CreateMutex()
 	Global updateStreamManagerThread:TThread = new TThread
+	Global updateStreamManagerThreadEnabled:int = True
 	?
 	Global isRefillBufferRunning:Int = False
 
@@ -84,11 +93,11 @@ Type TSoundManager_FreeAudio extends TSoundManager
 		manager.defaultSfxDynamicSettings = TSfxSettings.Create()
 		
 		?not threaded
-		'print "using external/c stream update threads"
+		print "using external/c stream update threads"
 		RegisterUpdateStreamManagerCallback(UpdateStreamManagerCallback)
 		StartUpdateStreamManagerThread()
 		?threaded
-		'print "using internal stream update threads"
+		print "using internal stream update threads"
 		updateStreamManagerThread = CreateThread( UpdateStreamManagerThreadFunction, null )
 		?
 			
@@ -135,14 +144,14 @@ Type TSoundManager_FreeAudio extends TSoundManager
 	
 	?threaded
 	Function UpdateStreamManagerThreadFunction:Object( data:Object )
-		repeat
+		While updateStreamManagerThreadEnabled
 			if instance 
 				LockMutex(refillBufferMutex)
 				instance.RefillBuffers()
 				UnLockMutex(refillBufferMutex)
 			endif
-			delay(100) 'waiting time
-		forever 
+			delay(125) 'waiting time
+		Wend
 		
 	End Function
 	?not threaded
@@ -271,17 +280,19 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 
 	'length of the total sound
 	Field samplesCount:Int = 0
+	Field sampleLength:Int = 0
 
 	Field bits:Int = 16
 	Field freq:Int = 44100
 	Field channels:Int = 2
 	Field format:Int = 0
 	Field paused:Int = False
+	Field volume:float = 1.0
 
 	'length of each chunk in positions/ints
 	Const chunkLength:Int = 1024
 	'amount of chunks to block
-	Const chunkCount:Int = 16
+	Const chunkCount:Int = 32
 
 
 	Method Create:TDigAudioStream_FreeAudio(loop:Int = False)
@@ -303,11 +314,48 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 
 		Return Self
 	End Method
+	
+	
+	Method CopyAudioFrom:TDigAudioStream_FreeAudio(other:TDigAudioStream_FreeAudio, deepCopy:int = False)
+		self.writePos = 0
+		self.streaming = other.streaming
+		self._lastPosition = 0
+		self.samplesCount = other.samplesCount
+		self.bits = other.bits
+		self.freq = other.freq
+		self.channels = other.channels
+		self.format = other.format
+		self.paused = False
+
+		'self.playing = other.playing
+		self.playtime = other.playtime
+		self.loop = other.loop
+		'self.lastChannelTime = other.lastChannelTime
+
+
+		if deepCopy
+			buffer = other.buffer[ .. ]
+		endif
+
+	
+		if other.currentChannel
+			self.CreateChannel( other.volume )
+		endif
+		if other.sound
+print "create new sound"
+			Local audioSample:TAudioSample = CreateStaticAudioSample(Byte Ptr(buffer), GetBufferLength(), freq, format)
+			'driver specific sound creation
+			CreateSound(audioSample)
+		endif
+	
+		Return self
+	End Method
 
 
 	Method Clone:TDigAudioStream_FreeAudio(deepClone:Int = False)
 		Local c:TDigAudioStream_FreeAudio = New TDigAudioStream_FreeAudio.Create(Self.loop)
-		Return c
+		c.CopyAudioFrom(self)
+		return c
 	End Method
 
 
@@ -330,12 +378,16 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 ?Not bmxng
 		Local fa_sound:Int = fa_CreateSound( audioSample.length, bits, channels, freq, audioSample.samples, $80000000 )
 ?
-		sound = TFreeAudioSound.CreateWithSound( fa_sound, audioSample)
+		'"audioSample" is ignored in the module, so could be skipped
+		'sound = TFreeAudioSound.CreateWithSound( fa_sound, audioSample)
+		sound = TFreeAudioSound.CreateWithSound( fa_sound, null)
 	End Method
 
 
 	Method CreateChannel:TChannel(volume:Float)
 		Reset()
+		self.volume = volume
+		
 		currentChannel = Cue()
 		currentChannel.SetVolume(volume)
 
@@ -550,6 +602,7 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 
 	Method Clone:TDigAudioStream_FreeAudio_Ogg(deepClone:Int = False)
 		Local c:TDigAudioStream_FreeAudio_Ogg = New TDigAudioStream_FreeAudio_Ogg.Create(Self.loop)
+		c.CopyAudioFrom(self)
 		c.uri = Self.uri
 		If Self.bank
 			If deepClone
@@ -569,6 +622,11 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 		Return c
 	End Method
 
+
+	Method GetURI:object()
+		return uri
+	End Method
+	
 
 	Method SetMemoryStreamMode:Int()
 		bank = LoadBank(uri)
