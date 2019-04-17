@@ -51,6 +51,12 @@ Type TSoundManager
 	'a named array of playlists, playlists contain available musicStreams
 	Field playlists:TMap = CreateMap()
 
+	'contains keys (IDs) and names (string representations and driver names)
+	'of supported audio engines
+	Field engineKeys:string[]
+	Field engineDriverNames:string[]
+	Field engineNames:string[]
+
 	Global instance:TSoundManager
 
 	Global PREFIX_MUSIC:String = "MUSIC_"
@@ -77,20 +83,65 @@ Type TSoundManager
 		
 		Return manager
 	End Function
+	
+	
+	Method GetAudioEngineDriverName:string(engineKey:string)
+		if not engineKeys or engineKeys.length = 0 then FillAudioEngines()
+		for local i:int = 0 until engineKeys.length
+			if engineKeys[i] = engineKey then return engineDriverNames[i]
+		Next
+		return "default"
+	End Method
 
 
-	Method SetAudioEngine:int(engine:string)
-		Throw "No engine available: did you SoundManager_RtAudio or SoundMaanger_FreeAudio?"
+	Method GetAudioEngineKeys:String[]()
+		if not engineKeys or engineKeys.length = 0 then FillAudioEngines()
+		return engineKeys
+	End Method
+
+
+	Method GetAudioEngineDriverNames:String[]()
+		if not engineDriverNames or engineDriverNames.length = 0 then FillAudioEngines()
+		return engineDriverNames
+	End Method
+
+
+	Method GetAudioEngineNames:String[]()
+		if not engineNames or engineNames.length = 0 then FillAudioEngines()
+		return engineNames
+	End Method
+
+	
+	Method FillAudioEngines:int()
 	End Method
 	
 
-	Method InitSpecificAudioEngine:int(engine:string)
-		if engine = "AUTOMATIC" then engine = "FreeAudio"
-		If Not SetAudioDriver(engine)
-			if engine = audioEngine
-				TLogger.Log("SoundManager.SetAudioEngine()", "audio engine ~q"+engine+"~q (configured) failed.", LOG_ERROR)
+	Method SetAudioEngine:int(engine:String)
+		engine = engine.ToUpper()
+		if engine = audioEngine then return False
+		
+		audioEngine = "AUTOMATIC"
+		local keys:string[] = GetAudioEngineKeys()
+		'local driverNames:string[] = GetAudioEngineDriverNames()
+
+		for local i:int = 0 until keys.length
+			if engine = keys[i]
+				audioEngine = keys[i]
+				exit
+			endif
+		Next
+
+		return True
+	End Method
+		
+
+	Method InitSpecificAudioEngine:int(engineKey:string)
+		local engineDriver:string = GetAudioEngineDriverName(engineKey)
+		If Not SetAudioDriver(engineKey)
+			if engineKey = audioEngine
+				TLogger.Log("SoundManager.SetAudioEngine()", "audio engine ~q"+engineDriver+" [" + engineKey+"]~q (configured) failed.", LOG_ERROR)
 			else
-				TLogger.Log("SoundManager.SetAudioEngine()", "audio engine ~q"+engine+"~q failed.", LOG_ERROR)
+				TLogger.Log("SoundManager.SetAudioEngine()", "audio engine ~q"+engineDriver+" [" + engineKey+"]~q failed.", LOG_ERROR)
 			endif
 			Return False
 		Else
@@ -101,28 +152,21 @@ Type TSoundManager
 
 	Method InitAudioEngine:int()
 		local engines:String[] = [audioEngine]
-		'add automatic-engine if manual setup is not already set to it
-		if audioEngine <> "AUTOMATIC" then engines :+ ["AUTOMATIC"]
-
-		?Linux
-			if audioEngine <> "FreeAudio PulseAudio System" then engines :+ ["FreeAudio PulseAudio System"]
-			if audioEngine <> "FreeAudio ALSA System" then engines :+ ["FreeAudio ALSA System"]
-			if audioEngine <> "FreeAudio OpenSound System" then engines :+ ["FreeAudio OpenSound System"]
-		?MacOS
-			'ATTENTION: WITHOUT ENABLED SOUNDCARD THIS CRASHES!
-			engines :+ ["FreeAudio CoreAudio"]
-		?Win32
-			engines :+ ["FreeAudio Multimedia"]
-			engines :+ ["FreeAudio DirectSound"]
-		?
-
+		local otherEngineKeys:String[] = GetAudioEngineKeys()
+		
+		for local i:int = 0 until otherEngineKeys.length
+			if otherEngineKeys[i].ToLower() <> audioEngine.toLower()
+				engines :+ [otherEngineKeys[i]]
+			endif
+		Next
+		
 		'try to init one of the engines, starting with the manually set
 		'audioEngine
 		local foundWorkingEngine:string = ""
 		if audioEngine <> "NONE"
-			For local engine:string = eachin engines
-				if InitSpecificAudioEngine(engine)
-					foundWorkingEngine = engine
+			For local engineKey:string = eachin engines
+				if InitSpecificAudioEngine(engineKey)
+					foundWorkingEngine = engineKey
 					exit
 				endif
 			Next
@@ -136,7 +180,8 @@ Type TSoundManager
 			Return False
 		endif
 
-		TLogger.Log("SoundManager.SetAudioEngine()", "initialized with engine ~q"+foundWorkingEngine+"~q.", LOG_DEBUG)
+		local workingDriver:string = GetAudioEngineDriverName(foundWorkingEngine)
+		TLogger.Log("SoundManager.SetAudioEngine()", "initialized with engine ~q"+workingDriver +" ["+foundWorkingEngine+"]~q.", LOG_DEBUG)
 		Return True
 	End Method
 
@@ -145,7 +190,35 @@ Type TSoundManager
 		If Not instance Then instance = TSoundManager.Create()
 		Return instance
 	End Function
+
 	
+	Method ApplyConfig(soundEngine:String="", musicVolume:Float=1.0, sfxVolume:Float=1.0, playlist:String="")
+		if soundEngine.ToLower() = "none"
+			MuteMusic(true)
+			MuteSfx(true)
+			audioEngineEnabled = False
+		elseif soundEngine <> ""
+			audioEngineEnabled = true
+			if SetAudioEngine(soundEngine.ToUpper())
+				InitAudioEngine()
+			endif
+		endif
+
+		self.sfxVolume = sfxVolume
+		SetMusicvolume(musicVolume)
+
+		if audioEngineEnabled
+			MuteSfx(sfxVolume = 0.0)
+			MuteMusic(musicVolume = 0)
+
+			if not HasMutedMusic()
+				'if no music is played yet, try to get one from the "menu"-playlist
+				If Not isPlaying() and playlist 
+					PlayMusicPlaylist(playlist)
+				endif
+			endif
+		endif
+	End Method	
 
 	Function DisableAudioEngine:int()
 		audioEngineEnabled = False

@@ -1,7 +1,7 @@
 SuperStrict
 Import brl.Map
 Import brl.WAVLoader
-Import brl.OGGLoader
+'Import brl.OGGLoader
 
 'the needed module files are located in "external/maxmod2_lite.mod.zip"
 Import MaxMod2.ogg
@@ -32,44 +32,30 @@ Type TSoundManager_RtAudio extends TSoundManager
 		Return TSoundManager_RtAudio(instance)
 	End Function
 
-
-	Method SetAudioEngine:int(engine:String)
-		if engine.ToUpper() = audioEngine then return False
-
-		'limit to allowed engines
-		Select engine.ToUpper()
-			Case "NONE"
-				audioEngine = "NONE"
-
-			Case "LINUX_ALSA"
-				audioEngine = "LINUX_ALSA"
-			Case "LINUX_PULSE"
-				audioEngine = "LINUX_PULSE"
-			Case "LINUX_OSS"
-				audioEngine = "LINUX_OSS"
-			'following are currently not compiled in the rtAudio module
-			'case "UNIX_JACK"
-			'	audioEngine = "UNIX_JACK"
-
-			Case "MACOSX_CORE"
-				audioEngine = "MACOSX_CORE"
-
-			Case "WINDOWS_ASIO"
-				audioEngine = "WINDOWS_ASIO"
-			Case "WINDOWS_DS"
-				audioEngine = "WINDOWS_DS"
-
-			Default
-				audioEngine = "AUTOMATIC"
-		End Select
-
-		return True
+	
+	
+	Method FillAudioEngines:int()
+		engineKeys = ["AUTOMATIC", "NONE"]
+		engineNames = ["Automatic", "None"]
+		engineDriverNames = ["AUTOMATIC", "NONE"]
+		?linux
+			engineKeys :+  ["LINUX_ALSA", "LINUX_PULSE", "LINUX_OSS"]
+			engineDriverNames :+ ["LINUX_ALSA", "LINUX_PULSE", "LINUX_OSS"]
+			engineNames :+ ["ALSA", "PulseAudio", "OSS"]
+		?MacOS
+			engineKeys :+  ["MACOSX_CORE"]
+			engineDriverNames :+ ["MACOSX_CORE"]
+			engineNames :+ ["CoreAudio"]
+		?Win32
+			engineKeys :+  ["WINDOWS_ASIO", "WINDOWS_DS"]
+			engineDriverNames :+ ["WINDOWS_ASIO", "WINDOWS_DS"]
+			engineNames :+ ["ASIO", "DirectSound"]
+		?
 	End Method
-
+	
 
 	Method InitSpecificAudioEngine:Int(engine:String)
 		TMaxModRtAudioDriver.Init(engine)
-
 		'
 		If Not SetAudioDriver("MaxMod RtAudio")
 			If engine = audioEngine
@@ -89,47 +75,11 @@ Type TSoundManager_RtAudio extends TSoundManager
 		'reenable rtAudio-messages
 		TMaxModRtAudioDriver.showWarnings(False)
 
-		Local engines:String[] = [audioEngine]
-		'add automatic-engine if manual setup is not already set to it
-		If audioEngine <> "AUTOMATIC" Then engines :+ ["AUTOMATIC"]
-
-		?Linux
-			If audioEngine <> "LINUX_PULSE" Then engines :+ ["LINUX_PULSE"]
-			If audioEngine <> "LINUX_ALSA" Then engines :+ ["LINUX_ALSA"]
-			If audioEngine <> "LINUX_OSS" Then engines :+ ["LINUX_OSS"]
-			'if audioEngine <> "UNIX_JACK" then engines :+ ["UNIX_JACK"]
-		?MacOS
-			'ATTENTION: WITHOUT ENABLED SOUNDCARD THIS CRASHES!
-			engines :+ ["MACOSX_CORE"]
-		?Win32
-			engines :+ ["WINDOWS_ASIO"]
-			engines :+ ["WINDOWS_DS"]
-		?
-
-		'try to init one of the engines, starting with the manually set
-		'audioEngine
-		Local foundWorkingEngine:String = ""
-		If audioEngine <> "NONE"
-			For Local engine:String = EachIn engines
-				If InitSpecificAudioEngine(engine)
-					foundWorkingEngine = engine
-					Exit
-				EndIf
-			Next
-		EndIf
-
-		'if no sound engine initialized successfully, use the dummy
-		'output (no sound)
-		If foundWorkingEngine = ""
-			TLogger.Log("SoundManager.SetAudioEngine()", "No working audio engine found. Disabling sound.", LOG_ERROR)
-			DisableAudioEngine()
-			Return False
-		EndIf
-
+		Super.InitAudioEngine() 
+		
 		'reenable rtAudio-messages
 		TMaxModRtAudioDriver.showWarnings(True)
 
-		TLogger.Log("SoundManager.SetAudioEngine()", "initialized with engine ~q"+foundWorkingEngine+"~q.", LOG_DEBUG)
 		Return True
 	End Method
 

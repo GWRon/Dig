@@ -93,11 +93,11 @@ Type TSoundManager_FreeAudio extends TSoundManager
 		manager.defaultSfxDynamicSettings = TSfxSettings.Create()
 		
 		?not threaded
-		print "using external/c stream update threads"
+		'print "using external/c stream update threads"
 		RegisterUpdateStreamManagerCallback(UpdateStreamManagerCallback)
 		StartUpdateStreamManagerThread()
 		?threaded
-		print "using internal stream update threads"
+		'print "using internal stream update threads"
 		updateStreamManagerThread = CreateThread( UpdateStreamManagerThreadFunction, null )
 		?
 			
@@ -110,35 +110,24 @@ Type TSoundManager_FreeAudio extends TSoundManager
 		Return TSoundManager_FreeAudio(instance)
 	End Function
 	
-
-	Method SetAudioEngine:int(engine:string)
-		if engine.ToUpper() = audioEngine then return False
-		
-		'limit to allowed engines
-		Select engine.ToUpper()
-			case "NONE"
-				audioEngine = "NONE"
-
-			case "LINUX_ALSA"
-				audioEngine = "FreeAudio ALSA System"
-			case "LINUX_PULSE"
-				audioEngine = "FreeAudio PulseAudio System"
-			case "LINUX_OSS"
-				audioEngine = "FreeAudio OpenSound System"
-
-			case "MACOSX_CORE"
-				audioEngine = "FreeAudio CoreAudio"
-
-			case "WINDOWS_MM"
-				audioEngine = "FreeAudio Multimedia"
-			case "WINDOWS_DS"
-				audioEngine = "FreeAudio DirectSound"
-
-			default
-				audioEngine = "AUTOMATIC"
-		End Select
-
-		return True
+	
+	Method FillAudioEngines:int()
+		engineKeys = ["AUTOMATIC", "NONE"]
+		engineNames = ["Automatic", "None"]
+		engineDriverNames = ["AUTOMATIC", "NONE"]
+		?linux
+			engineKeys :+  ["LINUX_ALSA", "LINUX_PULSE", "LINUX_OSS"]
+			engineDriverNames :+ ["FreeAudio ALSA System", "FreeAudio PulseAudio System", "FreeAudio OpenSound System"]
+			engineNames :+ ["ALSA", "PulseAudio", "OSS"]
+		?MacOS
+			engineKeys :+  ["MACOSX_CORE"]
+			engineDriverNames :+ ["FreeAudio CoreAudio"]
+			engineNames :+ ["CoreAudio"]
+		?Win32
+			engineKeys :+  ["WINDOWS_MM", "WINDOWS_DS"]
+			engineDriverNames :+ ["FreeAudio Multimedia", "FreeAudio DirectSound"]
+			engineNames :+ ["Multimedia", "DirectSound"]
+		?
 	End Method
 	
 	
@@ -167,58 +156,7 @@ Type TSoundManager_FreeAudio extends TSoundManager
 
 	Method InitSpecificAudioEngine:int(engine:string)
 		if engine = "AUTOMATIC" then engine = "FreeAudio"
-		If Not SetAudioDriver(engine)
-			if engine = audioEngine
-				TLogger.Log("SoundManager.SetAudioEngine()", "audio engine ~q"+engine+"~q (configured) failed.", LOG_ERROR)
-			else
-				TLogger.Log("SoundManager.SetAudioEngine()", "audio engine ~q"+engine+"~q failed.", LOG_ERROR)
-			endif
-			Return False
-		Else
-			Return True
-		endif
-	End Method
-
-
-	Method InitAudioEngine:int()
-		local engines:String[] = [audioEngine]
-		'add automatic-engine if manual setup is not already set to it
-		if audioEngine <> "AUTOMATIC" then engines :+ ["AUTOMATIC"]
-
-		?Linux
-			if audioEngine <> "FreeAudio PulseAudio System" then engines :+ ["FreeAudio PulseAudio System"]
-			if audioEngine <> "FreeAudio ALSA System" then engines :+ ["FreeAudio ALSA System"]
-			if audioEngine <> "FreeAudio OpenSound System" then engines :+ ["FreeAudio OpenSound System"]
-		?MacOS
-			'ATTENTION: WITHOUT ENABLED SOUNDCARD THIS CRASHES!
-			engines :+ ["FreeAudio CoreAudio"]
-		?Win32
-			engines :+ ["FreeAudio Multimedia"]
-			engines :+ ["FreeAudio DirectSound"]
-		?
-
-		'try to init one of the engines, starting with the manually set
-		'audioEngine
-		local foundWorkingEngine:string = ""
-		if audioEngine <> "NONE"
-			For local engine:string = eachin engines
-				if InitSpecificAudioEngine(engine)
-					foundWorkingEngine = engine
-					exit
-				endif
-			Next
-		endif
-
-		'if no sound engine initialized successfully, use the dummy
-		'output (no sound)
-		if foundWorkingEngine = ""
-			TLogger.Log("SoundManager.SetAudioEngine()", "No working audio engine found. Disabling sound.", LOG_ERROR)
-			DisableAudioEngine()
-			Return False
-		endif
-
-		TLogger.Log("SoundManager.SetAudioEngine()", "initialized with engine ~q"+foundWorkingEngine+"~q.", LOG_DEBUG)
-		Return True
+		return Super.InitSpecificAudioEngine(engine)
 	End Method
 
 
