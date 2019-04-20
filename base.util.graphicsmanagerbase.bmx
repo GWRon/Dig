@@ -12,7 +12,7 @@ Rem
 
 	LICENCE: zlib/libpng
 
-	Copyright (C) 2002-2018 Ronny Otto, digidea.de
+	Copyright (C) 2002-2019 Ronny Otto, digidea.de
 
 	This software is provided 'as-is', without any express or
 	implied warranty. In no event will the authors be held liable
@@ -36,20 +36,6 @@ Rem
 EndRem
 SuperStrict
 Import brl.Graphics
-'?MacOs
-'Import BRL.GLMax2D
-'?Win32
-'Import BRL.GLMax2D
-'Import "base.util.graphicsmanager.win32.bmx"
-'?Linux
-'Import BRL.GLMax2D
-'Import "../source/external/bufferedglmax2d/bufferedglmax2d.bmx"
-'?
-'?bmxng
-'?android
-'Import sdl.gl2sdlmax2d
-'?
-
 Import "base.util.virtualgraphics.bmx"
 Import "base.util.logger.bmx"
 

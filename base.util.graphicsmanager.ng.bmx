@@ -1,6 +1,8 @@
 SuperStrict
 
-
+?win32 or linux or macos 
+Import sdl.glsdlmax2d
+?
 Import sdl.gl2sdlmax2d
 
 Import "base.util.graphicsmanagerbase.bmx"
@@ -13,12 +15,16 @@ TGraphicsManager.SetRendererAvailable(TGraphicsManager.RENDERER_GL2SDL, GL2Max2D
 Type TGraphicsManagerNG Extends TGraphicsManager
 
 	Function GetInstance:TGraphicsManager()
-		If Not _instance Then _instance = New TGraphicsManagerNG
+		If Not TGraphicsManagerNG(_instance) Then _instance = New TGraphicsManagerNG
 		Return _instance
 	End Function
 
 	Method _InitGraphicsDefault:Int()
 		Select renderer
+			case RENDERER_OPENGL
+				TLogger.Log("GraphicsManager.InitGraphics()", "SetGraphicsDriver ~qGLSDL~q.", LOG_DEBUG)
+				SetGraphicsDriver GLMax2DDriver()
+				renderer = RENDERER_OPENGL
 			'buffered gl?
 			'?android
 			Default
@@ -45,6 +51,9 @@ Type TGraphicsManagerNG Extends TGraphicsManager
 End Type
 
 'convenience function
-Function GetGraphicsManager:TGraphicsManager()
+Function GetGraphicsManagerNG:TGraphicsManager()
 	Return TGraphicsManagerNG.GetInstance()
 End Function
+
+GetGraphicsManagerNG()
+
