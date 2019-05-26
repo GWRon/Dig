@@ -861,7 +861,7 @@ Type TBitmapFont
 
 		'adjust line height if another font is selected
 		if fontStyle.GetFont() <> self and fontStyle.GetFont()
-			fontStyle.styleDisplaceY = getMaxCharHeight() - fontStyle.GetFont().getMaxCharHeight()
+			fontStyle.styleDisplaceY = 0.5*(getMaxCharHeight() - fontStyle.GetFont().getMaxCharHeight())
 		else
 			'reset displace
 			fontStyle.styleDisplaceY = 0
@@ -994,7 +994,6 @@ Type TBitmapFont
 		local charBefore:int
 		local rotation:int = GetRotation()
 		local sprite:TSprite
-		local styleDisplaceY:int = 0
 		'cache
 		local font:TBitmapFont = fontStyle.GetFont()
 '		if not color then color = new TColor.Get()
@@ -1094,9 +1093,9 @@ Type TBitmapFont
 							'sprite = TSprite(font.charsSprites.ValueForKey(displayCharCode))
 							if sprite
 								if drawToPixmap
-									sprite.DrawOnImage(drawToPixmap, int(pixmapOrigin.x + x+lineWidth+tx), int(pixmapOrigin.y + y+height+ty+styleDisplaceY - font.displaceY), -1, null, color)
+									sprite.DrawOnImage(drawToPixmap, int(pixmapOrigin.x + x+lineWidth+tx), int(pixmapOrigin.y + y+height+ty + fontStyle.styleDisplaceY - font.displaceY), -1, null, color)
 								else
-									sprite.Draw(int(x+lineWidth+tx), int(y+height+ty+styleDisplaceY - font.displaceY))
+									sprite.Draw(int(x+lineWidth+tx), int(y+height+ty + fontStyle.styleDisplaceY - font.displaceY))
 								endif
 							endif
 						endif
