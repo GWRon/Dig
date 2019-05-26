@@ -52,6 +52,7 @@ Import Brl.freeaudioaudio
 Import Brl.bank
 Import Brl.blitz
 Import "base.sfx.soundmanager.base.bmx"
+Import "base.util.time.bmx"
 
 
 ?threaded
@@ -63,25 +64,24 @@ Function EndStreamThreadHook()
 End Function
 
 
-?not threaded
+?Not threaded
 'externalize the threading to a c file
 Import "base.sfx.soundmanager.freeaudio.c"
 Extern "C"
 '	Function RegisterUpdateStreamManagerCallback:int( cbFunc:int())
-	Function RegisterUpdateStreamManagerCallback:int( cbFunc:Byte Ptr )
-	Function StartUpdateStreamManagerThread:int() = "startThread"
-	Function StopUpdateStreamManagerThread:int() = "stopThread"
+	Function RegisterUpdateStreamManagerCallback:Int( cbFunc:Byte Ptr )
+	Function StartUpdateStreamManagerThread:Int() = "startThread"
+	Function StopUpdateStreamManagerThread:Int() = "stopThread"
 End Extern
 ?
 
 
-Type TSoundManager_FreeAudio extends TSoundManager
+Type TSoundManager_FreeAudio Extends TSoundManager
 	?threaded
 	Global refillBufferMutex:TMutex = CreateMutex()
-	Global updateStreamManagerThread:TThread = new TThread
-	Global updateStreamManagerThreadEnabled:int = True
+	Global updateStreamManagerThread:TThread = New TThread
+	Global updateStreamManagerThreadEnabled:Int = True
 	?
-	Global isRefillBufferRunning:Int = False
 
 
 	Function Create:TSoundManager_FreeAudio()
@@ -92,13 +92,13 @@ Type TSoundManager_FreeAudio extends TSoundManager
 
 		manager.defaultSfxDynamicSettings = TSfxSettings.Create()
 
-		?not threaded
+		?Not threaded
 		'print "using external/c stream update threads"
 		RegisterUpdateStreamManagerCallback(UpdateStreamManagerCallback)
 		StartUpdateStreamManagerThread()
 		?threaded
 		'print "using internal stream update threads"
-		updateStreamManagerThread = CreateThread( UpdateStreamManagerThreadFunction, null )
+		updateStreamManagerThread = CreateThread( UpdateStreamManagerThreadFunction, Null )
 		?
 
 		Return manager
@@ -111,7 +111,7 @@ Type TSoundManager_FreeAudio extends TSoundManager
 	End Function
 
 
-	Method FillAudioEngines:int()
+	Method FillAudioEngines:Int()
 		engineKeys = ["AUTOMATIC", "NONE"]
 		engineNames = ["Automatic", "None"]
 		engineDriverNames = ["AUTOMATIC", "NONE"]
@@ -134,70 +134,72 @@ Type TSoundManager_FreeAudio extends TSoundManager
 	?threaded
 	Function UpdateStreamManagerThreadFunction:Object( data:Object )
 		While updateStreamManagerThreadEnabled
-			if instance
-				LockMutex(refillBufferMutex)
+			local t:Long = Time.MillisecsLong()
+			If instance
+'				LockMutex(refillBufferMutex)
 				instance.RefillBuffers()
-				UnLockMutex(refillBufferMutex)
-			endif
-			delay(125) 'waiting time
+'				UnlockMutex(refillBufferMutex)
+			EndIf
+			'wait until 1000ms are gone in total
+			Delay( Max(0, 1000 - (Time.MillisecsLong() - t)) )
 		Wend
-
 	End Function
-	?not threaded
-	Function UpdateStreamManagerCallback:int()
-		if not instance then return False
+	?Not threaded
+	Function UpdateStreamManagerCallback:Int()
+		If Not instance Then Return False
 
 		instance.RefillBuffers()
 
-		return True
+		Return True
 	End Function
 	?
 
 
-	Method InitSpecificAudioEngine:int(engine:string)
-		if engine = "AUTOMATIC" then engine = "FreeAudio"
-		return Super.InitSpecificAudioEngine(engine)
+	Method InitSpecificAudioEngine:Int(engine:String)
+		If engine = "AUTOMATIC" Then engine = "FreeAudio"
+		Return Super.InitSpecificAudioEngine(engine)
 	End Method
 
 
 	'override for FreeAudio-specific checks
-	Method FixChannel:int(sfxChannel:TSfxChannel)
+	Method FixChannel:Int(sfxChannel:TSfxChannel)
 		'unset invalid channels
 		'and try to refresh previous settings
-		if TFreeAudioChannel(sfxChannel._channel) and TFreeAudioChannel(sfxChannel._channel).fa_channel = 0
-			sfxChannel._channel = null
+		If TFreeAudioChannel(sfxChannel._channel) And TFreeAudioChannel(sfxChannel._channel).fa_channel = 0
+			sfxChannel._channel = Null
 			sfxChannel._channel = AllocChannel()
-			if sfxChannel.CurrentSettings then sfxChannel.AdjustSettings(false)
-		endif
-		return Super.FixChannel(sfxChannel)
+			If sfxChannel.CurrentSettings Then sfxChannel.AdjustSettings(False)
+		EndIf
+		Return Super.FixChannel(sfxChannel)
 	End Method
 
 
-	Method RefillBuffers:int()
+	Method RefillBuffers:Int()
 		'currently executed?
-		if isRefillBufferRunning then return False
+		If isRefillBufferRunning Then Return False
 		isRefillBufferRunning = True
 
-		If inactiveMusicStream and inactiveMusicStream.IsPlaying()
+		If inactiveMusicStream And inactiveMusicStream.IsPlaying()
 			inactiveMusicStream.Update()
-		endif
-		If activeMusicStream and activeMusicStream.IsPlaying()
+		EndIf
+		If activeMusicStream And activeMusicStream.IsPlaying()
+			'print "activeStream:   buffersize="+ TDigAudioStream_FreeAudio(activeMusicStream).GetBufferSize() + "  bufferlength="+TDigAudioStream_FreeAudio(activeMusicStream).GetBufferLength() + "  bufferposition="+TDigAudioStream_FreeAudio(activeMusicStream).GetBufferPosition() + "  position="+TDigAudioStream_FreeAudio(activeMusicStream).GetPosition() + "  timeleft="+TDigAudioStream_FreeAudio(activeMusicStream).GetTimeLeft() + "  timebuffered="+TDigAudioStream_FreeAudio(activeMusicStream).GetTimeBuffered()
 			activeMusicStream.Update()
-		endif
+		EndIf
 
 		isRefillBufferRunning = False
 	End Method
 
 
-	Method CreateDigAudioStreamOgg:TDigAudioStream(uri:string, loop:int)
-		return new TDigAudioStream_Freeaudio_Ogg.CreateWithFile(uri, loop)
+	Method CreateDigAudioStreamOgg:TDigAudioStream(uri:String, loop:Int)
+		Return New TDigAudioStream_Freeaudio_Ogg.CreateWithFile(uri, loop)
 	End Method
 End Type
 
 '===== CONVENIENCE ACCESSORS =====
 'convenience instance getter
 Function GetSoundManager:TSoundManager_FreeAudio()
-	return TSoundManager_FreeAudio.GetInstance()
+	Return TSoundManager_FreeAudio.GetInstance()
 End Function
 
 
@@ -206,8 +208,9 @@ End Function
 
 
 'base class for audio streams
-Type TDigAudioStream_FreeAudio extends TDigAudioStream
-	Field buffer:Int[]
+Type TDigAudioStream_FreeAudio Extends TDigAudioStream
+	Field buffer:TBank
+'	Field buffer:Int[]
 	Field sound:TSound
 	Field currentChannel:TChannel
 
@@ -218,11 +221,11 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 	'when pausing a stream
 	Field position:Int
 	'position when cued/play
-	field channelStartPosition:Int
+	Field channelStartPosition:Int
 	'temporary variable to calculate position changes since last update
 	Field _lastPosition:Int
 
-	Field finishedPlaying:int = False
+	Field finishedPlaying:Int = False
 
 	'length of the total sound
 	Field samplesCount:Int = 0
@@ -233,12 +236,12 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 	Field channels:Int = 2
 	Field format:Int = 0
 	Field paused:Int = False
-	Field volume:float = 1.0
+	Field volume:Float = 1.0
 
 	'length of each chunk in positions/ints
 	Const chunkLength:Int = 1024
-	'amount of chunks to block
-	Const chunkCount:Int = 32
+	'amount of chunks to load/buffer
+	Const chunkCount:Int = 128*2
 
 
 	Method Create:TDigAudioStream_FreeAudio(loop:Int = False)
@@ -248,8 +251,11 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 		'audioSample = CreateAudioSample(GetBufferLength(), freq, format)
 
 		'option B
-		Self.buffer = New Int[GetBufferLength()]
-		Local audioSample:TAudioSample = CreateStaticAudioSample(Byte Ptr(buffer), GetBufferLength(), freq, format)
+'		Self.buffer = New Int[GetBufferLength()]
+		Self.buffer = New TBank
+		Self.buffer.Resize( GetBufferLength() * 4 ) 'SizeOf( Int(0) ) )
+'		Local audioSample:TAudioSample = CreateStaticAudioSample(Byte Ptr(buffer), GetBufferLength(), freq, format)
+		Local audioSample:TAudioSample = CreateStaticAudioSample(buffer.Lock(), GetBufferLength(), freq, format)
 
 
 		'driver specific sound creation
@@ -258,47 +264,54 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 		SetLooped(loop)
 		SetLoopedPlayTime( GetTimeTotal() )
 
+		'fill initial buffer
+		BufferData()
+
 		Return Self
 	End Method
 
 
-	Method CopyAudioFrom:TDigAudioStream_FreeAudio(other:TDigAudioStream_FreeAudio, deepCopy:int = False)
-		self.writePos = 0
-		self.streaming = other.streaming
-		self._lastPosition = 0
-		self.samplesCount = other.samplesCount
-		self.bits = other.bits
-		self.freq = other.freq
-		self.channels = other.channels
-		self.format = other.format
-		self.paused = False
+	Method CopyAudioFrom:TDigAudioStream_FreeAudio(other:TDigAudioStream_FreeAudio, deepCopy:Int = False)
+		Self.writePos = 0
+		Self.streaming = other.streaming
+		Self._lastPosition = 0
+		Self.samplesCount = other.samplesCount
+		Self.bits = other.bits
+		Self.freq = other.freq
+		Self.channels = other.channels
+		Self.format = other.format
+		Self.paused = False
 
-		self.playtime = other.playtime
-		self.loop = other.loop
-
-
-		if deepCopy
-			buffer = other.buffer[ .. ]
-		endif
+		Self.playtime = other.playtime
+		Self.loop = other.loop
 
 
-		if other.currentChannel
-			self.CreateChannel( other.volume )
-		endif
-		if other.sound
-			Local audioSample:TAudioSample = CreateStaticAudioSample(Byte Ptr(buffer), GetBufferLength(), freq, format)
+		If deepCopy
+'			buffer = other.buffer[ .. ]
+			buffer = new TBank
+			buffer.Resize(other.buffer.Size())
+			CopyBank( other.buffer, 0, buffer, 0, other.buffer.Size() )
+		EndIf
+
+
+		If other.currentChannel
+			Self.CreateChannel( other.volume )
+		EndIf
+		If other.sound
+'			Local audioSample:TAudioSample = CreateStaticAudioSample(Byte Ptr(buffer), GetBufferLength(), freq, format)
+			Local audioSample:TAudioSample = CreateStaticAudioSample(buffer.Lock(), GetBufferLength(), freq, format)
 			'driver specific sound creation
 			CreateSound(audioSample)
-		endif
+		EndIf
 
-		Return self
+		Return Self
 	End Method
 
 
 	Method Clone:TDigAudioStream_FreeAudio(deepClone:Int = False)
 		Local c:TDigAudioStream_FreeAudio = New TDigAudioStream_FreeAudio.Create(Self.loop)
-		c.CopyAudioFrom(self)
-		return c
+		c.CopyAudioFrom(Self)
+		Return c
 	End Method
 
 
@@ -323,19 +336,19 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 ?
 		'"audioSample" is ignored in the module, so could be skipped
 		'sound = TFreeAudioSound.CreateWithSound( fa_sound, audioSample)
-		sound = TFreeAudioSound.CreateWithSound( fa_sound, null)
+		sound = TFreeAudioSound.CreateWithSound( fa_sound, Null)
 	End Method
 
 
 	Method CreateChannel:TChannel(volume:Float)
 		Reset()
-		self.volume = volume
+		Self.volume = volume
 
 		currentChannel = Cue()
 		currentChannel.SetVolume(volume)
 
 		lastChannelTime = Time.MillisecsLong()
-		SetPlaying(true)
+		SetPlaying(True)
 
 		Return currentChannel
 	End Method
@@ -347,7 +360,7 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 
 
 	Method Stop()
-		If GetChannel() then GetChannel().Stop()
+		If GetChannel() Then GetChannel().Stop()
 
 		Super.Stop()
 	End Method
@@ -372,7 +385,7 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 
 
 	Method GetBufferLength:Int()
-		'buffer up to 8 chunks
+		'buffer up to "chunkCount" chunks
 		Return chunkLength * chunkCount
 	End Method
 
@@ -407,7 +420,7 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 
 	'returns milliseconds
 	Method GetTimeTotal:Int()
-		Return 1000 * (samplesCount / float(freq))
+		Return 1000 * (samplesCount / Float(freq))
 	End Method
 
 
@@ -431,7 +444,7 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 		streaming = False
 		paused = False
 
-		finishedPlaying = true
+		finishedPlaying = True
 	End Method
 
 
@@ -460,14 +473,12 @@ Type TDigAudioStream_FreeAudio extends TDigAudioStream
 	Method FinishPlaying:Int()
 		Reset()
 
-		finishedPlaying = true
+		finishedPlaying = True
 
 		If loop
 			Play()
 		Else
-print "finish playing - pause streaming"
 			PauseStreaming()
-
 		EndIf
 	End Method
 
@@ -478,7 +489,7 @@ print "finish playing - pause streaming"
 
 		If TFreeAudioChannel(currentChannel)
 			channelStartPosition = TFreeAudioChannel(currentChannel).Position()
-		else
+		Else
 			channelStartPosition = 0
 		EndIf
 
@@ -494,7 +505,7 @@ print "finish playing - pause streaming"
 
 		If TFreeAudioChannel(currentChannel)
 			channelStartPosition = TFreeAudioChannel(currentChannel).Position()
-		else
+		Else
 			channelStartPosition = 0
 		EndIf
 
@@ -508,20 +519,7 @@ print "finish playing - pause streaming"
 	End Method
 
 
-	Method Update()
-'If currentChannel Then print "  ChannelPos="+GetChannelPosition() + "  GetPos="+GetPosition() + "  playing="+currentChannel.Playing() +"  Time="+GetTimePlayed()+ "/" + GetTimeLeft() + "  ReadyToPlay="+ReadyToPlay() + "  IsPaused="+IsPaused() + "  finishedPlaying="+finishedPlaying
-		If not isPaused()
-			'=== CALCULATE STREAM POSITION ===
-			position :+ GetChannelPosition() - _lastPosition
-			_lastPosition = position
-
-
-			'=== FINISH PLAYBACK IF END IS REACHED ===
-			'did the playing position reach the last piece of the stream?
-			If GetPosition() >= samplesCount Then FinishPlaying()
-		endif
-
-		'=== LOAD NEW CHUNKS / BUFFER DATA ===
+	Method BufferData()
 		Local chunksToLoad:Int = GetBufferPosition() / chunkLength
 		'looping this way (in blocks of 1024) means that no "wrap over"
 		'can occour (start at 7168 and add 2048 - which wraps over 8192)
@@ -532,6 +530,24 @@ print "finish playing - pause streaming"
 			writepos :+ chunkLength
 			chunksToLoad :- 1
 		Wend
+	End Method
+
+
+	Method Update()
+'If currentChannel Then print "  ChannelPos="+GetChannelPosition() + "  GetPos="+GetPosition() + "  playing="+currentChannel.Playing() +"  Time="+GetTimePlayed()+ "/" + GetTimeLeft() + "  ReadyToPlay="+ReadyToPlay() + "  IsPaused="+IsPaused() + "  finishedPlaying="+finishedPlaying
+		If Not isPaused()
+			'=== CALCULATE STREAM POSITION ===
+			position :+ GetChannelPosition() - _lastPosition
+			_lastPosition = position
+
+
+			'=== FINISH PLAYBACK IF END IS REACHED ===
+			'did the playing position reach the last piece of the stream?
+			If GetPosition() >= samplesCount Then FinishPlaying()
+		EndIf
+
+		'=== LOAD NEW CHUNKS / BUFFER DATA ===
+		BufferData()
 
 
 		'=== BEGIN PLAYBACK IF BUFFERED ENOUGH ===
@@ -577,7 +593,7 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 
 	Method Clone:TDigAudioStream_FreeAudio_Ogg(deepClone:Int = False)
 		Local c:TDigAudioStream_FreeAudio_Ogg = New TDigAudioStream_FreeAudio_Ogg.Create(Self.loop)
-		c.CopyAudioFrom(self)
+		c.CopyAudioFrom(Self)
 		c.uri = Self.uri
 		If Self.bank
 			If deepClone
@@ -598,8 +614,8 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 	End Method
 
 
-	Method GetURI:object()
-		return uri
+	Method GetURI:Object()
+		Return uri
 	End Method
 
 
@@ -645,8 +661,9 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 
 		'=== FILL IN DATA ===
 		?bmxng
-		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset
-		?not bmxng
+		Local bufAppend:Byte Ptr = buffer.Lock() + offset*4 'newer bmxng *4, older without
+'		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset*4 'newer bmxng *4, older without
+		?Not bmxng
 		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset*4
 		?
 		'try to read the oggfile at the current position
@@ -660,21 +677,21 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 	'adjusted from brl.mod/oggloader.mod/oggloader.bmx
 	'they are "private" there... so this is needed to expose them
 	Function readfunc:Int(buf:Byte Ptr, size:Int, nmemb:Int, src:Object )
-		if TStream(src) then Return TStream(src).Read(buf, size * nmemb) / size
-		return 0
+		If TStream(src) Then Return TStream(src).Read(buf, size * nmemb) / size
+		Return 0
 	End Function
 
 
 ?bmxng
-	Function seekfunc:Int( src_obj:Object, offset:Long, whence:int )
+	Function seekfunc:Int( src_obj:Object, offset:Long, whence:Int )
 		Local src:TStream=TStream(src_obj)
 		Local off:Int = offset
-?not bmxng
+?Not bmxng
 	Function seekfunc:Int(src_obj:Object, off0:Int, off1:Int, whence:Int)
 		Local src:TStream=TStream(src_obj)
 		Local off:Int = off0
 ?
-		if not src then return -1
+		If Not src Then Return -1
 
 	?PPC
 		off = off1
@@ -699,10 +716,10 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 
 ?bmxng
 	Function tellfunc:Long(src:Object)
-?not bmxng
+?Not bmxng
 	Function tellfunc:Int(src:Object)
 ?
-		If TStream(src) then Return TStream(src).Pos()
+		If TStream(src) Then Return TStream(src).Pos()
 		Return 0
 	End Function
 End Type
