@@ -12,7 +12,7 @@ Rem
 
 	LICENCE: zlib/libpng
 
-	Copyright (C) 2002-2015 Ronny Otto, digidea.de
+	Copyright (C) 2002-2019 Ronny Otto, digidea.de
 
 	This software is provided 'as-is', without any express or
 	implied warranty. In no event will the authors be held liable
@@ -59,35 +59,24 @@ Import BRL.Reflection
 ?
 Import "base.util.logger.bmx"
 'from maxlua, modified to define "THREADED"
+?bmxng
 Import "base.util.luaengine.c"
+?Not bmxng
+Import "base.util.luaengine.vanillabmx.c"
+?
 
 Extern
 	Function lua_tolightobject:Object( L:Byte Ptr,index:Int )
 	Function lua_unboxobject:Object( L:Byte Ptr,index:Int)
 	?bmxng
-	Function lua_boxobject:int( L:Byte Ptr,obj:Object )="BBINT lua_boxobject(BBBYTE*, BBObject*)!"
-	Function lua_pushlightobject:int( L:Byte Ptr,obj:Object )="BBINT lua_pushlightobject(BBBYTE*,BBObject*)!"
-	Function lua_gcobject:int( L:Byte Ptr )="BBINT lua_gcobject(BBBYTE*)"
-	?not bmxng
+	Function lua_boxobject:Int( L:Byte Ptr,obj:Object )="BBINT lua_boxobject(BBBYTE*, BBObject*)!"
+	Function lua_pushlightobject:Int( L:Byte Ptr,obj:Object )="BBINT lua_pushlightobject(BBBYTE*,BBObject*)!"
+	Function lua_gcobject:Int( L:Byte Ptr )="BBINT lua_gcobject(BBBYTE*)"
+	?Not bmxng
 	Function lua_boxobject( L:Byte Ptr,obj:Object )
 	Function lua_pushlightobject( L:Byte Ptr,obj:Object )
-	Function lua_gcobject:int( L:Byte Ptr )
+	Function lua_gcobject:Int( L:Byte Ptr )
 	?
-rem
-?not bmxng
-	Function lua_boxobject( L:Byte Ptr,obj:Object )
-	Function lua_unboxobject:Object( L:Byte Ptr,index:Int)
-	Function lua_pushlightobject( L:Byte Ptr,obj:Object )
-	Function lua_tolightobject:Object( L:Byte Ptr,index:Int )
-	Function lua_gcobject:int( L:Byte Ptr )
-?bmxng
-	Function lua_boxobject( L:Byte Ptr,obj:Object )="BBINT lua_boxobject(BBBYTE*,BBOBJECT)"
-	Function lua_unboxobject:Object( L:Byte Ptr,index:Int)
-	Function lua_pushlightobject( L:Byte Ptr,obj:Object )="BBINT lua_pushlightobject(BBBYTE*,BBOBJECT)"
-	Function lua_tolightobject:Object( L:Byte Ptr,index:Int )
-	Function lua_gcobject:int( L:Byte Ptr )="BBINT lua_gcobject(BBBYTE*)"
-?
-endrem
 End Extern
 'end from maxlua
 
@@ -101,6 +90,9 @@ Type TLuaEngine
 	Field _luaState:Byte Ptr
 	'current code
 	Field _source:String = ""
+	'uri / path of the code
+	Field _uri:String = ""
+
 	'reference to currently loaded code
 	Field _chunk:Int = 0
 	'meta table set up finished?
@@ -124,8 +116,9 @@ Type TLuaEngine
 	Field whiteListCreated:Int = False
 
 
-	Function Create:TLuaEngine(source:String)
+	Function Create:TLuaEngine(source:String, uri:String="")
 		Local obj:TLuaEngine = New TLuaEngine.SetSource(source)
+		obj._uri = uri
 		'add here so during "RegisterToLua" code could run already
 		list.addLast(obj)
 
@@ -209,8 +202,20 @@ Type TLuaEngine
 	End Method
 
 
-	Method SetSource:TLuaEngine(source:String)
-		_source = source
+	Method SetSource:TLuaEngine(source:String, uri:String = "")
+		'prepend URI as CURRENT_WORKING_DIR global
+		Local cwd:String = ExtractDir(uri)
+		Local cwdLua:String = ""
+		If cwd
+			'add a single line so error offsets are -1
+			cwdLua :+ "--" + uri + "             ; CURRENT_WORKING_DIR = ~q" + cwd + "~q; " + "package.path = CURRENT_WORKING_DIR .. '/?.lua;' .. package.path .. ';'~n"
+			_source = cwdLua + source
+		Else
+			_source = source
+		EndIf
+		_uri = uri
+
+
 		'remove reference of old source
 		If _chunk
 			luaL_unref(getLuaState(), LUA_REGISTRYINDEX, _chunk)
@@ -282,11 +287,13 @@ Type TLuaEngine
 			If luaL_loadstring(getLuaState(), _source)
 				DumpError()
 				lua_pop(getLuaState(), 1)
+
 				Return False
 			EndIf
 			_chunk=luaL_ref(getLuaState(), LUA_REGISTRYINDEX)
 		EndIf
 		lua_rawgeti(getLuaState(), LUA_REGISTRYINDEX, _chunk)
+
 		Return True
 	End Method
 
@@ -296,10 +303,10 @@ Type TLuaEngine
 		Local typeId:TTypeId = TTypeId.ForObject(obj)
 		'for "Null[]" the function ArrayLength(obj) fails with
 		'"TypeID is not an array type"
-		if typeId.Name() = "Null[]"
+		If typeId.Name() = "Null[]"
 			lua_newtable(getLuaState())
-			return
-		endif
+			Return
+		EndIf
 
 		Local size:Int = typeId.ArrayLength(obj)
 
@@ -331,11 +338,11 @@ Type TLuaEngine
 					Self.lua_pushArray(typeId.GetArrayElement(obj, i))
 				'for everything else, we just push the object...
 				Default
-					if typeId and typeId.ElementType().ExtendsType(ArrayTypeId)
+					If typeId And typeId.ElementType().ExtendsType(ArrayTypeId)
 						Self.lua_pushArray(typeId.GetArrayElement(obj, i))
-					else
+					Else
 						Self.lua_pushObject(typeId.GetArrayElement(obj, i))
-					endif
+					EndIf
 			End Select
 
 			lua_settable(getLuaState(), -3)
@@ -382,7 +389,7 @@ Type TLuaEngine
 		Local obj:Object = lua_unboxobject(getLuaState(), 1)
 		'ignore this "TLuaEngine"-instance, it is passed if Lua scripts
 		'call Lua-objects and functions ("toNumber")
-		if obj = self then Return False
+		If obj = Self Then Return False
 
 		Local typeId:TTypeId = TTypeId.ForObject(obj)
 		'by default allow read access to lists/maps ?!
@@ -492,11 +499,11 @@ Type TLuaEngine
 				Case ArrayTypeId
 					lua_pushArray(fld.Get(obj))
 				Default
-					if fld.TypeId() and fld.TypeID().ExtendsType(ArrayTypeId)
+					If fld.TypeId() And fld.TypeID().ExtendsType(ArrayTypeId)
 						lua_pushArray(fld.Get(obj))
-					else
+					Else
 						lua_pushobject(fld.Get(obj))
-					endif
+					EndIf
 			End Select
 			Return True
 		EndIf
@@ -508,25 +515,25 @@ Type TLuaEngine
 
 
 	Method CompareObjects:Int()
-		Local obj1:Object, obj2:object
+		Local obj1:Object, obj2:Object
 
-		if lua_isnil(getLuaState(), -1)
-			print "CompareObjects: obj1 is nil"
+		If lua_isnil(getLuaState(), -1)
+			Print "CompareObjects: obj1 is nil"
 			TLogger.Log("TLuaEngine", "CompareObjects: param #1 is nil.", LOG_DEBUG)
-		else
+		Else
 			obj1 = lua_unboxobject(getLuaState(), -1)
-		endif
-		if lua_isnil(getLuaState(), 1)
-			print "CompareObjects: obj2 is nil"
+		EndIf
+		If lua_isnil(getLuaState(), 1)
+			Print "CompareObjects: obj2 is nil"
 			TLogger.Log("TLuaEngine", "CompareObjects: param #2 is nil.", LOG_DEBUG)
-		else
+		Else
 			obj2 = lua_unboxobject(getLuaState(), 1)
-		endif
+		EndIf
 
 		lua_pushboolean(getLuaState(), obj1 = obj2)
 '		lua_pushinteger(getLuaState(), obj1 = obj2)
 
-		return True
+		Return True
 		' obj1 = obj2
 	End Method
 
@@ -570,6 +577,7 @@ Type TLuaEngine
 			EndIf
 
 			If lua_isnil(getLuaState(), 3)
+				?Not bmxng
 				Select fld.TypeId()
 					Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId, FloatTypeId, DoubleTypeId, StringTypeId
 						'SetInt/SetFloat/...all convert to a string
@@ -578,14 +586,22 @@ Type TLuaEngine
 					Default
 						fld.Set(obj, Null)
 				End Select
+				?bmxng
+				Select fld.TypeId()
+					Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId, FloatTypeId, DoubleTypeId, ULongTypeId, UIntTypeId, SizetTypeId
+						fld.SetByte(obj, 0)
+					Case StringTypeId
+						fld.SetString(obj, "")
+					Default
+						fld.SetObject(obj, null)
+'						fld.Set(obj, object(null))
+				End Select
+				?
 			Else
 				Select fld.TypeId()
+?Not bmxng
 					Case IntTypeId, ShortTypeId, ByteTypeId
-						?bmxng
-							fld.SetInt(obj, int(lua_tointeger(getLuaState(), 3)))
-						?not bmxng
-							fld.SetInt(obj, lua_tointeger(getLuaState(), 3))
-						?
+						fld.SetInt(obj, lua_tointeger(getLuaState(), 3))
 					Case LongTypeId
 						fld.SetLong(obj, Long(lua_tonumber(getLuaState(), 3)))
 					Case FloatTypeId
@@ -596,6 +612,14 @@ Type TLuaEngine
 						fld.SetString(obj, lua_tostring(getLuaState(), 3))
 					Default
 						fld.Set(obj, lua_unboxobject(getLuaState(), 3))
+?bmxng
+					Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId, FloatTypeId, DoubleTypeId, ULongTypeId, UIntTypeId, SizetTypeId
+						fld.Set(obj, lua_tonumber(getLuaState(), 3))
+					Case StringTypeId
+						fld.Set(obj, lua_tostring(getLuaState(), 3))
+					Default
+						fld.Set(obj, lua_unboxobject(getLuaState(), 3))
+?
 				End Select
 			EndIf
 			Return True
@@ -622,7 +646,7 @@ Type TLuaEngine
 
 	Function CompareObjectsObject:Int(fromLuaState:Byte Ptr)
 		Local engine:TLuaEngine = TLuaEngine.FindEngine(fromLuaState)
-		If engine then return engine.CompareObjects()
+		If engine Then Return engine.CompareObjects()
 	End Function
 
 	Function IndexSelf:Int(fromLuaState:Byte Ptr)
@@ -637,10 +661,10 @@ Type TLuaEngine
 		Return 1
 	End Function
 
-	Function NewIndexSelf:int(fromLuaState:Byte Ptr)
+	Function NewIndexSelf:Int(fromLuaState:Byte Ptr)
 		'local engine:TLuaEngine = TLuaEngine.FindEngine(fromLuaState)
 		lua_rawset(fromLuaState, 1)
-		return 1
+		Return 1
 	End Function
 
 	Function CompareObjectsSelf:Int(fromLuaState:Byte Ptr)
@@ -659,7 +683,7 @@ Type TLuaEngine
 		Local obj:Object = lua_unboxobject(getLuaState(), LUA_GLOBALSINDEX - 1)
 		Local funcOrMeth:TMember = TMember(lua_tolightobject(getLuaState(), LUA_GLOBALSINDEX - 2))
 		If Not TFunction(funcOrMeth) And Not TMethod(funcOrMeth) Then Throw "LuaEngine._Invoke() failed. No function/method given."
-		if Not obj then print "LuaEngine._Invoke() failed to run ~q"+funcOrMeth.name()+"~q. Invalid parent given."
+		If Not obj Then Print "LuaEngine._Invoke() failed to run ~q"+funcOrMeth.name()+"~q. Invalid parent given."
 		Local func:TFunction = TFunction(funcOrMeth)
 		Local mth:TMethod = TMethod(funcOrMeth)
 		Local tys:TTypeId[]
@@ -673,7 +697,7 @@ Type TLuaEngine
 				Case IntTypeId, ShortTypeId, ByteTypeId
 					?bmxng
 						args[i] = String.FromLong(lua_tointeger(getLuaState(), i + 1))
-					?not bmxng
+					?Not bmxng
 						args[i] = String.FromInt(lua_tointeger(getLuaState(), i + 1))
 					?
 				Case LongTypeId
@@ -685,12 +709,12 @@ Type TLuaEngine
 				Case StringTypeId
 					args[i] = lua_tostring(getLuaState(), i + 1)
 				Default
-					if lua_isnil(getLuaState(), i + 1)
-						args[i] = null
-					else
+					If lua_isnil(getLuaState(), i + 1)
+						args[i] = Null
+					Else
 						args[i] = lua_unboxobject(getLuaState(), i + 1)
-					endif
-rem
+					EndIf
+Rem
 					if lua_isnil(getLuaState(), i + 1)
 						'print "LUA: "+funcOrMeth.name()+"() got null param #"+i+"."
 						args[i] = null
@@ -712,7 +736,7 @@ endrem
 		Next
 
 		Local t:Object
-		?not bmxng
+		?Not bmxng
 		If func Then t = func.Invoke(obj, args)
 		?bmxng
 		If func Then t = func.Invoke(args)
@@ -738,11 +762,11 @@ endrem
 			Case ArrayTypeId
 				lua_pushArray(t)
 			Default
-				if typeId and typeId.ExtendsType(ArrayTypeId)
+				If typeId And typeId.ExtendsType(ArrayTypeId)
 					lua_pushArray(t)
-				else
+				Else
 					lua_pushobject(t)
-				endif
+				EndIf
 		End Select
 		Return True
 	End Method
@@ -755,12 +779,19 @@ endrem
 		lua_rawgeti(getLuaState(), LUA_REGISTRYINDEX, _functionEnvironmentRef)
 
 		lua_getfield(getLuaState(), -1, name)
-		If lua_isnil(getLuaState(), -1)
-			lua_pop(getLuaState(), 2)
+		'make sure it is a function
+		If Not lua_isfunction(getLuaState(), -1)
+			lua_pop(getLuaState(), 1)
+			Print "CallLuaFunction(~q" + name + "~q) failed. Unknown function."
+'		If lua_isnil(getLuaState(), -1)
+'			lua_pop(getLuaState(), 2)
 			Return Null
 		EndIf
 
-		if args
+		Local argCount:Int = 0
+		If args
+			argCount = args.length
+
 			For Local i:Int = 0 Until args.length
 				Local typeId:TTypeId = TTypeId.ForObject(args[i])
 				Select typeId
@@ -778,23 +809,31 @@ endrem
 					Case ArrayTypeId
 						Self.lua_pushArray(args[i])
 					Default
-						if typeId and typeId.ExtendsType(ArrayTypeId)
+						If typeId And typeId.ExtendsType(ArrayTypeId)
 							Self.lua_pushArray(args[i])
-						else
+						Else
 							Self.lua_pushObject(args[i])
-						endif
+						EndIf
 				End Select
 			Next
-			If lua_pcall(getLuaState(), args.length, 1, 0) Then DumpError()
-		else
-			If lua_pcall(getLuaState(), 0, 1, 0) Then DumpError()
-		endif
+		EndIf
 
 		Local ret:Object
-		If Not lua_isnil(getLuaState(), -1) Then ret = lua_tostring(getLuaState(), -1)
 
-		'pop the result
-		lua_pop(getLuaState(), 1)
+		'(try to) call the function
+		If lua_pcall(getLuaState(), argCount, 1, 0) <> 0
+			DumpError()
+			lua_pop(getLuaState(), 1)
+		Else
+			'fetch the results
+			If Not lua_isnil(getLuaState(), -1)
+				ret = lua_tostring(getLuaState(), -1)
+			EndIf
+
+			'pop the returned result
+			lua_pop(getLuaState(), 1)
+		EndIf
+
 
 		'pop the _functionEnvironmentRef ?
 		lua_pop(getLuaState(), 1)
