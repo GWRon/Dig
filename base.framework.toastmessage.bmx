@@ -519,12 +519,14 @@ Type TToastMessage extends TEntity
 
 		'check clicked state
 		If GetScreenArea().containsXY(MouseManager.x, MouseManager.y)
-			If MouseManager.IsClicked(1) or MouseManager.IsHit(1)
+			If MouseManager.IsClicked(1)
 				Close()
-				MouseManager.ResetKey(1)
 
 				'fire event (eg. to play sound)
 				EventManager.triggerEvent(TEventSimple.Create("toastmessage.onClick", new TData.AddNumber("mouseButton", 1), Self))
+
+				'handled single click
+				MouseManager.SetClickHandled(1)
 			Endif
 		Endif
 	End Method

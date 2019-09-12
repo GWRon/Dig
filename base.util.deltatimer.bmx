@@ -129,7 +129,7 @@ Type TDeltaTimer
 	Method SetSystemUpdateRate(systemUpdatesPerSecond:int = 60)
 		_systemUpdateRate = 1.0 / systemUpdatesPerSecond
 	End Method
-
+	
 
 	Method Reset()
 		_loopBeginTime = Time.GetTimeGone()
@@ -211,7 +211,7 @@ Type TDeltaTimer
 		_updateAccumulator:+ Max(0, _lastLoopTime)/1000.0
 
 		local start:Long = Time.GetTimeGone()
-
+		
 		while(_updateAccumulator > _updateRate)
 			'if there is a function connected - run it
 			if _funcUpdate then _funcUpdate()
@@ -234,7 +234,7 @@ Type TDeltaTimer
 		_systemUpdateAccumulator:+ Max(0, _lastLoopTime)/1000.0
 
 		local start:Long = Time.GetTimeGone()
-
+		
 		while(_systemUpdateAccumulator > _systemUpdateRate)
 			'if there is a function connected - run it
 			if _funcSystemUpdate then _funcSystemUpdate()

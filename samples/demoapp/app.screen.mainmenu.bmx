@@ -116,7 +116,7 @@ Type TScreenMainMenu Extends TScreenMenuBase
 		windowCanvas.AddChild(guiTextArea)
 		window2.Resize(-1,-1)
 
-		
+
 		'a modal dialogue
 		Local createModalDialogueButton:TGUIButton = New TGUIButton.Create(New TVec2D.Init(590,20), New TVec2D.Init(200,-1), "create modal window", Self.GetName())
 		'handle clicking on that button
@@ -160,7 +160,7 @@ Type TScreenMainMenu Extends TScreenMenuBase
 		slider2b.SetDirection(TGUISlider.DIRECTION_LEFT)
 		slider2b.SetRenderMode(TGUISlider.RENDERMODE_CONTINUOUS)
 
-		
+
 		Local slider2c:TGUISlider = New TGUISlider.Create(New TVec2D.Init(640,60), New TVec2D.Init(150,40), "40", "mainmenu")
 		slider2c.SetValueRange(0,10)
 		slider2c.steps = 5
@@ -311,7 +311,7 @@ Type TScreenMainMenu Extends TScreenMenuBase
 		'draw original widget background (eg. selected state for SelectList items)
 		obj.DrawBackground()
 	End Function
-	
+
 
 	Method PrepareStart:Int()
 		Super.PrepareStart()
@@ -396,8 +396,6 @@ Type TGUIChat Extends TGUIPanel
 		guiList.setParent(Self)
 		guiList.SetAutoScroll(True)
 		guiList.SetBackground(Null)
-
-		Self.className = "TGUIChat"
 
 		guiInput = New TGUIInput.Create(New TVec2D.Init(0, dimension.y),New TVec2D.Init(dimension.x,-1), "", 32, limitState)
 		guiInput.setParent(Self)

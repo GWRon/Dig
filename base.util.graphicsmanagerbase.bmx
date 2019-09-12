@@ -12,7 +12,7 @@ Rem
 
 	LICENCE: zlib/libpng
 
-	Copyright (C) 2002-2019 Ronny Otto, digidea.de
+	Copyright (C) 2002-2018 Ronny Otto, digidea.de
 
 	This software is provided 'as-is', without any express or
 	implied warranty. In no event will the authors be held liable
@@ -36,7 +36,22 @@ Rem
 EndRem
 SuperStrict
 Import brl.Graphics
+'?MacOs
+'Import BRL.GLMax2D
+'?Win32
+'Import BRL.GLMax2D
+'Import "base.util.graphicsmanager.win32.bmx"
+'?Linux
+'Import BRL.GLMax2D
+'Import "../source/external/bufferedglmax2d/bufferedglmax2d.bmx"
+'?
+'?bmxng
+'?android
+'Import sdl.gl2sdlmax2d
+'?
+
 Import "base.util.virtualgraphics.bmx"
+Import "base.util.rectangle.bmx"
 Import "base.util.logger.bmx"
 
 
@@ -51,6 +66,8 @@ Type TGraphicsManager
 	Field hertz:Int			= 60
 	Field vsync:Int			= True
 	Field flags:Int			= 0 'GRAPHICS_BACKBUFFER '0 'GRAPHICS_BACKBUFFER | GRAPHICS_ALPHABUFFER '& GRAPHICS_ACCUMBUFFER & GRAPHICS_DEPTHBUFFER
+	Field viewportStack:TRectangle[] = new TRectangle[0]
+	Field viewportStackIndex:Int = -1
 	Global _instance:TGraphicsManager
 	Global _g:TGraphics
 	Global RENDERER_NAMES:String[] = [	"OpenGL",..
@@ -232,11 +249,7 @@ Type TGraphicsManager
 		If Not _g Then InitVirtualGraphics()
 
 		'close old one
-		local oldBlend:int = ALPHABLEND
-		If _g
-			oldBlend = GetBlend()
-			CloseGraphics(_g)
-		endif
+		If _g Then CloseGraphics(_g)
 
 		'needed to allow ?win32 + ?bmxng
 '		?win32
@@ -254,7 +267,7 @@ Type TGraphicsManager
 		TLogger.Log("GraphicsManager.InitGraphics()", "Initialized graphics with ~q"+GetRendererName()+"~q.", LOG_DEBUG)
 
 
-		SetBlend oldBlend
+		SetBlend ALPHABLEND
 		SetMaskColor 0, 0, 0
 		HideMouse()
 
@@ -332,6 +345,41 @@ End Rem
 	End Method
 
 
+	Method BackupAndSetViewport(newViewport:TRectangle)
+		BackupViewport()
+		SetViewportRect(newViewport)
+	End Method
+
+	
+	Method BackupViewport:TRectangle()
+		viewportStackIndex :+ 1
+		'resize stack
+		if viewportStack.length <= viewPortStackIndex
+			viewportStack = viewportStack[.. viewportStack.length + 10]
+
+			if viewportStack.length >= 500 Then Throw "Too many viewports put to stack: " + viewportStack.length
+		endif
+
+		'create a new rectangle instance
+		viewPortStack[viewPortStackIndex] = GetViewportRect()
+
+		return viewPortStack[viewPortStackIndex]
+	End Method
+
+
+	Method RestoreViewport:Int()
+		if viewportStackIndex < 0 then return False
+		
+		if viewportStack[viewportStackIndex]
+			self.SetViewportRect( viewportStack[viewportStackIndex] )
+		endif
+		viewportStack[viewportStackIndex] = null
+		viewportStackIndex :- 1
+		
+		return True
+	End Method
+
+
 	Method SetViewport(x:Int, y:Int, w:Int, h:Int)
 		'limit the viewport to the virtual dimension (to disable drawing
 		'on the black bars)
@@ -348,13 +396,30 @@ End Rem
 	End Method
 
 
+	Method SetViewportRect(r:TRectangle)
+		self.SetViewport(int(r.position.x), int(r.position.y), int(r.dimension.x), int(r.dimension.y))
+	End Method
+
+
 	Method GetViewport(x:Int Var, y:Int Var, w:Int Var, h:Int Var)
 		'the . means: access globally defined SetViewPort()
 		.GetViewport(x, y, w, h)
 		x :- TVirtualGfx.getInstance().vxoff
 		y :- TVirtualGfx.getInstance().vyoff
 	End Method
+	
+	
+	Method GetViewportRect:TRectangle()
+		Local vpX:int, vpY:int, vpW:int, vpH:Int
+		'the . means: access globally defined SetViewPort()
+		.GetViewport(vpX, vpY, vpW, vpH)
 
+		Return New TRectangle.Init(vpX - TVirtualGfx.getInstance().vxoff, ..
+		                           vpY - TVirtualGfx.getInstance().vyoff, ..
+		                           vpW, ..
+		                           vpH)
+	End Method
+	
 
 	Method EnableSmoothLines:Int()
 		Return False

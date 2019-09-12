@@ -28,7 +28,7 @@ Type TSpriteFrameAnimationCollection
 
 		return self
 	End Method
-	
+
 
 	'insert a TSpriteFrameAnimation with a certain Name
 	Method Set(animation:TSpriteFrameAnimation, name:string="")
@@ -95,6 +95,11 @@ Type TSpriteFrameAnimation
 	Field paused:Int = FALSE
 	Field frameTimer:float = null
 	Field randomness:float = 0
+	Field flags:int = 0
+
+	'use this flag to use the default GetDelta() instead of the given
+	'one -> ignores the WorldSpeedFactor given by the sprite
+	Const FLAG_IGNORE_DELTATIME_PARAM:int = 1
 
 
 	Function Create:TSpriteFrameAnimation(name:string, framesArray:int[][], repeatTimes:int=0, paused:int=0, randomness:Int = 0)
@@ -163,6 +168,7 @@ Type TSpriteFrameAnimation
 		paused = data.GetInt("paused")
 		frameTimer = data.GetFloat("frameTimer")
 		randomness = data.GetFloat("randomness")
+		flags = data.GetInt("flags")
 
 		For local s:string = EachIn data.GetString("frames").Split("::")
 			frames :+ [int(s)]
@@ -193,7 +199,11 @@ Type TSpriteFrameAnimation
 		c.currentFrame = currentFrame
 		c.currentSpriteName = currentSpriteName
 		c.frames = frames[..]
-		c.spriteNames = spriteNames[..]
+		if spriteNames
+			c.spriteNames = spriteNames[..]
+		else
+			c.spriteNames = null
+		endif
 		c.framesTime = framesTime[..]
 		c.paused = paused
 		c.frameTimer = frameTimer
@@ -202,8 +212,22 @@ Type TSpriteFrameAnimation
 	End Method
 
 
+	Method SetFlag(flag:Int, enable:Int=True)
+		If enable
+			flags :| flag
+		Else
+			flags :& ~flag
+		EndIf
+	End Method
+
+
+	Method HasFlag:Int(flag:Int)
+		Return (flags & flag) <> 0
+	End Method
+
+
 	Function GetDeltaTime:Float()
-		GetDeltaTimer().GetDelta()
+		return GetDeltaTimer().GetDelta()
 	End Function
 
 
@@ -213,8 +237,9 @@ Type TSpriteFrameAnimation
 		If paused or frames.length <= 1 then return 0
 
 		'use given or default deltaTime?
-		if deltaTime < 0 then deltaTime = GetDeltaTime()
-
+		if deltaTime < 0 or HasFlag(FLAG_IGNORE_DELTATIME_PARAM)
+			deltaTime = GetDeltaTime()
+		endif
 		if frameTimer = null then ResetFrameTimer()
 		frameTimer :- deltaTime
 
@@ -279,7 +304,10 @@ Type TSpriteFrameAnimation
 		currentFrame = Max( Min(framePos, len(frames) - 1), 0)
 		'set the image frame of thhe animation frame
 		setCurrentImageFrame( frames[currentFrame] )
-		setCurrentSpriteName( spriteNames[currentFrame] )
+
+		if spriteNames and spriteNames.length > currentFrame
+			setCurrentSpriteName( spriteNames[currentFrame] )
+		endif
 	End Method
 
 
