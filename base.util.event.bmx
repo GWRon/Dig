@@ -56,6 +56,12 @@ Import "base.util.time.bmx"
 
 Global EventManager:TEventManager = New TEventManager
 
+Function TriggerSimpleEvent(trigger:string, data:Object=Null, sender:Object=Null, receiver:Object=Null, channel:Int=0)
+	EventManager.triggerEvent(TEventSimple.Create(trigger, data, sender, receiver, channel))
+End Function
+
+
+
 Type TEventManager
 	'holding events
 	Field _events:TList = New TList
@@ -202,7 +208,7 @@ Type TEventManager
 	'runs all listeners NOW ...returns amount of listeners
 	Method triggerEvent:Int(triggeredByEvent:TEventBase)
 		If Not triggeredByEvent Then Return 0
-		
+
 		?Threaded
 		'if we have systemonly-event we cannot do it in a subthread
 		'instead we just add that event to the upcoming events list
@@ -354,6 +360,7 @@ End Type
 Type TEventListenerRunMethod Extends TEventListenerBase
 	Field _methodName:String = ""
 	Field _objectInstance:Object
+	Field _method:TMethod {nosave}
 
 
 	Function Create:TEventListenerRunMethod(objectInstance:Object, methodName:String, limitToSender:Object=Null, limitToReceiver:Object=Null )
@@ -370,10 +377,13 @@ Type TEventListenerRunMethod Extends TEventListenerBase
 		If triggerEvent = Null Then Return 0
 
 		If Not Self.ignoreEvent(triggerEvent)
-			Local id:TTypeId		= TTypeId.ForObject( _objectInstance )
-			Local update:TMethod	= id.FindMethod( _methodName )
-			If update
-				update.Invoke(_objectInstance ,[triggerEvent])
+			if not _method
+				Local id:TTypeId = TTypeId.ForObject( _objectInstance )
+				_method = id.FindMethod( _methodName )
+			endif
+
+			If _method
+				_method.Invoke(_objectInstance ,[triggerEvent])
 				Return True
 			Else
 				TLogger.Log("TEventListener.OnEvent", "Tried to call non-existing method ~q"+_methodName+"~q.", LOG_WARNING | LOG_DEBUG)
@@ -524,7 +534,7 @@ Type TEventBase
 			' they're newer
 			If getStartTime() < event.getStartTime() Then Return -1
 		EndIf
-		
+
 		' let the basic object decide
 		Return Super.Compare(other)
 	End Method
