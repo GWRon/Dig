@@ -6,9 +6,6 @@ Import brl.Map
 Import "base.util.logger.bmx"
 Import "base.util.vector.bmx"
 Import "base.util.time.bmx"
-?threaded
-Import Brl.Threads
-?
 
 Type TSoundManager
 	Field soundFiles:TMap = CreateMap()
@@ -63,18 +60,15 @@ Type TSoundManager
 	Global audioEngineEnabled:int = True
 	Global audioEngine:String = "AUTOMATIC"
 
-	?threaded
-	Global refillBufferMutex:TMutex = CreateMutex()
-	Global updateStreamManagerThread:TThread = new TThread
-	?
 	Global isRefillBufferRunning:Int = False
 
 
 	Function Create:TSoundManager()
 		Local manager:TSoundManager = New TSoundManager
-
+print "Create:TSoundManager"
 		'initialize sound system
 		manager.InitAudioEngine()
+print "-----"
 
 		manager.defaulTSfxDynamicSettings = TSfxSettings.Create()
 
@@ -198,6 +192,7 @@ Type TSoundManager
 		elseif soundEngine <> ""
 			audioEngineEnabled = true
 			if SetAudioEngine(soundEngine.ToUpper())
+				'new and old engine differed, so initialize the engine
 				InitAudioEngine()
 			endif
 		endif
@@ -764,12 +759,12 @@ print "FadeOverToNextTitle() finished"
 		Return result
 	End Method
 
-
+rem
 	'by default all sfx share the same volume
 	Method GetSfxVolume:Float(sfx:String)
 		Return 0.2
 	End Method
-
+endrem
 	'by default all music share the same volume
 	Method GetMusicVolume:Float(music:String)
 		Return defaultMusicVolume
@@ -1104,17 +1099,15 @@ End Type
 
 
 Type TSfxSettings
-	Field forceVolume:Float = False
-	Field forcePan:Float = False
-	Field forceDepth:Float = False
+	Field forceVolume:Int = False
+	Field forcePan:Int = False
+	Field forceDepth:Int = False
 
 	Field defaultVolume:Float = 1
 	Field defaultPan:Float = 0
 	Field defaultDepth:Float = 0
 
 	Field nearbyDistanceRange:Int = -1
-'	Field nearbyDistanceRangeTopY:int -1
-'	Field nearbyDistanceRangeBottomY:int -1   hier war ich
 	Field maxDistanceRange:Int = 1000
 
 	Field nearbyRangeVolume:Float = 1

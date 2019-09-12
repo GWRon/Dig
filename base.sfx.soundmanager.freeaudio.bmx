@@ -141,8 +141,10 @@ Type TSoundManager_FreeAudio Extends TSoundManager
 '				UnlockMutex(refillBufferMutex)
 			EndIf
 			'wait until 1000ms are gone in total
-			Delay( Max(0, 1000 - (Time.MillisecsLong() - t)) )
+			local d:Int = Max(0, 1000 - (Time.MillisecsLong() - t))
+			Delay(d) 'waiting time
 		Wend
+
 	End Function
 	?Not threaded
 	Function UpdateStreamManagerCallback:Int()
@@ -329,11 +331,11 @@ Type TDigAudioStream_FreeAudio Extends TDigAudioStream
 		endrem
 
 		'LOAD FREE AUDIO SOUND
-?bmxng
+'?bmxng
 		Local fa_sound:Byte Ptr = fa_CreateSound( audioSample.length, bits, channels, freq, audioSample.samples, $80000000 )
-?Not bmxng
-		Local fa_sound:Int = fa_CreateSound( audioSample.length, bits, channels, freq, audioSample.samples, $80000000 )
-?
+'?Not bmxng
+'		Local fa_sound:Int = int(fa_CreateSound( audioSample.length, bits, channels, freq, audioSample.samples, $80000000 ))
+'?
 		'"audioSample" is ignored in the module, so could be skipped
 		'sound = TFreeAudioSound.CreateWithSound( fa_sound, audioSample)
 		sound = TFreeAudioSound.CreateWithSound( fa_sound, Null)
@@ -660,12 +662,8 @@ Type TDigAudioStream_FreeAudio_Ogg Extends TDigAudioStream_FreeAudio
 
 
 		'=== FILL IN DATA ===
-		?bmxng
-		Local bufAppend:Byte Ptr = buffer.Lock() + offset*4 'newer bmxng *4, older without
-'		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset*4 'newer bmxng *4, older without
-		?Not bmxng
-		Local bufAppend:Byte Ptr = Byte Ptr(buffer) + offset*4
-		?
+		Local bufAppend:Byte Ptr = buffer.Lock() + offset*4
+
 		'try to read the oggfile at the current position
 		Local bytesRead:Int = Read_Ogg(ogg, bufAppend, bytes)
 		If bytesRead = 0 Then Throw "Error streaming from OGG. Null bytes read."

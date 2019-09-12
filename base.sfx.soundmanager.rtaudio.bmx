@@ -193,7 +193,8 @@ Type TDigAudioStream_RtAudio extends TDigAudioStream
 	'returns time left in milliseconds
 	Method GetTimePlayed:Float()
 		if not channel then return 0
-		Return GetChannelPosition(channel, MM_MILLISECS)
+
+		Return maxmod2.maxmod2.GetChannelPosition(channel, MM_MILLISECS)
 	End Method
 End Type
 
