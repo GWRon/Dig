@@ -14,14 +14,23 @@ Repeat
 
 	MouseManager.Update()
 
-	If MouseManager.IsClicked(1) Then Print Time.GetTimeGone() + " | " + Time.MilliSecsLong() + ": Button 1 clicked"
-	If MouseManager.IsSingleClicked(1) Then Print Time.GetTimeGone() + ": Button 1 single clicked"
-	If MouseManager.IsDoubleClicked(1) Then Print Time.GetTimeGone() + ": Button 1 double clicked"
-	
-	If KeyDown(KEY_UP) Then MouseManager._doubleClickTime :+ 1
-	If KeyDown(KEY_DOWN) Then MouseManager._doubleClickTime = Max(0, MouseManager._doubleClickTime -1)
-	
-	DrawText("Doubleclick time: " + MouseManager._doubleClickTime, 10, 10)
+	If MouseManager.IsClicked(1)
+		Print Time.GetTimeGone() + " | " + Time.MilliSecsLong() + ": Button 1 clicked"
+		MouseManager.SetClickHandled(1)
+	EndIf
+	If MouseManager.IsLongClicked(1)
+		Print Time.GetTimeGone() + ": Button 1 long clicked"
+		MouseManager.SetLongClickHandled(1)
+	EndIf
+	If MouseManager.IsDoubleClicked(1)
+		Print Time.GetTimeGone() + ": Button 1 double clicked"
+		MouseManager.SetDoubleClickHandled(1)
+	EndIf
+
+	If KeyDown(KEY_UP) Then MouseManager.doubleClickMaxTime :+ 1
+	If KeyDown(KEY_DOWN) Then MouseManager.doubleClickMaxTime = Max(0, MouseManager.doubleClickMaxTime -1)
+
+	DrawText("Doubleclick time: " + MouseManager.doubleClickMaxTime, 10, 10)
 	DrawText("Press UP or DOWN to adjust time", 10, 25)
 
 	Flip 0

@@ -32,7 +32,7 @@ Type TMyApp Extends TGraphicalApp
 		'gm.SetFullscreen(True)
 		'only need to init graphics again if we changed resolution,
 		'else it is already called by "Super.Prepare()"
-		gm.InitGraphics()	
+		gm.InitGraphics()
 
 		'we use a full screen background - so no cls needed
 		autoCls = True
@@ -102,6 +102,10 @@ Type TMyApp Extends TGraphicalApp
 
 		'reset modal window states
 		GUIManager.EndUpdates()
+
+		'reset left unhandled Mouseclicks or clicks to gui objects
+'		MouseManager.SetClickHandled(1)
+'		MouseManager.SetClickHandled(2)
 	End Method
 
 
