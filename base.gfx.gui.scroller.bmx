@@ -254,7 +254,7 @@ Type TGUIScrollerBase extends TGUIobject
 			else
 				'(do it in an "update" so it also handles "mousedown"
 				'avoid long left-mousebutton clicks
-				MouseManager.ResetLongClicked(1, True)
+				MouseManager.ResetLongClicked(1)
 			endif
 		endif
 	End Method
@@ -279,7 +279,7 @@ Type TGUIScroller Extends TGUIScrollerBase
 
 		'manage (update/draw) the handle on our own
 		AddChild(scrollHandle)
-		
+
 		'listen to interaction with scrollHandle elements (dragging it)
 		'attention: do not listen to "guiobject.onchangevalue" as this is
 		'           also triggered by "onScrollPositionChanged" (circlular
@@ -304,7 +304,7 @@ Type TGUIScroller Extends TGUIScrollerBase
 
 		sender.scrollHandle.SetRelativeValue( sender.GetRelativeValue() )
 	End Function
-	
+
 
 	'scroller got change
 	Function onScrollHandleChange:Int( triggerEvent:TEventBase )
@@ -375,7 +375,7 @@ Type TGUIScroller Extends TGUIScrollerBase
 	Method ScrollerHasFocus:int()
 		return Super.ScrollerHasFocus() or scrollHandle.HasFocus()
 	End Method
-	
+
 
 	Method DrawContent()
 	End Method
@@ -409,7 +409,7 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 			case GUI_OBJECT_ORIENTATION_HORIZONTAL
 				progressRect.position.AddY(+guiButtonMinus.rect.GetH()/4)
 				progressRect.dimension.SetY(+guiButtonMinus.rect.GetH()/2)
-				
+
 				progressRect.position.AddX(+guiButtonMinus.rect.GetW() - 2)
 				progressRect.dimension.AddX(-guiButtonMinus.rect.GetW() - guiButtonPlus.rect.GetW() + 2)
 			case GUI_OBJECT_ORIENTATION_VERTICAL
@@ -425,14 +425,6 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 	'override to add progressRect-click support
 	Method Update:int()
 		Super.Update()
-rem
-		if (guiButtonMinus and guiButtonMinus.isHovered()) or (guiButtonPlus and guiButtonPlus.isHovered())
-			'process long clicks to avoid odd "right click behaviour"
-			if MouseManager.IsLongClicked(1)
-				MouseManager.ResetClicked(1)
-			endif
-		endif
-endrem
 
 		'check if mouse over progressRect
 		if not isHovered()
@@ -452,7 +444,7 @@ endrem
 				if progressRect.ContainsVec(clickPos)
 '					clickPos.AddXY(progressRect.GetX(), progressRect.GetY())
 					local progress:float = 0
-				
+
 					Select _orientation
 						case GUI_OBJECT_ORIENTATION_HORIZONTAL
 							if progressRect.GetW() > 0
@@ -474,12 +466,14 @@ endrem
 
 					'reset clicked state and button state
 					mouseIsClicked = Null
-					MouseManager.ResetKey(1)
+
+					'handled left click
+					MouseManager.SetClickHandled(1)
 				endif
 			endif
 		endif
 	End Method
-	
+
 
 	Method DrawContent()
 		local oldCol:TColor = new TColor.Get()

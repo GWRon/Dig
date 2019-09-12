@@ -50,7 +50,6 @@ Type TGUIDropDown Extends TGUIInput
 	Field selectedEntry:TGUIObject
 	Field list:TGUISelectList
 	Field listHeight:int = 100
-	Field listOffsetY:int = 0
 	Global defaultSpriteName:string = "gfx_gui_input.default"
 	Global defaultOverlaySpriteName:string = "gfx_gui_icon_arrowDown"
 
@@ -73,7 +72,7 @@ Type TGUIDropDown Extends TGUIInput
 		'=== ENTRY LIST ===
 		'create and style list
 		if list then list.Remove()
-		list = new TGUISelectList.Create(new TVec2D.Init(0, self.rect.GetH() + listOffsetY), new TVec2D.Init(rect.GetW(), listHeight), "")
+		list = new TGUISelectList.Create(new TVec2D.Init(0, self.rect.GetH()), new TVec2D.Init(rect.GetW(), listHeight), "")
 		'do not add as child - we position it on our own when updating
 		'hide list to begin
 		SetOpen(false)
@@ -143,8 +142,8 @@ Type TGUIDropDown Extends TGUIInput
 		if receiver and list.HasItem(receiver)
 			SetSelectedEntry(receiver)
 
-			'reset mouse button to avoid clicks below
-			MouseManager.ResetKey(1)
+			'handled mouse button click to avoid clicks below
+			MouseManager.SetClickHandled(1)
 
 			SetOpen(False)
 		endif
@@ -197,8 +196,8 @@ Type TGUIDropDown Extends TGUIInput
 		local button:int = triggerEvent.GetData().GetInt("button")
 
 		if button = 1 'left button
-			'reset mouse button to avoid clicks below
-			MouseManager.ResetKey(1)
+			'handled mouse button click to avoid clicks below
+			MouseManager.SetClickHandled(1)
 
 			SetOpen(1- IsOpen())
 		endif
@@ -267,8 +266,7 @@ Type TGUIDropDown Extends TGUIInput
 
 	'sets the height of the lists content area (ignoring padding)
 	Method SetListContentHeight:int(height:Float)
-		if list then list.Resize(list.rect.GetW(), height + list.GetPadding().GetTop() + list.GetPadding().GetBottom())
-		MoveListIntoPosition()
+		list.Resize(list.rect.GetW(), height + list.GetPadding().GetTop() + list.GetPadding().GetBottom())
 	End Method
 
 
@@ -293,13 +291,6 @@ Type TGUIDropDown Extends TGUIInput
 	End Method
 
 
-	Method EmptyList:Int()
-		if not list then return False
-
-		return list.EmptyList()
-	End Method
-
-
 	Method AddItem:Int(item:TGUIDropDownItem)
 		if not list then return false
 
@@ -315,7 +306,7 @@ Type TGUIDropDown Extends TGUIInput
 
 	Method MoveListIntoPosition()
 		'move list to our position
-		local listPosY:int = GetScreenY() + GetScreenHeight() + listOffsetY
+		local listPosY:int = GetScreenY() + GetScreenHeight()
 		'if list ends below screen end we might move it above the button
 		if listPosY + list.GetScreenHeight() > GetGraphicsManager().GetHeight()
 			if list.GetScreenHeight() < GetScreenY()
@@ -347,7 +338,11 @@ Type TGUIDropDown Extends TGUIInput
 			'remove focus from gui object
 			GuiManager.ResetFocus()
 
-			MouseManager.ResetKey(2)
+			'avoid clicks
+			'remove right click - to avoid leaving the room
+			MouseManager.ResetClicked(2)
+			'also avoid long click (touch screen)
+			MouseManager.ResetLongClicked(1)
 		endif
 
 
