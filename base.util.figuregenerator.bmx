@@ -23,7 +23,7 @@ Type TFigureGenerator
 
 	Function GetRandomPart:TFigureGeneratorPart(partType:int, gender:int=0, age:int=0)
 		if partType < 1 or partType > registeredParts.length then return Null
-		if not registeredParts[partType-1] then return Null
+		if not registeredParts[partType-1] or registeredParts[partType-1].Count() = 0 then return Null
 
 		local index:int = partType -1
 
@@ -82,7 +82,9 @@ Type TFigureGenerator
 			fig.gender = int(subCodes[0])
 			fig.age = int(subCodes[1])
 			fig.skinTone = int(subCodes[2])
-			if subCodes[3].Find("#") = 0
+			'also accept codes leaving out the "number sign"
+			'if subCodes[3].Find("#") = 0
+			if int(subCodes[3]) <> -1
 				skinColor = new TColor.FromHex(subCodes[3])
 			endif
 			for local i:int = 4 to 17
@@ -111,10 +113,10 @@ Type TFigureGenerator
 			if skinColor then fig.SetSkinColor(skinColor)
 
 			'override skincolors if needed
-			For local i:int = 0 to colors.length
+			For local i:int = 0 until colors.length
 				'only set valid colors, all other colors like "explicit null"
 				'are set before 
-				if colors[i] then fig.SetPartColor(i+1, colors[i])
+				if colors[i] Then fig.SetPartColor(i+1, colors[i])
 			Next
 
 			return fig
@@ -130,10 +132,10 @@ Type TFigureGenerator
 		if gender = 0 then gender = Rand(1,2)
 		if skintone = 0 then skinTone = Rand(1,3)
 
-		For local i:int = 1 to registeredParts.length
-			local partType:int = TFigureGeneratorFigure.partOrder[i-1]
-			if TFigureGeneratorFigure.useChance[i-1] <> 100
-				if Rand(100) > TFigureGeneratorFigure.useChance[i-1] then continue
+		For local i:int = 0 until registeredParts.length
+			local partType:int = TFigureGeneratorFigure.partOrder[i]
+			if TFigureGeneratorFigure.useChance[i] <> 100
+				if Rand(100) > TFigureGeneratorFigure.useChance[i] then continue
 			endif
 			local part:TFigureGeneratorPart = GetRandomPart(partType, gender, age)
 			if part
@@ -169,7 +171,7 @@ Type TFigureGeneratorFigure
 		local code:string = gender+":"+age+":"+skinTone
 		local skinColor:TColor = GetSkinColor()
 		if skinColor
-			code :+ ":"+skinColor.ToHex()
+			code :+ ":#"+skinColor.ToHex()
 		else
 			code :+ ":-1"
 		endif
