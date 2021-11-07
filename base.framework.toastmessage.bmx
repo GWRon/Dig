@@ -49,6 +49,10 @@ Type TToastMessageCollection extends TRenderableEntity
 	Field spawnPoints:TMap = CreateMap()
 	Global _instance:TToastMessageCollection
 	Global _eventsRegistered:Int
+	Global eventKey_ToastMessageCollection_onAddMessage:TEventKey = EventManager.GetEventKey("ToastMessageCollection.onAddMessage", True)
+	Global eventKey_ToastMessage_onClose:TEventKey = EventManager.GetEventKey("ToastMessage.onClose", True)
+	Global eventKey_ToastMessage_onOpen:TEventKey = EventManager.GetEventKey("ToastMessage.onOpen", True)
+	Global eventKey_ToastMessage_onClick:TEventKey = EventManager.GetEventKey("ToastMessage.onClick", True)
 
 
 	Method New()
@@ -68,7 +72,7 @@ Type TToastMessageCollection extends TRenderableEntity
 		if _eventsRegistered then return False
 
 		'remove closed messages
-		EventManager.registerListenerFunction("toastmessage.onClose", onCloseToastMessage)
+		EventManager.registerListenerFunction(eventKey_ToastMessage_onClose, onCloseToastMessage)
 
 		_eventsRegistered = True
 		return True
@@ -130,7 +134,7 @@ Type TToastMessageCollection extends TRenderableEntity
 		spawnPoint.AddMessage(message)
 
 		'send out event - eg for sounds
-		EventManager.triggerEvent(TEventSimple.Create("ToastMessageCollection.onAddMessage", new TData.Add("spawnPoint", spawnPoint), null, message ))
+		TriggerBaseEvent(eventKey_ToastMessageCollection_onAddMessage, new TData.Add("spawnPoint", spawnPoint), null, message )
 
 		return True
 	End Method
@@ -147,7 +151,7 @@ Type TToastMessageCollection extends TRenderableEntity
 		spawnPoint.AddMessageFirst(message)
 
 		'send out event - eg for sounds
-		EventManager.triggerEvent(TEventSimple.Create("ToastMessageCollection.onAddMessage", new TData.Add("spawnPoint", spawnPoint), null, message ))
+		TriggerBaseEvent(eventKey_ToastMessageCollection_onAddMessage, new TData.Add("spawnPoint", spawnPoint), null, message )
 
 		return True
 	End Method
@@ -218,7 +222,7 @@ Type TToastMessageSpawnPoint extends TEntity
 	'alignment of messages according to the position of the spawnpoint
 	Field alignment:TVec2D
 	'messages of the spawnpoint
-	Field messages:TList = CreateList()
+	Field messages:TObjectList = new TObjectList
 	'=== CONFIGURATION ===
 	'vector describing spaces between two messages
 	Field spacerSize:TVec2D = New TVec2D.Init(0,5)
@@ -278,7 +282,7 @@ Type TToastMessageSpawnPoint extends TEntity
 	Method GetChildX:Float(child:TRenderableEntity = Null)
 		if not child then return Super.GetChildX()
 
-		return alignment.GetX() * (GetScreenWidth() - child.area.GetW())
+		return alignment.GetX() * (GetScreenRect().GetW() - child.area.GetW())
 	End Method
 
 
@@ -313,7 +317,7 @@ Type TToastMessageSpawnPoint extends TEntity
 		local oldAlpha:Float = GetAlpha()
 		SetAlpha oldAlpha * 0.3
 		SetColor 255,0,0
-		DrawRect(GetScreenX(), GetScreenY(), GetScreenWidth(), GetScreenHeight())
+		DrawRect(GetScreenRect().GetX(), GetScreenRect().GetY(), GetScreenRect().GetW(), GetScreenRect().GetH())
 		SetAlpha oldAlpha
 		SetColor 255,255,255
 	End Method
@@ -322,7 +326,7 @@ Type TToastMessageSpawnPoint extends TEntity
 	Method Render:Int(xOffset:Float = 0, yOffset:Float = 0, alignment:TVec2D = Null)
 		'store old render config and adjust to our needs
 		local renderConfig:TRenderconfig = TRenderConfig.Push()
-		if HasSize() then GetGraphicsManager().SetViewPort(int(GetScreenX()), int(GetScreenY()), int(GetScreenWidth()), int(GetScreenHeight()))
+		if HasSize() then GetGraphicsManager().SetViewPort(int(GetScreenRect().GetX()), int(GetScreenRect().GetY()), int(GetScreenRect().GetW()), int(GetScreenRect().GetH()))
 
 
 		if showBackground then RenderBackground(xOffset, yOffset)
@@ -340,7 +344,7 @@ Type TToastMessageSpawnPoint extends TEntity
 
 
 	Method Update:Int()
-		For local message:TToastMessage = EachIn messages.Copy()
+		For local message:TToastMessage = EachIn messages
 			message.Update()
 		Next
 
@@ -464,7 +468,7 @@ Type TToastMessage extends TEntity
 		SetStatus(TOASTMESSAGE_OPENING_OR_CLOSING, False)
 
 		'fire event so others can handle it (eg. remove from list)
-		EventManager.triggerEvent(TEventSimple.Create("toastmessage.onClose", null, Self))
+		TriggerBaseEvent(TToastMessageCollection.eventKey_ToastMessage_onClose, null, Self)
 		if _onCloseFunction then _onCloseFunction(self)
 	End Method
 
@@ -475,7 +479,7 @@ Type TToastMessage extends TEntity
 		SetStatus(TOASTMESSAGE_OPENING_OR_CLOSING, False)
 
 		'fire event so others can handle it
-		EventManager.triggerEvent(TEventSimple.Create("toastmessage.onOpen", null, Self))
+		TriggerBaseEvent(TToastMessageCollection.eventKey_ToastMessage_onOpen, null, Self)
 	End Method
 
 
@@ -523,7 +527,7 @@ Type TToastMessage extends TEntity
 				Close()
 
 				'fire event (eg. to play sound)
-				EventManager.triggerEvent(TEventSimple.Create("toastmessage.onClick", new TData.AddNumber("mouseButton", 1), Self))
+				TriggerBaseEvent(TToastMessageCollection.eventKey_ToastMessage_onClick, new TData.AddNumber("mouseButton", 1), Self)
 
 				'handled single click
 				MouseManager.SetClickHandled(1)
@@ -534,18 +538,18 @@ Type TToastMessage extends TEntity
 
 	Method RenderBackground:Int(xOffset:Float=0, yOffset:Float=0)
 		if canvasImage
-			DrawImage(canvasImage, xOffset + GetScreenX(), yOffset + GetScreenY())
+			DrawImage(canvasImage, xOffset + GetScreenRect().GetX(), yOffset + GetScreenRect().GetY())
 'rem
 		else
-			DrawRect(xOffset + GetScreenX(), yOffset + GetScreenY(), area.GetW(), area.GetH())
+			DrawRect(xOffset + GetScreenRect().GetX(), yOffset + GetScreenRect().GetY(), area.GetW(), area.GetH())
 			_lifeTimeBarColor.SetRGB()
 			if _lifeTime > 0
-				local lifeTimeWidth:int = GetScreenWidth() - 2 * _textOffset.GetIntX()
+				local lifeTimeWidth:int = GetScreenRect().GetW() - 2 * _textOffset.GetIntX()
 				lifeTimeWidth :* GetLifeTimeProgress()
-				DrawRect(xOffset + GetScreenX() + _textOffset.GetIntX(), yOffset + GetScreenY() + area.GetH() - _lifeTimeBarBottomY, lifeTimeWidth, _lifeTimeBarHeight)
+				DrawRect(xOffset + GetScreenRect().GetX() + _textOffset.GetIntX(), yOffset + GetScreenRect().GetY() + area.GetH() - _lifeTimeBarBottomY, lifeTimeWidth, _lifeTimeBarHeight)
 			endif
 			SetColor 255,255,255
-			DrawText(name+" "+id, xOffset + GetScreenX() + _textOffset.GetIntX(), yOffset + GetScreenY() + _textOffset.GetIntY())
+			DrawText(name+" "+id, xOffset + GetScreenRect().GetX() + _textOffset.GetIntX(), yOffset + GetScreenRect().GetY() + _textOffset.GetIntY())
 'endrem
 		endif
 	End Method
