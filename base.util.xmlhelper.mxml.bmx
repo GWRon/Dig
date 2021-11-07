@@ -35,7 +35,11 @@ Rem
 EndRem
 SuperStrict
 Import Brl.Standardio
+?not bmxng
 Import Brl.xml
+?bmxng
+Import Text.xml
+?
 Import "base.util.data.bmx"
 Import "base.util.string.bmx"
 Import "base.util.localization.bmx"
@@ -412,7 +416,7 @@ endrem
 			local value:String = nodeLangEntry.getContent() '.Trim()
 
 			if value <> ""
-				localized.Set(value, language)
+				localized.Set(value, TLocalization.GetLanguageID(language))
 				foundEntry = True
 			endif
 		Next

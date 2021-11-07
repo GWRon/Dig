@@ -35,6 +35,7 @@ Rem
 EndRem
 SuperStrict
 Import "base.util.vector.bmx"
+Import "base.util.srectangle.bmx"
 
 global rectangle_created:int = 0
 
@@ -89,11 +90,25 @@ Type TRectangle {_exposeToLua="selected"}
 
 
 	'copies all values from the given rectangle
+	Method New(rect:SRect)
+		position.Init(rect.x, rect.y)
+		dimension.Init(rect.w, rect.h)
+	End Method
+
+
+	'copies all values from the given rectangle
 	Method CopyFrom:TRectangle(rect:TRectangle)
 		If Not rect Then Return Self
 
 		position.copyFrom(rect.position)
 		dimension.copyFrom(rect.dimension)
+		Return Self
+	End Method
+
+	'copies all values from the given rectangle
+	Method CopyFrom:TRectangle(rect:SRect)
+		position.Init(rect.x, rect.y)
+		dimension.Init(rect.w, rect.h)
 		Return Self
 	End Method
 
@@ -164,6 +179,17 @@ Type TRectangle {_exposeToLua="selected"}
 		Else
 			Return Null
 		EndIf
+	End Method
+
+
+	'returns a new SRect describing the intersection of the
+	'rectangle and the given one
+	'attention: returns the struct even if there is no intersection
+	'           (check width and height on your own!)
+	Method IntersectSRectXYWH:SRect(x:Float, y:Float, w:Float, h:Float)
+		local ix:float = max(GetX(), x)
+		local iy:float = max(GetY(), y)
+		Return new SRect(ix, iy, min(GetX2(), x + w) - ix, min(GetY2(), y + h) - iy)
 	End Method
 
 
@@ -244,6 +270,13 @@ Type TRectangle {_exposeToLua="selected"}
 	Method Grow:TRectangle(dx:Float, dy:Float, dw:Float, dh:Float)
 		position.AddXY(-dx, -dy)
 		dimension.AddXY(dx + dw, dy + dh)
+		Return Self
+	End Method
+
+
+	Method GrowTLBR:TRectangle(top:Float, left:Float, bottom:Float, right:Float)
+		position.AddXY(-top, -left)
+		dimension.AddXY(left + right, top + bottom)
 		Return Self
 	End Method
 
