@@ -47,6 +47,8 @@ Import "base.util.deltatimer.bmx"
 
 Type TRenderableEntity extends TEntityBase
 	Field area:TRectangle = new TRectangle
+	Field _screenRect:TRectangle = new TRectangle {nosave}
+	Field _screenArea:TRectangle = new TRectangle {nosave}
 	Field name:string
 	Field visible:int = True
 	Field parent:TRenderableEntity = null
@@ -157,12 +159,12 @@ Type TRenderableEntity extends TEntityBase
 
 
 	Method RenderAt:Int(x:Float = 0, y:Float = 0, alignment:TVec2D = Null)
-		local oldPos:TVec2D = area.position.copy()
+		local oldPos:SVec2F = New SVec2F(area.position.x, area.position.y)
 		area.position.SetXY(x,y)
 
 		Render(0, 0, alignment)
 
-		area.position = oldPos
+		area.position.SetXY(oldPos.x, oldPos.y)
 	End Method
 
 
@@ -224,7 +226,7 @@ Type TRenderableEntity extends TEntityBase
 
 
 	Method GetScreenArea:TRectangle()
-		return new TRectangle.Init(GetScreenX(), GetScreenY(), GetScreenWidth(), GetScreenHeight() )
+		return _screenArea.Init(GetScreenX(), GetScreenY(), GetScreenWidth(), GetScreenHeight() )
 	End Method
 
 
@@ -298,7 +300,7 @@ Type TRenderableEntity extends TEntityBase
 
 	'get a rectangle describing the objects area on the screen
 	Method GetScreenRect:TRectangle()
-			Return new TRectangle.Init(GetScreenX(), GetScreenY(), GetScreenWidth(), GetScreenHeight() )
+		return _screenRect.Init(GetScreenX(), GetScreenY(), GetScreenWidth(), GetScreenHeight() )
 	End Method
 
 
