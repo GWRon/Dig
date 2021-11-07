@@ -42,6 +42,7 @@ Function RandMax:int(hi:int)
 End Function
 
 Function RandRange:int(lo:int, hi:int)
+	If lo = hi Then Return lo
 	'order min/max
 	if hi < lo
 		local tmp:int = hi
@@ -61,12 +62,43 @@ End Function
 
 
 'returns a "biased" random number
-Function BiasedRandRange:Int(lo:int, hi:int, bias:Float)
+'bias of 1.0 means "mostly maximum", a bias of 0.1 means "mostly minimum"
+Function BiasedRandRangeOld:Int(lo:int, hi:int, bias:Float)
+	If lo = hi Then Return lo
 	'higher bias values lead to more results near "hi"
 	'lower bias values lead to more results near "lo"
-	local r:Float = mt_RandRange(0, 1000000) / 1000000.0
-    r = r ^ bias
-    return hi - (hi - lo) * r
+
+	If bias < 0.499
+		bias = 2 * bias
+
+		local r:Float = mt_RandRange(0, 1000000) / 1000000.0
+		r = r ^ bias
+		return hi - (hi - lo) * r + 0.5
+	ElseIf bias > 0.501
+		bias = 2 * (1 - bias)
+
+		local r:Float = mt_RandRange(0, 1000000) / 1000000.0
+		r = r ^ bias
+		return (hi - lo) * r + 0.5
+	Else
+		Return hi - (hi - lo) * mt_RandRange(0, 1000000) / 1000000.0 + 0.5
+	EndIf
+
+End Function
+
+
+Function BiasedRandRange:Int(lo:int, hi:int, bias:Float)
+	If lo = hi Then Return lo
+    local r:Float = mt_RandRange(0, 1000000) / 1000000.0
+
+    If bias < 0.5
+		'round mathematically via int(x+0.5)
+        Return hi - r^((bias*2)^0.5) * (hi-lo) + 0.5
+    Else
+		'round mathematically via int(x+0.5)
+		Return (lo + r^((2 - bias*2)^0.5) * (hi-lo)) + 0.5
+    EndIf
+
 End Function
 
 
@@ -90,7 +122,7 @@ End Function
 
 'The Function returns a random value within the given range.
 'A weighting less or higher than 0.5 define which direction (low or high)
-'gets more propably. The more extreme the weight is (0.0 or 1.0) the
+'gets more probably. The more extreme the weight is (0.0 or 1.0) the
 'smaller the chance of numbers of the opposite direction. The extremity
 'also defines the maximum range of numbers. The more narrow the center
 'of a weighting is placed to an extremum, the smaller the range gets.
@@ -100,6 +132,7 @@ End Function
 '     WeightedRange(0, 100, 0.6) will most probably return values of 20-100
 'But all of them (except 0.0 and 1.0) might return values between 0-100
 Function WeightedRandRange:Int(lo:int, hi:int, weight:Float = 0.5, strength:Float = 1.0)
+	If lo = hi Then Return lo
 	'order min/max
 	if hi < lo
 		local tmp:int = hi
