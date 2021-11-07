@@ -36,6 +36,7 @@ EndRem
 SuperStrict
 Import BRL.Retro
 Import BRL.Map
+Import "base.util.directorytree.bmx"
 
 
 Type TLocalization
@@ -56,6 +57,19 @@ Type TLocalization
 			result = result.replace("%"+(i+1), params[i])
 		Next
 		Return result
+	End Function
+
+
+	'Returns true if one of the languages contains the key
+	'nothing was found
+	Function HasString:Int(Key:String, group:String = Null)
+		if currentLanguage and currentLanguage.Has(key, group)
+			Return True
+		EndIf
+		if defaultLanguage and defaultLanguage.Has(key, group)
+			Return True
+		EndIf
+		Return False
 	End Function
 
 
@@ -148,22 +162,42 @@ Type TLocalization
 	Function _GetRandomString:string(language:TLocalizationLanguage, key:string, limit:int=-1)
 		if not language then return key
 
-		local availableStrings:int = 1
+
+		local keyLower:String = key.ToLower()
+		local hasMain:Int = language.HasRaw(keyLower)
+		local availableAlternatives:Int = 0
 		local subKey:string = ""
+
 		Repeat
-			subKey = Key
-			if availableStrings > 0 then subKey :+ availableStrings
-			if language.Get(subKey) <> subKey
-				availableStrings :+1
+			subKey = keyLower + (availableAlternatives + 1)
+
+			'alternative existing?
+			if language.HasRaw(subKey)
+				availableAlternatives :+ 1
 				continue
 			endif
-
-			if availableStrings = 1
-				return language.Get(Key).replace("\n", Chr(13))
-			else
-				return language.Get(Key + Rand(1, availableStrings-1)).replace("\n", Chr(13))
-			endif
+			
+			exit
 		Forever
+
+		if hasMain
+			if availableAlternatives = 0
+				return language.GetRaw(keyLower).replace("\n", Chr(13))
+			else
+				local index:int = Rand(0, availableAlternatives)
+				if index = 0
+					return language.GetRaw(keyLower).replace("\n", Chr(13))
+				else
+					return language.GetRaw(keyLower + index).replace("\n", Chr(13))
+				endif
+			endif
+		else
+			if availableAlternatives = 0
+				return key
+			else
+				return language.GetRaw(keyLower + (1 + Rand(0, availableAlternatives-1))).replace("\n", Chr(13))
+			endif
+		endif
 	End Function
 
 
@@ -173,35 +207,46 @@ Type TLocalization
 			return ""
 		endif
 
-		local availableStrings:string[]
+		local availableStrings:string[4]
+		local availableStringsCount:int = 0
 		local subKey:string
+
 		for local k:string = EachIn keys
 			local availableSubKeys:int = 0
 			local foundEntry:int =  False
+			local kLS:string = k.ToLower()
+			
+
 			Repeat
-				subKey = k
 				'append a number except for first
-				if availableSubKeys > 0 then subKey :+ availableSubKeys
-				if language.Get(subKey) <> subKey
+				if availableSubKeys > 0 
+					subKey = kLS + availableSubKeys
+				else
+					subKey = kLS
+				endif
+				if language.HasRaw(subKey)
 					availableSubKeys :+1
-					availableStrings :+ [subKey]
+					availableStringsCount :+ 1
+					if availableStrings.length <= availableSubKeys
+						availableStrings = availableStrings[.. availableStrings.length + 4]
+					endif
+					availableStrings[availableStringsCount-1] = subKey
 					continue
 				else
 					'stop searching if nothing was found for this "key+number"
-					if availablesubKeys > 0 then exit
+					if availableSubKeys > 0 then exit
 				endif
-
 
 				availableSubKeys :+ 1
 			Forever
 		Next
 
 		'found no more entries
-		if availableStrings.length > 0
-			if availableStrings.length = 1
-				return language.Get(availableStrings[0]).replace("\n", Chr(13))
+		if availableStringsCount > 0
+			if availableStringsCount = 1
+				return language.GetRaw(availableStrings[0]).replace("\n", Chr(13))
 			else
-				return language.Get(availableStrings[Rand(0, availableStrings.length-1)]).replace("\n", Chr(13))
+				return language.GetRaw(availableStrings[Rand(0, availableStringsCount-1)]).replace("\n", Chr(13))
 			endif
 		endif
 
@@ -239,16 +284,17 @@ Type TLocalization
 
 
 	Function GetLanguageCode:String(languageID:Int)
-		if languages.length < languageID then return ""
+		if languages.length < languageID or languageID < 0 then return ""
 		return languages[languageID].languageCode
 	End Function
 
 
 	Function SetDefaultLanguage:Int(languageCode:String)
-		local lang:TLocalizationLanguage = GetLanguage(languageCode)
+		local langID:Int = GetLanguageID(languageCode)
+		if langID >= 0
+			defaultLanguage = languages[langID]
+			defaultLanguageID = langID
 
-		if lang
-			defaultLanguage = lang
 			Return True
 		else
 			Return False
@@ -288,15 +334,37 @@ Type TLocalization
 	End Function
 
 
-	Function LoadLanguageFile(file:String, languageCode:string="")
-		AddLanguage(TLocalizationLanguage.Create(file))
+	Function LoadLanguageURI(uri:String, languageCode:string="")
+		AddLanguage(TLocalizationLanguage.Create(uri, languageCode))
+	End Function
+	
+	
+	Function LoadLanguages(baseDirectory:String)
+		Local dirTree:TDirectoryTree = New TDirectoryTree.SimpleInit()
+		dirTree.ScanDir(baseDirectory, True)
+		For Local directory:String = EachIn dirTree.GetDirectories()
+			TLocalization.LoadLanguageFiles(directory+"/*.txt")
+		Next
 	End Function
 
 
 	'Loads all resource files according to the filter (for example: myfile*.txt will load myfile_en.txt, myfile_de.txt etc.)
 	Function LoadLanguageFiles(filter:String)
 		For Local file:String = EachIn GetLanguageFiles(filter)
-			LoadLanguageFile(file)
+			LoadLanguageURI(file)
+		Next
+	End Function
+
+
+	Function LoadLanguageDirectories(baseDirectory:String)
+		'load in all files from the directory and subdirectories
+		Local dirTree:TDirectoryTree = New TDirectoryTree.SimpleInit()
+		dirTree.SetIncludeFileEndings(Null)
+		dirTree.SetExcludeFileNames(["*"])
+		dirTree.ScanDir(baseDirectory, True)
+
+		For Local directory:String = EachIn dirTree.GetDirectories()
+			LoadLanguageURI(directory)
 		Next
 	End Function
 
@@ -397,9 +465,15 @@ Type TLocalization
 End Type
 
 
+
+'convenience helper function
+Function HasLocale:Int(key:string)
+	return TLocalization.HasString(key)
+End Function
+
 'convenience helper function
 Function GetLocale:string(key:string)
-	return TLocalization.getString(key)
+	return TLocalization.GetString(key)
 End Function
 
 
@@ -430,54 +504,90 @@ Type TLocalizationLanguage
 
 
 	'Opens a resource file and loads the content into memory
-	Function Create:TLocalizationLanguage(filename:String, languageCode:String = Null)
-		If languageCode = Null
-			languageCode = TLocalization.GetLanguageCodeFromFilename(filename)
-			If not languageCode Then Throw "No language was specified for loading the resource file and the language could not be detected from the filename itself.~r~nPlease specify the language or use the format ~qname_language.extension~q for the resource files."
+	Function Create:TLocalizationLanguage(uri:String, languageCode:String = Null)
+		Local lang:TLocalizationLanguage
+		
+		local filesToLoad:String[]
+		Select FileType(uri)
+			Case FILETYPE_FILE
+				filesToLoad = [uri]
+
+				If languageCode = Null
+					languageCode = TLocalization.GetLanguageCodeFromFilename(uri)
+					If not languageCode Then Throw "No language was specified for loading the resource file and the language could not be detected from the filename itself.~r~nPlease specify the language or use the format ~qname_language.extension~q for the resource files."
+				EndIf
+
+			Case FILETYPE_DIR
+				'load in all files from the directory and subdirectories
+				Local dirTree:TDirectoryTree = New TDirectoryTree.SimpleInit()
+				dirTree.SetIncludeFileEndings(["txt"])
+				'skip some special readme file?
+				'dirTree.SetExcludeFileNames(["_readme"])
+				dirTree.ScanDir(uri, True)
+
+				filesToLoad = dirTree.GetFiles()
+
+				If languageCode = Null
+					languageCode = StripAll(uri)
+				EndIf
+
+			Default
+				'no language to load
+				Print "File/Folder ~q" + uri + "~q not found."
+				Return Null
+		End Select
+
+		'extend existing?
+		if languageCode
+			lang = TLocalization.GetLanguage(languageCode)
 		EndIf
+		If not lang
+			lang = New TLocalizationLanguage
+			lang.languageCode = languageCode
+		endif
+		
+		
+		For local fileToLoad:String = EachIn filesToLoad
+			'load definitions
+			Local content:string = LoadText(fileToLoad)
+			Local line:string =""
+			Local Key:String
+			Local value:String
+			Local Pos:Int = 0
+			Local group:String = ""
 
+			For line = EachIn content.Split(chr(10))
+				'comments
+				if Left(line, 2) = "//" then continue
 
-		Local lang:TLocalizationLanguage = New TLocalizationLanguage
-		lang.languageCode = languageCode
+				'groups
+				If Left(line, 1) = "[" and Right(line, 1) = "]"
+					group = Mid(line, 2, line.length - 2).Trim()
+				EndIf
 
-		'load definitions
-		Local content:string = LoadText(filename)
-		Local line:string =""
-		Local Key:String
-		Local value:String
-		Local Pos:Int = 0
-		Local group:String = ""
+				Pos = Instr(line, "=")
+				If Pos > 0
+					Key = Left(line, Pos - 1).Trim()
+					value = Mid(line, Pos + 1).Trim()
+				EndIf
 
-		For line = EachIn content.Split(chr(10))
-			'comments
-			if Left(line, 2) = "//" then continue
+				'skip corrupt keys
+				If Key = "" then continue
 
-			'groups
-			If Left(line, 1) = "[" and Right(line, 1) = "]"
-				group = Mid(line, 2, line.length - 2).Trim()
-			EndIf
+				'unescape + new line or tab
+				value = value.replace("\\", "\").replace("\n", "~n").replace("\t", "~t")
 
-			Pos = Instr(line, "=")
-			If Pos > 0
-				Key = Left(line, Pos - 1).Trim()
-				value = Mid(line, Pos + 1).Trim()
-			EndIf
-
-			'skip corrupt keys
-			If Key = "" then continue
-
-			'unescape + new line or tab
-			value = value.replace("\\", "\").replace("\n", "~n").replace("\t", "~t")
-
-			If group <> ""
-				'insert as "groupname::key"
-				lang.map.Insert(lower(group + "::" + Key), value)
-				'insert as key if "key" was not defined before
-				If not lang.map.ValueForKey(Key) Then lang.map.Insert(lower(Key), value)
-			Else
-				lang.map.Insert(lower(Key), value)
-			EndIf
+				If group <> ""
+					'insert as "groupname::key"
+					lang.map.Insert(lower(group + "::" + Key), value)
+					'insert as key if "key" was not defined before
+					If not lang.map.ValueForKey(Key) Then lang.map.Insert(lower(Key), value)
+				Else
+					lang.map.Insert(lower(Key), value)
+				EndIf
+			Next
 		Next
+
 		Return lang
 	End Function
 
@@ -487,11 +597,30 @@ Type TLocalizationLanguage
 		Local ret:Object
 
 		If group Then key = group + "::" + Key
+		key = lower(key)
 
-		ret = map.ValueForKey(lower(key))
+		ret = map.ValueForKey(key)
 
-		If ret = Null
-			Return Key
+		If ret = Null 'empty strings or not existing?
+			If not HasRaw(key) Then Return Key
+			Return ""
+		Else
+			Return String(ret)
+		EndIf
+	End Method
+
+
+	'Gets the value for the specified key
+	Method GetRaw:String(Key:String, group:String = Null)
+		Local ret:Object
+
+		If group Then key = group + "::" + Key
+
+		ret = map.ValueForKey(key)
+
+		If ret = Null 'empty strings or not existing?
+			If not HasRaw(key) Then Return Key
+			Return ""
 		Else
 			Return String(ret)
 		EndIf
@@ -502,6 +631,11 @@ Type TLocalizationLanguage
 		If group Then key = group + "::" + Key
 
 		return map.Contains(lower(key))
+	End Method
+
+
+	Method HasRaw:int(key:string)
+		return map.Contains(key)
 	End Method
 
 
@@ -581,8 +715,9 @@ Type TLocalizedString
 
 		valueStrings[langIndex] = value
 
+		'refresh cache
 		if languageCodeID = valueCachedLanguageID
-			self.valueCached = valueCached
+			self.valueCached = value
 		endif
 		return self
 	End Method
@@ -607,14 +742,17 @@ rem
 				next
 endrem
 			endif
-
 			if not result and returnDefault
+				'fetch value of "default language" if possible
+				'but if it is not defined, try to use the first possible
+				'value
 				local defaultIndex:Int = GetLanguageIndex(TLocalization.defaultLanguageID)
-				if defaultIndex >= 0 and valueStrings.length <= defaultIndex
-					result = valueStrings[TLocalization.defaultLanguageID]
+				If defaultIndex < 0 Then defaultIndex = valueStrings.length -1
+				
+				if defaultIndex >= 0
+					result = valueStrings[defaultIndex]
 				endif
 			endif
-
 
 			valueCachedLanguageID = languageCodeID
 			valueCached = result
@@ -674,6 +812,23 @@ endrem
 		Next
 		return -1
 	End Method
+	
+	
+	Method GetLanguageCodes:String[]()
+		Local codes:String[] = new String[valueLangIDs.length]
+		Local langCount:Int
+		For local i:int = EachIn valueLangIDs
+			local code:String = TLocalization.GetLanguageCode(i)
+			if code
+				codes[langCount] = code
+				langCount :+ 1
+			endif
+		Next
+		if langCount <> codes.length Then codes = codes[.. langCount]
+		Return codes
+	End Method
+	
+
 
 
 	Method GetLanguageIDs:Int[]()
