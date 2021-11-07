@@ -29,13 +29,13 @@ Local appExit:Int = False
 local pix:TPixmap = CreatePixmap(130,50, PF_RGBA8888)
 pix.ClearPixels(0)
 local img:TImage = LoadImage(pix)
-Local hintColor:TColor = New TColor.Create(130,130,130)
-Local hintColorGood:TColor = New TColor.Create(230,90,90)
+Local hintColor:SColor8 = New SColor8(130,130,130)
+Local hintColorGood:SColor8 = New SColor8(230,90,90)
 TBitmapFont.setRenderTarget(pix)
 SetAlpha 0.75
-fontB.DrawBlock("normal", 0, 0, 100, 15, ALIGN_LEFT_CENTER, hintColor)
+fontB.DrawBox("normal", 0, 0, 100, 15, sALIGN_LEFT_CENTER, hintColor)
 SetAlpha 1.0
-font.DrawBlock("farbig", 0, 15, 100, 15, ALIGN_LEFT_CENTER, hintColorGood)
+font.DrawBox("farbig", 0, 15, 100, 15, sALIGN_LEFT_CENTER, hintColorGood)
 
 'GetBitmapFont("Default",13).DrawBlock("Rendered to |b|an |color=255,0,100|image |/color||/b| instead of the |i|screen|/i||/b|.", 0,0, 130,50, Null,TColor.Create(175,175,140))
 SetAlpha 1.0
@@ -57,37 +57,37 @@ While Not KeyHit(KEY_ESCAPE) And Not appExit
 	SetAlpha 1.0
 	SetColor 255,255,255
 
-	f.DrawBlock("Left Top", 150, 100, 200, 200, ALIGN_LEFT_TOP)
-	f.DrawBlock("Right Top", 150, 100, 200, 200, ALIGN_RIGHT_TOP)
-	f.DrawBlock("Left Bottom", 150, 100, 200, 200, ALIGN_LEFT_BOTTOM)
-	f.DrawBlock("Right Bottom", 150, 100, 200, 200, ALIGN_RIGHT_BOTTOM)
-	f.DrawBlock("Center", 150, 100, 200, 200, ALIGN_CENTER_CENTER)
+	f.DrawBox("Left Top", 150, 100, 200, 200, sALIGN_LEFT_TOP, SColor8.white)
+	f.DrawBox("Right Top", 150, 100, 200, 200, sALIGN_RIGHT_TOP, SColor8.white)
+	f.DrawBox("Left Bottom", 150, 100, 200, 200, sALIGN_LEFT_BOTTOM, SColor8.white)
+	f.DrawBox("Right Bottom", 150, 100, 200, 200, sALIGN_RIGHT_BOTTOM, SColor8.white)
+	f.DrawBox("Center", 150, 100, 200, 200, sALIGN_CENTER_CENTER, SColor8.white)
 
 	'calc current position of dynamic text thingie
 	x :+ direction * (cycleTime / 1000.0) 'in ms
 	If x >= 1.0 Then direction = -1
 	If x <= 0 Then direction = 1
 
-	f.DrawBlock("Bounce", 150, 100, 200, 200, New TVec2D.Init(x, 0.3))
+	f.DrawBox("Bounce", 150, 100, 200, 200, New SVec2F(x, 0.3), SColor8.white)
 
-	GetBitmapFont("Default",13).DrawBlock("Long text missing some stuff? Does it eat characters, or not?", 500,200, 98,250, Null, TColor.clWhite)
+	GetBitmapFont("Default",13).DrawBox("Long text missing some stuff? Does it eat characters, or not?", 500,200, 98,250, sALIGN_LEFT_TOP, SColor8.white)
 
-	GetBitmapFont("Default",13).DrawBlock("Showing some line-breaking stuff. Does it eat characters, or not?", 500,400, 130,250, Null, TColor.clWhite)
+	GetBitmapFont("Default",13).DrawBox("Showing some line-breaking stuff. Does it eat characters, or not?", 500,400, 130,250, sALIGN_LEFT_TOP, SColor8.white)
 
-	GetBitmapFont("Default",13).DrawBlock("Let's test a bit |b|bold |color=255,0,0|Text |color=255,255,0|or|/color| |i|italic bold|/color| one|/i||/b|. Yeah!", 10,400, 120,250, Null,TColor.Create(175,175,140))
+	GetBitmapFont("Default",13).DrawBox("Let's test a bit |b|bold |color=255,0,0|Text |color=255,255,0|or|/color| |i|italic bold|/color| one|/i||/b|. Yeah!", 10,400, 120,250, sALIGN_LEFT_TOP, new SColor8(175,175,140))
 
 
 	Local t:String = "Let's test if |b|bold |color=255,0,0|colored |color=255,255,0|or|/color| |i|italic bold|/color| Text|/i||/b| leads to incorrect dimensions!"
 	SetColor 150,150,150
 	DrawRect(10, 10, GetBitmapFont("Default",13).GetWidth(t), GetBitmapFont("Default",13).GetMaxCharHeight())
 	SetColor 255,255,255
-	GetBitmapFont("Default",13).DrawBlock(t, 10,10, 450,150, Null,TColor.clWhite)
+	GetBitmapFont("Default",13).DrawBox(t, 10,10, 450,150, sALIGN_LEFT_TOP, SColor8.White)
 
 	t = "Let's test if bold colored or italic bold Text leads to incorrect dimensions!"
 	SetColor 150,150,150
-	DrawRect(10, 40, GetBitmapFont("Default",13).GetWidth(t), GetBitmapFont("Default",13).GetMaxCharHeight())
+	DrawRect(10, 40, GetBitmapFont("Default",13).GetSimpleWidth(t), GetBitmapFont("Default",13).GetMaxCharHeight())
 	SetColor 255,255,255
-	GetBitmapFont("Default",13).DrawBlock(t, 10,40, 450,150, Null,TColor.clWhite)
+	GetBitmapFont("Default",13).DrawBox(t, 10,40, 450,150, sALIGN_LEFT_TOP, SColor8.White)
 
 	if img
 		f.Draw("Rendered To Texture:", 10,315)
