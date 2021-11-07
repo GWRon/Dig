@@ -114,6 +114,88 @@ Type THelper
 	End Function
 
 
+	'based on code of "Henri" written in the BlitzMax NG's discord channel "#code"
+	Function PackValue64:Int(pack:Long Var, value:Long, loBit:Int, hiBit:Int)
+		?debug
+			'Check that the range is valid
+			If hiBit > 64 Or loBit <= 0 Or hiBit < loBit 
+				Assert 0, "PackValue64: Invalid bit range"
+				Return False
+			EndIf
+
+			Local maxValue:Long = (1:Long Shl (hiBit - loBit + 1)) - 1
+			If value > maxValue 
+				Assert 0, "PackValue64: Value out of range: " + value + " > " + maxValue
+				Return False
+			EndIf
+		?
+
+		Local shiftPoint:Int = loBit - 1
+		 'Clear bits in range
+		pack = pack & ~ (((1:Long Shl (hiBit - shiftPoint)) - 1) Shl (shiftPoint))
+		'Add new value
+		pack = pack | (value Shl shiftPoint)
+
+		Return True
+	End Function
+
+
+	Function GetPackValue64:Long(pack:Long, loBit:Int, hiBit:Int)
+		?debug
+			'Check that the range is valid
+			If hiBit> 64 Or loBit <= 0 Or hiBit < loBit 
+				Assert 0, "GetPackValue64: Invalid bit range" 
+				Return False
+			EndIf
+		?
+
+		Local shiftPoint:Int = lobit - 1
+		Return (pack & (((1:Long Shl (hiBit - shiftPoint)) - 1) Shl (shiftPoint))) Shr shiftPoint
+	End Function
+	
+	Rem
+		'this is the "long" version of above's code - so it explains
+		'a bit better what is done exactly
+		
+	Function PackValue64B:Int(value:Long, loBit:Int, hibit:Int)
+		
+		'Check that the range is valid
+		If hibit > 64 Or lobit <= 0 Or hibit < lobit Then Assert 0, "PackValue64: Invalid bit range"; Return False
+		
+		'Check that the value fits into specified bit range
+		Local numOfBits:Int = hibit - lobit + 1
+		Local maxValue:Long = (1:Long Shl numOfBits) - 1
+		If value > maxValue Then Assert 0, "PackValue64: Value out of range"; Return False
+		
+		'Creating a clearing mask for the bit range
+		Local shiftPoint:Int = lobit - 1
+		Local mask:Long = ~ (maxValue Shl (shiftPoint))
+		
+		'Clear bits in range
+		global_value = global_value & mask
+		
+		'Add new value
+		global_value = global_value | (value Shl shiftPoint)
+		
+		Return True
+		
+	EndFunction
+
+	Function GetPackValue64B:Long(loBit:Int, hibit:Int)
+		'Creating a clearing mask for the bits outside of range
+		Local numOfBits:Int = hibit - lobit + 1
+		Local maxValue:Long = (1:Long Shl numOfBits) - 1
+		Local shiftPoint:Int = lobit - 1
+		Local mask:Long = (maxValue Shl (shiftPoint))
+		
+		Local value:Long = (global_value & mask) Shr shiftPoint
+		
+		Return value
+		
+	EndFunction
+	End Rem
+
+
 	Function ShuffleList:TList(list:TList)
 		Local objArr:Object[] = list.ToArray()
 		Local j:Int
@@ -135,10 +217,20 @@ Type THelper
 		return IsIn(Int(MouseManager.x), Int(MouseManager.y), x,y,w,h)
 	End Function
 
+	'returns whether the mouse is within the given rectangle coords
+	Function MouseIn:int(x:Float,y:Float, w:Float,h:Float)
+		return IsIn(Int(MouseManager.x), Int(MouseManager.y), Int(x),Int(y),Int(w),Int(h))
+	End Function
+
 
 	'returns whether the mouse is within the given rectangle
 	Function MouseInRect:int(rect:TRectangle)
 		return IsIn(int(MouseManager.x), int(MouseManager.y), int(rect.position.x), int(rect.position.y), int(rect.dimension.x), int(rect.dimension.y))
+	End Function
+
+
+	Function MouseInSRect:int(rect:SRect var)
+		return IsIn(int(MouseManager.x), int(MouseManager.y), int(rect.x), int(rect.y), int(rect.w), int(rect.h))
 	End Function
 
 
@@ -170,6 +262,21 @@ Type THelper
 			   )
 		else
 			return new TVec2D.Init(..
+				 MathHelper.Tween(oldPoint.x, currentPoint.x, tween),..
+				 MathHelper.Tween(oldPoint.y, currentPoint.y, tween)..
+			   )
+		endif
+	End Function
+
+
+	Function GetTweenedPoint:SVec2F(currentPoint:SVec2F, oldPoint:SVec2F, tween:Float, avoidShaking:int=TRUE)
+		if avoidShaking
+			return new SVec2F(..
+				 MathHelper.SteadyTween(oldPoint.x, currentPoint.x, tween),..
+				 MathHelper.SteadyTween(oldPoint.y, currentPoint.y, tween)..
+			   )
+		else
+			return new SVec2F(..
 				 MathHelper.Tween(oldPoint.x, currentPoint.x, tween),..
 				 MathHelper.Tween(oldPoint.y, currentPoint.y, tween)..
 			   )
@@ -318,7 +425,7 @@ Type THelper
 
 
 	'assigns field properties of one object to another
-	'deepCopy: Set to False to skip deep cloning but copy "references" 
+	'deepCopy: Set to False to skip deep cloning but copy "references"
 	Function TakeOverObjectValues:object(source:object, target:object var, skipFields:string="", deepCopy:int = False)
 		If source = Null
 			target = null
