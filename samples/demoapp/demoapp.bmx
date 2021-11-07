@@ -178,7 +178,6 @@ Type TMyApp Extends TGraphicalApp
 
 		DrawText("worldTime: "+GetWorldTime().GetFormattedTime(-1, "h:i:s")+ " at day "+GetWorldTime().GetDayOfYear()+" in "+GetWorldTime().GetYear(), 80, 0)
 
-DrawRect(0,0,1,1)
 
 		'=== DRAW MOUSE CURSOR ===
 '		GetSpriteFromRegistry("gfx_mousecursor"+mouseCursorState).Draw(MouseManager.x - 12, MouseManager.y - 3, 0)
