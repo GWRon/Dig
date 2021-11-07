@@ -21,11 +21,13 @@ Type TGuiTextAreaSelect Extends TGUITextArea
 
 
 	Method onMouseOver:int(triggerEvent:TEventBase)
-		local coord:TVec2D = TVec2D(triggerEvent.GetData().Get("coord"))
-		if not coord then return False
+		local coordX:Int = triggerEvent.GetData().GetInt("x")
+		local coordY:Int = triggerEvent.GetData().GetInt("y")
 
-		local localCoord:TVec2D = new TVec2D.Init( coord.x - GetContentScreenX(), coord.y - GetContentScreenY())
-		hoveredLine = 1 + int((localCoord.y + Abs(guiTextPanel.scrollPosition.GetY())) / GetLineHeight())
+		'make local
+		coordX = coordX - GetContentScreenX()
+		coordY = coordY - GetContentScreenY()
+		hoveredLine = 1 + int((coordX + Abs(guiTextPanel.scrollPosition.GetY())) / GetLineHeight())
 		hoveredLine = MathHelper.Clamp(hoveredLine, 0, GetValueLines().length -1)
 	End Method
 
@@ -62,28 +64,29 @@ Type TGuiTextAreaSelect Extends TGUITextArea
 
 		if selectedLine > 0 or hoveredLine > 0
 			RestrictContentViewport()
-			local oldCol:TColor = new TColor.Get()
+			Local oldCol:SColor8; GetColor(oldCol)
+			Local oldColA:Float = GetAlpha()
 
 			if selectedLine > 0
-				SetBlend LightBlend
-				SetAlpha oldCol.a * 0.25
-				SetColor 200,200,200
+				SetBlend(LightBlend)
+				SetAlpha(oldColA * 0.25)
+				SetColor(200,200,200)
 				local lineY:int = GetLineHeight() * (selectedLine-1) + guiTextPanel.scrollPosition.GetY()
 				DrawRect(GetContentScreenX(), GetContentScreenY() + lineY -1, GetContentScreenWidth(), GetLineHeight())
-				SetBlend AlphaBlend
+				SetBlend(AlphaBlend)
 			endif
 
 			if hoveredLine > 0 and hoveredLine <> selectedLine
-				SetBlend LightBlend
-				SetAlpha oldCol.a * 0.10
-				SetColor 200,200,230
+				SetBlend(LightBlend)
+				SetAlpha(oldColA * 0.10)
+				SetColor(200,200,230)
 				local lineY:int = GetLineHeight() * (hoveredLine-1) + guiTextPanel.scrollPosition.GetY()
 				DrawRect(GetContentScreenX(), GetContentScreenY() + lineY -1, GetContentScreenWidth(), GetLineHeight())
-				SetBlend AlphaBlend
+				SetBlend(AlphaBlend)
 			endif
 			
-
-			oldCol.SetRGBA()
+			SetColor(oldCol)
+			SetAlpha(oldColA)
 			ResetViewport()
 		endif
 	End Method

@@ -9,11 +9,15 @@ Import "base.gfx.gui.bmx"
 
 
 Type TGUITextBox Extends TGUIobject
-	Field valueAlignment:TVec2D = new TVec2D.Init(0,0)
-	Field valueColor:TColor	= TColor.Create(0,0,0)
-	Field valueStyle:Int = 0 'used in DrawBlock(...style)
-	Field valueStyleSpecial:Float = 1.0	 'used in DrawBlock(...special)
+	Field valueAlignment:SVec2F = New SVec2F(0,0)
+	Field valueColor:SColor8 = SColor8.Black
+	Field valueEffect:TDrawTextEffect
 	Field _autoAdjustHeight:Int	= False
+
+
+	Method GetClassName:String()
+		Return "tguitextbox"
+	End Method
 
 
 	Method Create:TGUITextBox(position:TVec2D = null, dimension:TVec2D = null, text:String, limitState:String="")
@@ -33,19 +37,22 @@ Type TGUITextBox Extends TGUIobject
 
 	Method GetHeightWithMax:Int(maxHeight:Int=800)
 		If _autoAdjustHeight
-			Return Min(maxHeight, GetFont().getBlockHeight(value, rect.GetW(), maxHeight))
+			Return Min(maxHeight, GetFont().GetBoxHeight(value, int(rect.GetW()), maxHeight))
 		Else
 			Return rect.GetH()
 		EndIf
 	End Method
 
 
-	Method SetValue(value:string)
-		self.value = value
+	Method SetValueColor(color:TColor)
+		if color 
+			valueColor = color.ToSColor8()
+		else
+			valueColor = SColor8.Black
+		endif
 	End Method
 
-
-	Method SetValueColor(color:TColor)
+	Method SetValueColor(color:SColor8)
 		valueColor = color
 	End Method
 
@@ -56,16 +63,27 @@ Type TGUITextBox Extends TGUIobject
 
 
 	Method SetValueAlignment(alignment:TVec2D)
+		valueAlignment = new SVec2F(alignment.x, alignment.y)
+	End Method
+
+
+	Method SetValueAlignment(alignment:SVec2F)
 		valueAlignment = alignment
 	End Method
 
 
 	Method DrawContent()
-		local oldCol:TColor = new TColor.Get()
-		SetAlpha oldCol.a * GetScreenAlpha()
+		local oldColA:Float = GetAlpha()
+		SetAlpha oldColA * GetScreenAlpha()
+		
+		Local scrRect:TRectangle = GetScreenRect()
 
-		GetFont().drawBlock(value, int(GetScreenX()), int(GetScreenY()), rect.GetW(), rect.GetH(), valueAlignment, valueColor, 1, 1, 0.25)
+		GetFont().DrawBox(value, scrRect.GetIntX(), scrRect.GetIntY(), rect.GetW(), rect.GetH(), valueAlignment, valueColor, EDrawTextEffect.Shadow, 0.25)
 
-		oldCol.SetRGBA()
+		SetAlpha(oldColA)
+	End Method
+
+
+	Method UpdateLayout()
 	End Method
 End Type

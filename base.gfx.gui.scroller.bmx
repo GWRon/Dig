@@ -20,8 +20,14 @@ Type TGUIScrollerBase extends TGUIobject
 	Field minValue:Double = 0
 	Field maxValue:Double = 100
 	Field begunAMouseDown:int = False
+	Field mouseScrollAmount:Int = 5
 	Field currentValue:Double
 	Field _orientation:int = GUI_OBJECT_ORIENTATION_VERTICAL
+
+
+	Method GetClassName:String()
+		Return "tguiscrollerbase"
+	End Method
 
 
 	Method Create:TGUIScrollerBase(parent:TGUIobject)
@@ -40,9 +46,13 @@ Type TGUIScrollerBase extends TGUIobject
 
 		'the scroller itself ignores focus too
 		self.setOption(GUI_OBJECT_CAN_GAIN_FOCUS, False)
+		'allow to keep mouse button pressed and leave the area while still
+		'scrolling
+		self.setOption(GUI_OBJECT_KEEP_ACTIVE_ON_OUTSIDE_CONTINUED_MOUSEDOWN, True)
+
 
 		'style myself - aligns buttons
-		onStatusAppearanceChange()
+		onAppearanceChanged()
 
 
 		'set the parent of the buttons so they inherit visible state etc.
@@ -68,6 +78,11 @@ Type TGUIScrollerBase extends TGUIobject
 		if guiButtonMinus then guiButtonMinus.Remove()
 		if guiButtonPlus then guiButtonPlus.Remove()
 	End Method
+	
+	
+	Method SetMouseScrollAmount(amount:Int)
+		mouseScrollAmount = amount
+	End Method
 
 
 	'override to also check buttons
@@ -80,18 +95,22 @@ Type TGUIScrollerBase extends TGUIobject
 
 
 	'override default
-	Method onStatusAppearanceChange:int()
-		rect.position.setXY(GetParent().rect.getW() - guiButtonMinus.rect.getW(),0)
-
-		'this also aligns the buttons
-		Resize(GetParent().rect.getW(), GetParent().rect.getH())
-		'Resize()
+	Method onAppearanceChanged:int()
+		If _parent
+			rect.position.setXY(_parent.rect.getW() - guiButtonMinus.rect.getW(),0)
+			'this also aligns the buttons
+			SetSize(_parent.rect.getW(), _parent.rect.getH())
+		Else
+			rect.position.setXY(rect.getW() - guiButtonMinus.rect.getW(),0)
+			'this also aligns the buttons
+			SetSize(rect.getW(), rect.getH())
+		EndIf
 	End Method
 
 
 	'override resize and add minSize-support
 	'size 0, 0 is not possible (leads to autosize)
-	Method Resize(w:Float = 0, h:Float = 0)
+	Method SetSize(w:Float = 0, h:Float = 0)
 		'according the orientation we limit height or width
 		Select _orientation
 			case GUI_OBJECT_ORIENTATION_HORIZONTAL
@@ -101,12 +120,7 @@ Type TGUIScrollerBase extends TGUIobject
 				w = guiButtonMinus.rect.getW()
 				'if h <= 0 then h = rect.GetH()
 		End Select
-		Super.Resize(w, h)
-
-		'move the first button to the most left and top position
-		guiButtonMinus.rect.position.SetXY(0, 0)
-		'move the second button to the most right and bottom position
-		guiButtonPlus.rect.position.SetXY(GetScreenWidth() - guiButtonPlus.GetScreenWidth(), GetScreenHeight() - guiButtonPlus.GetScreenHeight())
+		Super.SetSize(w, h)
 	End Method
 
 
@@ -142,7 +156,7 @@ Type TGUIScrollerBase extends TGUIobject
 
 
 	Method SetCurrentValue(currentValue:Double)
-		EventManager.triggerEvent( TEventSimple.Create( "guiobject.onChangeValue", null, self ) )
+		TriggerBaseEvent(GUIEventKeys.GUIObject_OnChangeValue, null, self)
 		self.currentValue = Max(minValue, Min(maxValue, currentValue))
 	End Method
 
@@ -168,22 +182,47 @@ Type TGUIScrollerBase extends TGUIobject
 				guiButtonMinus.SetDirection("LEFT")
 				guiButtonPlus.SetDirection("RIGHT")
 				'set scroller area to full WIDTH of parent
-				if GetParent() then rect.dimension.SetX(GetParent().rect.getW())
+				if _parent then rect.dimension.SetX(_parent.rect.getW())
 			default
 				guiButtonMinus.SetDirection("UP")
 				guiButtonPlus.SetDirection("DOWN")
 				'set scroller area to full height of parent
-				if GetParent() then rect.dimension.SetY(GetParent().rect.getH())
+				if _parent then rect.dimension.SetY(_parent.rect.getH())
 		End Select
 
-		Resize()
+		SetSize(-1,-1)
 
 		return TRUE
 	End Method
 
 
+	Method onMouseScrollWheel:Int( triggerEvent:TEventBase ) override
+		Local value:Int = triggerEvent.GetData().getInt("value",0)
+		If value = 0 Then Return False
+		'emit event that the scroller position has changed
+		Local direction:String = ""
+		Select _orientation
+			Case GUI_OBJECT_ORIENTATION_VERTICAL
+				If value < 0 Then direction = "up"
+				If value > 0 Then direction = "down"
+			Case GUI_OBJECT_ORIENTATION_HORIZONTAL
+				If value < 0 Then direction = "left"
+				If value > 0 Then direction = "right"
+		End Select
+		If direction <> ""
+			TriggerBaseEvent(GUIEventKeys.GUIObject_OnScrollPositionChanged, New TData.AddString("direction", direction).AddInt("scrollAmount", mouseScrollAmount), self)
+		EndIf
+
+		'set to accepted so that nobody else receives the event
+		triggerEvent.SetAccepted(True)
+	End Method
+
+
 	'handle clicks on the up/down-buttons and inform others about changes
 	Function onButtonClick:Int( triggerEvent:TEventBase )
+		'only handle left/primary key clicks
+		If triggerEvent.GetData().GetInt("button") <> 1 Then Return False
+
 		Local sender:TGUIArrowButton = TGUIArrowButton(triggerEvent.GetSender())
 		If sender = Null Then Return False
 
@@ -192,8 +231,11 @@ Type TGUIScrollerBase extends TGUIobject
 
 		'emit event that the scroller position has changed
 		If sender = guiScroller.guiButtonMinus or sender = guiScroller.guiButtonPlus
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", sender.direction.ToLower()).AddNumber("scrollAmount", 15), guiScroller ) )
+			TriggerBaseEvent(GUIEventKeys.GUIObject_OnScrollPositionChanged, new TData.AddString("direction", sender.direction.ToLower()).AddInt("scrollAmount", 15), guiScroller)
 		EndIf
+
+		'handled the click
+		Return True
 	End Function
 
 
@@ -216,8 +258,10 @@ Type TGUIScrollerBase extends TGUIobject
 
 		'emit event that the scroller position has changed
 		If sender = guiScroller.guiButtonMinus or sender = guiScroller.guiButtonPlus
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("direction", sender.direction.ToLower()), guiScroller ) )
+			TriggerBaseEvent(GUIEventKeys.GUIObject_OnScrollPositionChanged, new TData.AddString("direction", sender.direction.ToLower()), guiScroller )
 		EndIf
+
+		Return True
 	End Function
 
 
@@ -241,7 +285,7 @@ Type TGUIScrollerBase extends TGUIobject
 
 
 	Method ScrollerHasFocus:int()
-		return HasFocus() or guiButtonMinus.HasFocus() or guiButtonPlus.HasFocus()
+		return IsFocused() or guiButtonMinus.IsFocused() or guiButtonPlus.IsFocused()
 	End Method
 
 
@@ -249,14 +293,27 @@ Type TGUIScrollerBase extends TGUIobject
 		Super.Update()
 
 		if begunAMouseDown
+			'skip next long click
+			MouseManager.SkipNextLongClick(1) 
+			MouseManager.ResetClicked(1)
 			if not MouseManager.IsDown(1)
 				begunAMouseDown = False
-			else
-				'(do it in an "update" so it also handles "mousedown"
-				'avoid long left-mousebutton clicks
-				MouseManager.ResetLongClicked(1)
+				'disable a potentially still active "to skip"
+				MouseManager.SkipNextLongClick(1, 0) 
 			endif
+			MouseManager.ResetLongClicked(1)
 		endif
+	End Method
+
+
+	Method UpdateLayout()
+		'realign buttons
+
+		'move the first button to the most left and top position
+		guiButtonMinus.rect.position.SetXY(0, 0)
+		'move the second button to the most right and bottom position
+		'do not use "screenRect" for the button as the LimitToRect() filters it out
+		guiButtonPlus.rect.position.SetXY(GetScreenRect().GetW() - guiButtonPlus.rect.GetW(), GetScreenRect().GetH() - guiButtonPlus.rect.GetH())
 	End Method
 End Type
 
@@ -265,6 +322,12 @@ End Type
 
 Type TGUIScroller Extends TGUIScrollerBase
 	Field scrollHandle:TGUISlider
+
+
+	Method GetClassName:String()
+		Return "tguiscroller"
+	End Method
+
 
 	Method Create:TGUIScroller(parent:TGUIobject)
 		Super.Create(parent)
@@ -276,19 +339,28 @@ Type TGUIScroller Extends TGUIScrollerBase
 		scrollHandle.SetDirection(TGUISlider.DIRECTION_DOWN)
 		scrollHandle._showFilledGauge = False
 		scrollHandle._gaugeAlpha = 0.5
+		scrollHandle.SetOption(GUI_OBJECT_KEEP_ACTIVE_ON_OUTSIDE_CONTINUED_MOUSEDOWN)
+		scrollHandle.mouseScrollWheelStepSize = mouseScrollAmount
 
 		'manage (update/draw) the handle on our own
 		AddChild(scrollHandle)
 
 		'listen to interaction with scrollHandle elements (dragging it)
+		'or mouse scrolling over its "progress area"
 		'attention: do not listen to "guiobject.onchangevalue" as this is
 		'           also triggered by "onScrollPositionChanged" (circlular
 		'           triggers)
-		AddEventListener(EventManager.registerListenerFunction( "guislider.setValueByMouse", onScrollHandleChange, scrollHandle ))
+		AddEventListener(EventManager.registerListenerFunction( GUIEventKeys.GUISlider_SetValueByMouse, onScrollHandleChange, scrollHandle ))
 		'listen to changes via scroller buttons
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.onScrollPositionChanged", onScrollPositionChanged, self))
+		AddEventListener(EventManager.registerListenerFunction( GUIEventKeys.GUIObject_OnScrollPositionChanged, onScrollPositionChanged, self))
 
 		return self
+	End Method
+
+
+	Method SetMouseScrollAmount(amount:Int) override
+		Super.SetMouseScrollAmount(amount)
+		if scrollHandle then scrollHandle.mouseScrollWheelStepSize = mouseScrollAmount
 	End Method
 
 
@@ -319,7 +391,7 @@ Type TGUIScroller Extends TGUIScrollerBase
 		if MouseManager.IsDown(1) then guiScroller.begunAMouseDown = true
 
 		'inform others (equally to up/down-buttonclicks)
-		EventManager.triggerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("changeType", "percentage").AddNumber("percentage", sender.GetRelativeValue()).Add("sendingSlider", sender), guiScroller ) )
+		TriggerBaseEvent(GUIEventKeys.GUIObject_OnScrollPositionChanged, new TData.AddInt("isRelative", True).AddFloat("percentage", sender.GetRelativeValue()).Add("sendingSlider", sender), guiScroller )
 	End Function
 
 
@@ -342,8 +414,27 @@ Type TGUIScroller Extends TGUIScrollerBase
 	End Method
 
 
-	Method Resize(w:Float = 0, h:Float = 0)
-		Super.Resize(w, h)
+	'override to also check handle
+	Method IsAppearanceChanged:int()
+		if scrollHandle and scrollHandle.isAppearanceChanged() then return TRUE
+
+		return Super.isAppearanceChanged()
+	End Method
+
+
+	Method ScrollerHasFocus:int()
+		return Super.ScrollerHasFocus() or scrollHandle.IsFocused()
+	End Method
+
+
+	Method DrawContent()
+'		DrawRect(GetScreenRect().GetX(), GetScreenRect().GetY(), GetScreenRect().GetW(), GetScreenRect().GetH())
+	End Method
+
+
+	Method UpdateLayout()
+		'realign buttons
+		Super.UpdateLayout()
 
 		'called after scrollHandle creation?
 		if scrollHandle
@@ -362,23 +453,6 @@ Type TGUIScroller Extends TGUIScrollerBase
 			End Select
 		endif
 	End Method
-
-
-	'override to also check handle
-	Method IsAppearanceChanged:int()
-		if scrollHandle and scrollHandle.isAppearanceChanged() then return TRUE
-
-		return Super.isAppearanceChanged()
-	End Method
-
-
-	Method ScrollerHasFocus:int()
-		return Super.ScrollerHasFocus() or scrollHandle.HasFocus()
-	End Method
-
-
-	Method DrawContent()
-	End Method
 End Type
 
 
@@ -390,20 +464,26 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 	Field progressRectHovered:int = False
 
 
+	Method GetClassName:String()
+		Return "tguiscrollersimple"
+	End Method
+
+
 	Method Create:TGUIScrollerSimple(parent:TGUIobject)
 		Super.Create(parent)
+
 		return self
 	End Method
 
 
 	'override resize and add minSize-support
 	'size 0, 0 is not possible (leads to autosize)
-	Method Resize(w:Float = 0, h:Float = 0)
-		Super.Resize(w, h)
+	Method SetSize(w:Float = 0, h:Float = 0)
+		Super.SetSize(w, h)
 
 		'=== PROGRESS RECT ===
 		'fill whole area
-		progressRect.SetXYWH(0,0,GetScreenWidth(),GetScreenHeight())
+		progressRect.SetXYWH(0,0, GetScreenRect().GetW(),GetScreenRect().GetH())
 		'subtract buttons
 		Select _orientation
 			case GUI_OBJECT_ORIENTATION_HORIZONTAL
@@ -431,7 +511,7 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 			progressRectHovered = False
 
 		else
-			local overPos:TVec2D = new TVec2D.Init( MouseManager.x -GetScreenX(), MouseManager.y -GetScreenY())
+			local overPos:TVec2D = new TVec2D.Init( MouseManager.x - GetScreenRect().GetX(), MouseManager.y - GetScreenRect().GetY())
 			if progressRect.ContainsVec(overPos)
 				progressRectHovered = True
 			endif
@@ -440,7 +520,7 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 			if mouseIsClicked
 				'convert clicked position to local widget coordinates
 				local clickPos:TVec2D = mouseIsClicked.Copy()
-				clickPos.AddXY(-GetScreenX(), -GetScreenY())
+				clickPos.AddXY(-GetScreenRect().GetX(), -GetScreenRect().GetY())
 				if progressRect.ContainsVec(clickPos)
 '					clickPos.AddXY(progressRect.GetX(), progressRect.GetY())
 					local progress:float = 0
@@ -462,7 +542,7 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 					'scroll to the percentage
 					SetRelativeValue(progress)
 					'inform others
-					EventManager.triggerEvent( TEventSimple.Create( "guiobject.onScrollPositionChanged", new TData.AddString("changeType", "percentage").AddNumber("percentage", GetRelativeValue()), self ) )
+					TriggerBaseEvent(GUIEventKeys.GUIObject_OnScrollPositionChanged, new TData.Addint("isRelative", True).AddFloat("percentage", GetRelativeValue()), self )
 
 					'reset clicked state and button state
 					mouseIsClicked = Null
@@ -476,8 +556,9 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 
 
 	Method DrawContent()
-		local oldCol:TColor = new TColor.Get()
-		SetAlpha oldCol.a * GetScreenAlpha() * 0.20
+		local oldCol:SColor8; GetColor(oldCol)
+		local oldColA:Float = GetAlpha()
+		SetAlpha oldColA * GetScreenAlpha() * 0.20
 
 		'draw a area to click on
 		if progressRectHovered
@@ -485,16 +566,17 @@ Type TGUIScrollerSimple Extends TGUIScrollerBase
 		else
 			SetColor 125,50,50
 		endif
-		DrawRect(GetScreenX() + progressRect.GetX(), GetScreenY() + progressRect.GetY(), progressRect.GetW(), progressRect.GetH())
+		DrawRect(GetScreenRect().GetX() + progressRect.GetX(), GetScreenRect().GetY() + progressRect.GetY(), progressRect.GetW(), progressRect.GetH())
 
-		SetAlpha oldCol.a * GetScreenAlpha() * 0.5
+		SetAlpha oldColA * GetScreenAlpha() * 0.5
 		Select _orientation
 			case GUI_OBJECT_ORIENTATION_HORIZONTAL
-				DrawRect(GetScreenX() + progressRect.GetX() + GetRelativeValue() * progressRect.GetW(), GetScreenY() + progressRect.GetY(), 3, progressRect.GetH())
+				DrawRect(GetScreenRect().GetX() + progressRect.GetX() + GetRelativeValue() * progressRect.GetW(), GetScreenRect().GetY() + progressRect.GetY(), 3, progressRect.GetH())
 			case GUI_OBJECT_ORIENTATION_VERTICAL
-				DrawRect(GetScreenX() + progressRect.GetX(), GetScreenY() + progressRect.GetY() + GetRelativeValue() * progressRect.GetH(), progressRect.GetW(), 3)
+				DrawRect(GetScreenRect().GetX() + progressRect.GetX(), GetScreenRect().GetY() + progressRect.GetY() + GetRelativeValue() * progressRect.GetH(), progressRect.GetW(), 3)
 		End Select
 
-		oldCol.SetRGBA()
+		SetColor(oldCol)
+		SetAlpha(oldColA)
 	End Method
 End Type

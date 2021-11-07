@@ -44,26 +44,40 @@ Import "base.gfx.gui.list.selectlist.bmx"
 Type TGUIDropDown Extends TGUIInput
 	Field lastPosition:TVec2D
 	'height of the opened drop down
-	Field open:int = FALSE
+	Field open:Int = False
 	'close dropdown as soon as an item gets selected
-	Field closeOnSelect:int = True
+	Field closeOnSelect:Int = True
 	Field selectedEntry:TGUIObject
 	Field list:TGUISelectList
-	Field listHeight:int = 100
-	Global defaultSpriteName:string = "gfx_gui_input.default"
-	Global defaultOverlaySpriteName:string = "gfx_gui_icon_arrowDown"
+	Field listHeight:Int = 100
+	Field automaticListHeight:Int = True
+	Field additionalZIndex:Int = 0
+	Global defaultSpriteName:String = "gfx_gui_input.default"
+	Global defaultOverlaySpriteName:String = "gfx_gui_icon_arrowDown"
 
 
 
-    Method Create:TGUIDropDown(position:TVec2D = null, dimension:TVec2D = null, value:string="", maxLength:Int=128, limitState:String = "")
+	Method GetClassName:String()
+		Return "tguidropdown"
+	End Method
+
+
+	Method Create:TGUIDropDown(pos:SVec2I, dimension:SVec2I, value:String="", maxLength:Int=128, limitState:String = "")
+		Return Create(new TVec2D.Init(pos.x, pos.y), new TVec2D.Init(dimension.x, dimension.y), value, maxLength, limitState)
+	End Method
+
+
+    Method Create:TGUIDropDown(position:TVec2D = Null, dimension:TVec2D = Null, value:String="", maxLength:Int=128, limitState:String = "")
 		'setup base widget (input)
 		Super.Create(position, dimension, value, maxLength, limitState)
 		'but this element does not react to keystrokes
-		SetOption(GUI_OBJECT_CAN_RECEIVE_KEYSTROKES, False)
+		SetOption(GUI_OBJECT_CAN_RECEIVE_KEYBOARDINPUT, False)
+		'stay activated if clicked into
+		SetOption(GUI_OBJECT_STAY_ACTIVE_AFTER_MOUSECLICK, True)
 
 		'=== STYLE BUTTON ===
 		'use another sprite than the default button
-		if not spriteName then spriteName = defaultSpriteName
+		If Not spriteName Then spriteName = defaultSpriteName
 		SetOverlayPosition("right")
 		SetOverlay(defaultOverlaySpriteName)
 		SetEditable(False)
@@ -71,11 +85,11 @@ Type TGUIDropDown Extends TGUIInput
 
 		'=== ENTRY LIST ===
 		'create and style list
-		if list then list.Remove()
-		list = new TGUISelectList.Create(new TVec2D.Init(0, self.rect.GetH()), new TVec2D.Init(rect.GetW(), listHeight), "")
+		If list Then list.Remove()
+		list = New TGUISelectList.Create(New TVec2D.Init(0, Self.rect.GetH()), New TVec2D.Init(rect.GetW(), listHeight), "")
 		'do not add as child - we position it on our own when updating
 		'hide list to begin
-		SetOpen(false)
+		SetOpen(False)
 
 		'set the list to ignore focus requests (avoids onRemoveFocus-events)
 		list.setOption(GUI_OBJECT_CAN_GAIN_FOCUS, False)
@@ -88,213 +102,267 @@ Type TGUIDropDown Extends TGUIInput
 		list.SetZIndex(20000)
 
 		'add bg to list
-		local bg:TGUIBackgroundBox = new TGUIBackgroundBox.Create(new TVec2D, new TVec2D)
+		Local bg:TGUIBackgroundBox = New TGUIBackgroundBox.Create(New TVec2D, New TVec2D)
 		bg.spriteBaseName = spriteName
+'		bg.SetOption(GUI_OBJECT_IGNORE_PARENTPADDING, True)
 		list.SetBackground(bg)
 		'use padding from background
 		list.SetPadding(bg.GetPadding().getTop(), bg.GetPadding().getLeft(),  bg.GetPadding().getBottom(), bg.GetPadding().getRight())
 
+		list.OnResize(0, 0)
 
 		'=== REGISTER EVENTS ===
 		'to close the list automatically if the object looses focus
-		AddEventListener(EventManager.registerListenerMethod("guiobject.onRemoveFocus", Self, "onRemoveFocus", self ))
+'		AddEventListener(EventManager.registerListenerMethod(GUIEventKeys.GUIObject_OnRemoveFocus, Self, "onRemoveFocus", Self))
 		'listen to clicks to dropdown-items
-		AddEventListener(EventManager.registerListenerMethod("GUIDropDownItem.onClick",	Self.list, "onClickOnEntry" ))
-		'someone uses the mouse wheel to scroll over the panel
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.OnScrollwheel", onScrollWheel, Self))
+		AddEventListener(EventManager.registerListenerMethod(GUIEventKeys.GUIDropDownItem_OnClick,	Self.list, "onClickOnEntry"))
 
 		'to register if an item was selected
-		AddEventListener(EventManager.registerListenerMethod("guiselectlist.onSelectEntry", self, "onSelectEntry", self.list ))
+		AddEventListener(EventManager.registerListenerMethod(GUIEventKeys.GUISelectList_OnSelectEntry, Self, "onSelectEntry", Self.list))
 
 		Return Self
 	End Method
 
 
-	Method Resize(w:Float = 0, h:Float = 0)
-		Super.Resize(w, h)
-		if list then list.Resize(w, -1)
+	Method SetSize(w:Float = 0, h:Float = 0)
+		Super.SetSize(w, h)
+		If list Then list.SetSize(w, -1)
 	End Method
 
 
-	Method Remove:int()
+	Method Remove:Int()
 		Super.Remove()
-		list.Remove()
+		If list Then list.Remove()
 	End Method
 
 
-	'check if the drop down has to close
-	Method onRemoveFocus:int(triggerEvent:TEventBase)
-		'skip indeep checks if already closed
-		if not IsOpen() then return False
-
-		local sender:TGuiObject = TGUIObject(triggerEvent.GetSender())
-		local receiver:TGuiObject = TGUIObject(triggerEvent.GetReceiver())
-		if not sender then return False
-
-		Rem
-		'if the receiver is an entry of the list - close and "click"
-		if self.list.HasItem(receiver)
-			SetOpen(False)
-			print "clicked"
-		endif
-		EndRem
-		'close on click on a list item
-		if receiver and list.HasItem(receiver)
-			SetSelectedEntry(receiver)
-
-			'handled mouse button click to avoid clicks below
-			MouseManager.SetClickHandled(1)
-
-			SetOpen(False)
-		endif
-
-
-		'skip when loosing focus to self->list or list->self
-		if receiver
-			local senderBelongsToWidget:int = False
-			local receiverBelongsToWidget:int = False
-
-			if sender = self
-				senderBelongsToWidget = True
-			elseif sender.HasParent(self.list)
-				senderBelongsToWidget = True
-			endif
-
-			if senderBelongsToWidget and receiver
-				if receiver = self
-					receiverBelongsToWidget = True
-				elseif receiver.HasParent(self.list)
-					receiverBelongsToWidget = True
-				endif
-			endif
-
-			'keep the widgets list "open" if new focus is now at a sub element
-			'of the widget
-			if senderBelongsToWidget and receiverBelongsToWidget then return False
-		endif
-
-
-		SetOpen(False)
+	'override
+	Method OnUpdateScreenRect()
+		Super.OnUpdateScreenRect()
+		If list Then list.InvalidateScreenRect()
+'		if list then list.InvalidateLayout()
 	End Method
 
 
-	Method onSelectEntry:int(triggerEvent:TEventBase)
-		local guiobj:TGUIObject = TGUIObject(triggerEvent.GetData().Get("entry"))
+	'close drop down if still open
+	Method _SetActive:Int(bool:Int, oldOrNewActive:TGUIObject = Null) override
+		if not bool
+			'check if new activated object is one of our children
+			'- stay open if one of them is the new active one
+			If oldOrNewActive and (GetEntries().Contains(oldOrNewActive) or oldOrNewActive.HasParent(self) or oldOrNewActive.HasParent(self.list)) 
+				'stay open
+			Else
+				SetOpen(False)
+			EndIf
+		EndIf
+		
+		Return super._SetActive(bool, oldOrNewActive)
+	End Method
 
-		local item:TGUIDropDownItem = TGUIDropDownItem(triggerEvent.GetData().Get("entry"))
+
+	Method onSelectEntry:Int(triggerEvent:TEventBase)
+		Local guiobj:TGUIObject = TGUIObject(triggerEvent.GetData().Get("entry"))
+
+		Local item:TGUIDropDownItem = TGUIDropDownItem(triggerEvent.GetData().Get("entry"))
 		'clicked item is of a different type
-		if not item then return False
+		If Not item Then Return False
 
 		SetSelectedEntry(item)
 
-		if closeOnSelect then SetOpen(0)
+		If closeOnSelect Then SetOpen(0)
 	EndMethod
 
 
 	'override onClick to add open/close toggle
-	Method onClick:int(triggerEvent:TEventBase)
-		local button:int = triggerEvent.GetData().GetInt("button")
+	Method onClick:Int(triggerEvent:TEventBase)
+		Local button:Int = triggerEvent.GetData().GetInt("button")
 
-		if button = 1 'left button
+		If button = 1 'left button
 			'handled mouse button click to avoid clicks below
 			MouseManager.SetClickHandled(1)
 
 			SetOpen(1- IsOpen())
-		endif
+		EndIf
 	End Method
 
 
-	'handle clicks on the up/down-buttons and inform others about changes
-	Function onScrollWheel:Int( triggerEvent:TEventBase )
-		Local dropdown:TGUIDropDown = TGUIDropDown(triggerEvent.GetSender())
+	'handle mousewheel right on the drop down "input" (not the list)
+	Method onMouseScrollWheel:Int( triggerEvent:TEventBase ) override
 		Local value:Int = triggerEvent.GetData().getInt("value",0)
-		If Not dropdown Or value=0 Then Return False
+		If value=0 Then Return False
 
-		local newEntryPos:int = -1
+		Local newEntryPos:Int = -1
 		If value >= 1
-			newEntryPos = Min(dropdown.list.entries.count()-1, dropdown.GetEntryPos(dropdown.GetSelectedEntry()) + 1)
-		else
-			newEntryPos = Max(0, dropdown.GetEntryPos(dropdown.GetSelectedEntry()) - 1)
-		endif
-		dropdown.SetSelectedEntryByPos( newEntryPos )
+			newEntryPos = Min(list.entries.count()-1, GetEntryPos( GetSelectedEntry()) + 1 )
+		Else
+			newEntryPos = Max(0, GetEntryPos( GetSelectedEntry()) - 1 )
+		EndIf
+		SetSelectedEntryByPos( newEntryPos )
 
 		'set to accepted so that nobody else receives the event
 		triggerEvent.SetAccepted(True)
-	End Function
-
+		
+		Return True
+	End Method
+	
+	
+	Method RefreshValue()
+		If selectedEntry
+			SetValue(selectedEntry.GetValue())
+		Else
+			SetValue("")
+		EndIf
+	End Method
+	
 
 	Method SetSelectedEntry(item:TGUIObject)
+		If selectedEntry <> item
+			if selectedEntry then selectedEntry.SetSelected(False)
+			if item then item.SetSelected(True)
+		EndIf
 		selectedEntry = item
-		SetValue(item.GetValue())
+		
+		RefreshValue()
 
-		EventManager.triggerEvent( TEventSimple.Create("GUIDropDown.onSelectEntry", null, Self, item) )
+		TriggerBaseEvent(GUIEventKeys.GUIDropDown_onSelectEntry, Null, Self, item)
 	End Method
 
 
 	Method GetSelectedEntry:TGUIObject()
-		return selectedEntry
+		Return selectedEntry
 	End Method
 
 
-	Method SetSelectedEntryByPos:Int(itemPos:int=0)
-		local item:TGUIObject = GetEntryByPos(itemPos)
-		if item then SetSelectedEntry(item)
+	Method SetSelectedEntryByPos:Int(itemPos:Int=0)
+		Local item:TGUIObject = GetEntryByPos(itemPos)
+		If item Then SetSelectedEntry(item)
 	End Method
 
 
-	Method GetEntryByPos:TGUIObject(itemPos:int=0)
-		local item:TGUIObject = TGUIObject(list.entries.ValueAtIndex(itemPos))
-		if not item then return Null
+	Method GetEntryByPos:TGUIObject(itemPos:Int=0)
+		Local item:TGUIObject = TGUIObject(list.entries.ValueAtIndex(itemPos))
+		If Not item Then Return Null
 
-		return Item
+		Return Item
 	End Method
 
 
-	Method GetEntryPos:int(entry:TGUIObject)
-		if not entry then return -1
-		For local i:int = 0 until list.entries.count()
-			if entry = TGUIObject(list.entries.ValueAtIndex(i)) then return i
+	Method GetEntryPos:Int(entry:TGUIObject)
+		If Not entry Then Return -1
+		For Local i:Int = 0 Until list.entries.count()
+			If entry = TGUIObject(list.entries.ValueAtIndex(i)) Then Return i
 		Next
-		return -1
+		Return -1
 	End Method
 
 
 	Method GetEntries:TList()
-		return list.entries
+		Return list.entries
 	End Method
+	
+	
+	Method GetAutoSizeListContentHeight:Int()
+		'up to 3 items as default
+		local height:Int = 0
+		local itemCount:Int = list.entries.count()
 
+		For local i:int = 0 until 3
+			if itemCount <= i then exit
+
+			local item:TGUIObject = TGUIObject(list.entries.ValueAtIndex(i))
+			height :+ item.GetHeight()
+		Next
+		
+		return height
+	End Method
+	
 
 	'sets the height of the lists content area (ignoring padding)
-	Method SetListContentHeight:int(height:Float)
-		list.Resize(list.rect.GetW(), height + list.GetPadding().GetTop() + list.GetPadding().GetBottom())
+	Method SetListContentHeight:Int(height:Float)
+		'automatic mode?
+		if height < 0
+			automaticListHeight = True
+			height = GetAutoSizeListContentHeight()
+		else
+			automaticListHeight = False
+		endif
+		
+		listHeight = height + list.GetPadding().GetTop() + list.GetPadding().GetBottom()
+		list.SetSize(list.rect.GetW(), listHeight)
 	End Method
 
 
-	Method SetOpen:Int(bool:int)
+	'sets the height of the lists content area to X times of the Nth
+	'element
+	Method SetListContentHeight:Int(itemCount:int, referenceListItemIndex:Int)
+		if not list then return False
+		if not list.entries then return False
+		
+		'keep current
+		if list.entries.count() = 0 Then return False
+		'fall back to entry 0 if requesting an invalid item
+		if list.entries.count() <= referenceListItemIndex Then referenceListItemIndex = 0
+
+		local item:TGUIObject = TGUIObject(list.entries.ValueAtIndex(referenceListItemIndex))
+		SetListcontentHeight(itemCount * item.GetHeight())
+	End Method
+
+
+	Method SetZIndex(zIndex:Int) override
+		If Self.zIndex <> zIndex
+			list.SetZindex(zIndex +1)
+		EndIf
+		
+		Super.SetZIndex(zIndex)
+	End Method
+
+
+	Method SetOpen:Int(bool:Int)
 		open = bool
-		if open
+		If open
 			'update z index to be above parent's child widgets
-			if GetParent() <> self
-				if list.GetZIndex() <= GetZIndex() + 1
-					list.SetZIndex( GetZIndex() + 2)
-				endif
-			endif
+			If _parent
+'				if list.GetZIndex() <= GetZIndex() + 1
+				If GetZIndex() <= _parent.GetZIndex() + 1
+					SetZIndex( GetZIndex() + 2)
+					additionalZIndex = 2
+					'OnChildZIndexChanged()
+				EndIf
+			EndIf
 			list.Show()
-		else
+		Else
+			If _parent
+				If GetZIndex() > _parent.GetZIndex() + 1
+				'if list.GetZIndex() > GetZIndex() + 1
+					SetZIndex( GetZIndex() - additionalZIndex)
+					additionalZIndex = 0
+					'OnChildZIndexChanged()
+				EndIf
+			EndIf
+
 			list.Hide()
-		endif
+		EndIf
 	End Method
 
 
 	Method IsOpen:Int()
-		return open
+		Return open
 	End Method
 
 
 	Method AddItem:Int(item:TGUIDropDownItem)
-		if not list then return false
-
+		If Not list Then Return False
+	
 		list.AddItem(item)
+
+		if automaticListHeight
+			local autoHeight:Int = GetAutoSizeListContentHeight()
+			if autoHeight > 0
+				SetListContentHeight( autoHeight )
+				'restore
+				automaticListHeight = True
+			endif
+		endif
 	End Method
 
 
@@ -306,14 +374,14 @@ Type TGUIDropDown Extends TGUIInput
 
 	Method MoveListIntoPosition()
 		'move list to our position
-		local listPosY:int = GetScreenY() + GetScreenHeight()
+		Local listPosY:Int = GetScreenRect().GetY2()
 		'if list ends below screen end we might move it above the button
-		if listPosY + list.GetScreenHeight() > GetGraphicsManager().GetHeight()
-			if list.GetScreenHeight() < GetScreenY()
-				listPosY = GetScreenY() - list.GetScreenHeight()
-			endif
-		endif
-		list.SetPosition( GetScreenX(), listPosY )
+		If listPosY + list.GetScreenRect().GetH() > GetGraphicsManager().GetHeight()
+			If list.GetScreenRect().GetH() < GetScreenRect().GetY()
+				listPosY = GetScreenRect().GetY() - list.GetScreenRect().GetH()
+			EndIf
+		EndIf
+		list.SetPosition( GetScreenRect().GetX(), listPosY )
 	End Method
 
 
@@ -322,17 +390,17 @@ Type TGUIDropDown Extends TGUIInput
 		Super.Update()
 
 		'if the list is open, an "escape" is used to "abort the action"
-		if isOpen() and KeyManager.IsHit(KEY_ESCAPE)
+		If isOpen() And KeyManager.IsHit(KEY_ESCAPE)
 			'do not allow another ESC-press for 250ms
 			KeyManager.blockKey(KEY_ESCAPE, 250)
 			'close the list
 			SetOpen(False)
 			'remove focus from gui object
 			GuiManager.ResetFocus()
-		endif
+		EndIf
 
 		'close with right click
-		if isOpen() and (MouseManager.IsClicked(2) or MouseManager.IsLongClicked(1))
+		If isOpen() And (MouseManager.IsClicked(2) Or MouseManager.IsLongClicked(1))
 			'close the list
 			SetOpen(False)
 			'remove focus from gui object
@@ -343,16 +411,17 @@ Type TGUIDropDown Extends TGUIInput
 			MouseManager.ResetClicked(2)
 			'also avoid long click (touch screen)
 			MouseManager.ResetLongClicked(1)
-		endif
+		EndIf
 
 
-		local screenPos:TVec2D = GetScreenPos()
-		if not lastPosition or not lastPosition.IsSame(screenPos)
-			lastPosition = screenPos
+		Local screenPos:TVec2D = GetScreenRect().position
+		If Not lastPosition Or Not lastPosition.IsSame(GetScreenRect().position)
+			If Not lastPosition Then lastPosition = New TVec2D
+			lastPosition.CopyFrom( GetScreenRect().position )
 
 			'update list position (as it is not maintained as "child")
 			MoveListIntoPosition()
-		endif
+		EndIf
 	End Method
 End Type
 
@@ -363,10 +432,20 @@ End Type
 'using "TGUISelectListItem" provides ability to easily
 'add them to the list contained in TGUIDropDown
 Type TGUIDropDownItem Extends TGUISelectListItem
+	Method New()
+		'avoid that drop downs items get "active" (only dropdown parent
+		'should be able to get "active"!)
+		SetOption(GUI_OBJECT_CAN_GAIN_ACTIVE, False)
+	End Method
 
 
-    Method Create:TGUIDropDownItem(position:TVec2D=null, dimension:TVec2D=null, value:String="")
-		if not dimension then dimension = new TVec2D.Init(80,20)
+	Method GetClassName:String()
+		Return "tguidropdownitem"
+	End Method
+
+
+    Method Create:TGUIDropDownItem(position:TVec2D=Null, dimension:TVec2D=Null, value:String="")
+		If Not dimension Then dimension = New TVec2D.Init(80,20)
 
 		'no "super.Create..." as we do not need events and dragable and...
    		Super.CreateBase(position, dimension, "")
@@ -379,81 +458,81 @@ Type TGUIDropDownItem Extends TGUISelectListItem
 	End Method
 
 
-	Method GetScreenWidth:Float()
-		local listParent:TGUIListBase = TGUIListBase(GetParent("TGUIListBase"))
-		if not listParent or not listParent.guiEntriesPanel
-			Return GetParent().GetScreenWidth()
-		else
-			Return listParent.guiEntriesPanel.GetContentScreenWidth()
-		endif
-	End Method
-
-
 	Method DrawBackground()
-		if not isHovered() and not isSelected() then return
+		If Not isHovered() And Not isSelected() Then Return
 
 
-		local oldCol:TColor = new TColor.Get()
-		SetAlpha oldCol.a * GetScreenAlpha()
+		Local oldCol:SColor8; GetColor(oldCol)
+		Local oldColA:Float = GetAlpha()
+		SetAlpha oldColA * GetScreenAlpha()
 
-		local upperParent:TGUIObject = GetParent("TGUIListBase")
+		Local upperParent:TGUIObject = TGUIListBase.FindGUIListBaseParent(Self)
 		upperParent.RestrictContentViewPort()
 
 		If isHovered()
 			SetColor 250,210,100
-			DrawRect(getScreenX(), getScreenY(), GetScreenWidth(), GetScreenHeight())
-			SetColor 255,255,255
+			DrawRect(GetScreenRect().GetX(), GetScreenRect().GetY(), GetScreenRect().GetW(), GetScreenRect().GetH())
 		ElseIf isSelected()
-			SetAlpha GetAlpha()*0.5
+			SetAlpha oldcolA*0.5
 			SetColor 250,210,100
-			DrawRect(getScreenX(), getScreenY(), GetScreenWidth(), GetScreenHeight())
-			SetColor 255,255,255
-			SetAlpha GetAlpha()*2.0
+			DrawRect(GetScreenRect().GetX(), GetScreenRect().GetY(), GetScreenRect().GetW(), GetScreenRect().GetH())
 		EndIf
 
 		upperParent.ResetViewPort()
-		oldCol.SetRGBA()
+
+		SetColor(oldCol)
+		SetAlpha(oldColA)
 	End Method
 
 
 	'override onClick to close parental list
-	Method OnClick:int(triggerEvent:TEventBase)
+	Method OnClick:Int(triggerEvent:TEventBase)
 		Super.OnClick(triggerEvent)
 
-		local button:int = triggerEvent.GetData().GetInt("button")
+		Local button:Int = triggerEvent.GetData().GetInt("button")
 
-		if button = 1 'left button
+		If button = 1 'left button
 			'inform others that a dropdownitem was clicked
 			'this makes the "dropdownitem-clicked"-event filterable even
 			'if the itemclass gets extended (compared to the general approach
 			'of "guiobject.onclick")
-			EventManager.triggerEvent(TEventSimple.Create("GUIDropDownItem.onClick", new TData.AddNumber("button", button), Self, triggerEvent.GetReceiver()) )
-		endif
+			TriggerBaseEvent(GUIEventKeys.GUIDropDownItem_onClick, New TData.AddNumber("button", button), Self, triggerEvent.GetReceiver())
+
+			'we handled it
+			Return True
+		EndIf
+
+		Return False
 	End Method
 
 
 	Method DrawValue()
-		GetFont().DrawBlock(value, getScreenX()+2, GetScreenY(), GetScreenWidth()-4, GetScreenHeight(), ALIGN_LEFT_CENTER, valueColor)
+		'use rect height as limit as screen rect height might be limited
+		local scrRect:TRectangle = GetScreenRect()
+		GetFont().DrawBox(value, scrRect.GetX()+2, scrRect.GetY(), rect.GetW()-4, rect.GetH(), sALIGN_LEFT_CENTER, valueColor)
 	End Method
 
 
 	'override to select another parent
 	Method GetRestrictingViewPortObject:TGUIObject()
-		return GetParent("TGUIListBase")
+		Return TGUIListBase.FindGUIListBaseParent(Self)
 	End Method
 
 
 	'override
 	Method DrawContent()
-		local oldCol:TColor = new TColor.Get()
-		SetAlpha oldCol.a * GetScreenAlpha()
+		If GetScreenRect().GetH() = 0 Or GetScreenRect().GetW() = 0 Then Return
 
-		local upperParent:TGUIObject = GetParent("TGUIListBase")
-		upperParent.RestrictContentViewPort()
+		Local oldColA:Float = GetAlpha()
+		SetAlpha oldColA * GetScreenAlpha()
+
+		Local upperParent:TGUIObject = TGUIListBase.FindGUIListBaseParent(Self)
+		If upperParent Then upperParent.RestrictContentViewPort()
 
 		DrawValue()
 
-		upperParent.ResetViewPort()
-		oldCol.SetRGBA()
+		If upperParent Then	upperParent.ResetViewPort()
+
+		SetAlpha(oldColA)
 	End Method
 End Type

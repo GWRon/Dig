@@ -17,6 +17,11 @@ Type TGUIBackgroundBox Extends TGUIobject
 	Field spriteTintColor:TColor
 
 
+	Method GetClassName:String()
+		Return "tguibackgroundbox"
+	End Method
+
+
 	Method Create:TGUIBackgroundBox(position:TVec2D, dimension:TVec2D, limitState:String="")
 		Super.CreateBase(position, dimension, limitState)
 
@@ -32,7 +37,13 @@ Type TGUIBackgroundBox Extends TGUIobject
 
 	Method GetPadding:TRectangle()
 		'if no manual padding was setup - use sprite padding
-		if not _padding then return GetSprite().GetNinePatchContentBorder()
+		If Not _padding
+			Local s:TSprite = GetSprite()
+			if s and s.IsNinePatch()
+				Local r:sRect = GetSprite().GetNinePatchInformation().contentBorder
+				Return New TRectangle.Init(r.x, r.y, r.w, r.h)
+			endif
+		EndIf
 		Return Super.GetPadding()
 	End Method
 
@@ -40,30 +51,38 @@ Type TGUIBackgroundBox Extends TGUIobject
 	'acts as cache
 	Method GetSprite:TSprite()
 		'refresh cache if not set or wrong sprite name
-		if not sprite or sprite.GetName() <> spriteBaseName
+		If Not sprite Or sprite.GetName() <> spriteBaseName
 			sprite = GetSpriteFromRegistry(spriteBaseName)
 			'new -non default- sprite: adjust appearance
-			if sprite.GetName() <> "defaultsprite"
-				SetAppearanceChanged(TRUE)
-			endif
-		endif
-		return sprite
+			If sprite.GetName() <> "defaultsprite"
+				SetAppearanceChanged(True)
+			EndIf
+		EndIf
+		Return sprite
 	End Method
 
 
 	Method DrawContent()
-		'
 	End Method
 
 
 	Method DrawBackground()
-		Local drawPos:TVec2D = GetScreenPos()
-		local oldCol:TColor = new TColor.Get()
+		Local oldCol:SColor8; GetColor(oldCol)
+		Local oldColA:Float = GetAlpha()
+
 		'a local spriteAlpha means widget as "parent" can have alpha 1.0
 		'while the sprite is drawn with 0.3
-		SetAlpha oldCol.a * GetScreenAlpha() * spriteAlpha
-		if spriteTintColor then spriteTintColor.SetRGB()
-		GetSprite().DrawArea(drawPos.getX(), drawPos.getY(), GetScreenWidth(), GetScreenHeight())
-		oldCol.SetRGBA()
+		SetAlpha oldColA * GetScreenAlpha() * spriteAlpha
+		If spriteTintColor Then spriteTintColor.SetRGB()
+
+		Local r:TRectangle = GetScreenRect()
+		GetSprite().DrawArea(r.GetX(), r.GetY(), r.GetW(), r.GetH())
+
+		SetColor(oldCol)
+		SetAlpha(oldColA)
+	End Method
+
+
+	Method UpdateLayout()
 	End Method
 End Type

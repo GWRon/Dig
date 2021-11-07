@@ -2,14 +2,14 @@ Rem
 	====================================================================
 	GUI Window
 	====================================================================
-	
+
 	====================================================================
 	If not otherwise stated, the following code is available under the
 	following licence:
 
 	LICENCE: zlib/libpng
 
-	Copyright (C) 2015 Ronny Otto, digidea.de
+	Copyright (C) 2015-now Ronny Otto, digidea.de
 
 	This software is provided 'as-is', without any express or
 	implied warranty. In no event will the authors be held liable
@@ -43,6 +43,11 @@ Type TGUIWindowBase Extends TGUIPanel
 	Global defaultCaptionColor:TColor = null
 
 
+	Method Create:TGUIWindowBase(pos:SVec2I, dimension:SVec2I, limitState:String = "")
+		Return Create(new TVec2D.Init(pos.x, pos.y), new TVec2D.Init(dimension.x, dimension.y), limitState)
+	End Method
+
+
 	Method Create:TGUIWindowBase(pos:TVec2D, dimension:TVec2D, limitState:String = "")
 		Super.CreateBase(pos, dimension, limitState)
 
@@ -56,22 +61,22 @@ Type TGUIWindowBase Extends TGUIPanel
 	End Method
 
 
-	'override to delete children too
-	Method Remove:Int()
+	'override to delete additional widgets too
+	Method Remove:Int() override
 		Super.Remove()
 
 		if guiCaptionTextBox then guiCaptionTextBox.Remove()
 
 		return True
 	End Method
-	
+
 
 	Method InitWindow(dimension:TVec2D)
 		If Not guiBackground
 			SetBackground( new TGUIBackgroundBox.Create(null, null) )
 		Else
 			guiBackground.rect.position.SetXY(0,0)
-			guiBackground.resize(dimension.GetX(), dimension.GetY())
+			guiBackground.SetSize(dimension.GetX(), dimension.GetY())
 		EndIf
 
 		'set another panel background
@@ -92,7 +97,7 @@ Type TGUIWindowBase Extends TGUIPanel
 	'content panel gets created if not done yet
 	Method GetGuiContent:TGUIPanel()
 		if not guiContent
-			guiContent = new TGUIPanel.Create(new TVec2D, new TVec2D.Init(GetContentScreenWidth(), GetContentScreenHeight()), "")
+			guiContent = new TGUIPanel.Create(new TVec2D, new TVec2D.Init(GetContentScreenRect().GetW(), GetContentScreenRect().GetH()), "")
 			AddChild(guiContent)
 		endif
 
@@ -102,20 +107,25 @@ Type TGUIWindowBase Extends TGUIPanel
 
 	'override to add guiContent-resizing
 	'size 0, 0 is not possible (leads to autosize)
-	Method Resize(w:Float = 0, h:Float = 0)
-		Super.Resize(w, h)
-
-		'resize content (if exists) to use all available content space
-		If guiContent
-			guiContent.SetPosition(0,0)
-			guiContent.resize(GetContentScreenWidth(),GetContentScreenHeight())
-		EndIf
+	Method SetSize(w:Float = 0, h:Float = 0)
+		Super.SetSize(w, h)
 	End Method
 
 
+	'override
+	Method UpdateLayout()
+		Super.UpdateLayout()
 
-	'overwrite default to reapply caption/value to reposition them
-	Method onStatusAppearanceChange:int()
+		'resize content (if exists) to use all available content space
+		If guiContent
+			local contentScreenRect:TRectangle = GetContentScreenRect()
+			'content element is aligned according to padding setup, so 0,0
+			'is ok
+			guiContent.SetPosition(0,0)
+			guiContent.SetSize(contentScreenRect.GetW(), contentScreenRect.GetH())
+		EndIf
+
+
 		if guiCaptionTextBox
 			Local rect:TRectangle = new TRectangle.Init(-1,-1,-1,-1)
 			'if an area was defined - use as much values of this as
@@ -130,23 +140,24 @@ Type TGUIWindowBase Extends TGUIPanel
 			'calculation of undefined/automatic values
 			'vertical center the caption between 0 and the start of
 			'content but to make it visible in all cases use "max(...)".
-			Local padding:TRectangle
 			if guiBackground
-				padding = guiBackground.GetSprite().GetNinePatchContentBorder()
+				Local padding:SRect = guiBackground.GetSprite().GetNinePatchInformation().contentBorder
+				if rect.position.x = -1 then rect.position.x = padding.GetLeft()
+				if rect.position.y = -1 then rect.position.y = 0
+				if rect.dimension.x = -1 then rect.dimension.x = GetContentScreenRect().GetW()
+				if rect.dimension.y = -1 then rect.dimension.y = Max(25, padding.GetTop())
 			else
-				padding = new TRectangle.Init()
+				if rect.position.x = -1 then rect.position.x = 0
+				if rect.position.y = -1 then rect.position.y = 0
+				if rect.dimension.x = -1 then rect.dimension.x = GetContentScreenRect().GetW()
+				if rect.dimension.y = -1 then rect.dimension.y = 25
 			endif
-			if rect.position.x = -1 then rect.position.x = padding.GetLeft()
-			if rect.position.y = -1 then rect.position.y = 0
-			if rect.dimension.x = -1 then rect.dimension.x = GetContentScreenWidth()
-			if rect.dimension.y = -1 then rect.dimension.y = Max(25, padding.GetTop())
 
 
 			'reposition in all cases
 			guiCaptionTextBox.rect.position.SetXY(rect.GetX(), rect.GetY())
-			guiCaptionTextBox.resize(rect.GetW(), rect.GetH())
+			guiCaptionTextBox.SetSize(rect.GetW(), rect.GetH())
 		endif
-
 	End Method
 
 
@@ -185,26 +196,26 @@ Type TGUIWindowBase Extends TGUIPanel
 			guiCaptionTextBox.value = caption
 
 			'manually call reposition function
-			onStatusAppearanceChange()
+			InvalidateLayout()
 		EndIf
 	End Method
 
 
 	Method SetCaptionAndValue:Int(caption:String="", value:String="")
-		Local oldTextboxHeight:Float = GetContentScreenHeight()
+		Local oldTextboxHeight:Float = GetContentScreenRect().GetH()
 
 		SetCaption(caption)
 		SetValue(value)
 
 		'resize window
 		if guiTextBox
-			if guiTextBox.getHeight() - GetContentScreenHeight() > 0
-				Self.resize(0, GetScreenHeight() + Max(guiTextBox.GetScreenHeight(), guiTextBox.getHeight()) - GetContentScreenHeight())
+			if guiTextBox.getHeight() - GetContentScreenRect().GetH() > 0
+				Self.SetSize(0, GetScreenRect().GetH() + Max(guiTextBox.GetScreenRect().GetH(), guiTextBox.getHeight()) - GetContentScreenRect().GetH())
 			else
-				Self.resize(0, GetScreenHeight() + guiTextBox.getHeight() - GetContentScreenHeight() + 4)
+				Self.SetSize(0, GetScreenRect().GetH() + guiTextBox.getHeight() - GetContentScreenRect().GetH() + 4)
 			endif
 		else
-			Self.resize(0, rect.getH())
+			Self.SetSize(0, rect.getH())
 		endif
 
 		Return True

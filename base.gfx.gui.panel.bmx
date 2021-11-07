@@ -15,6 +15,12 @@ Type TGUIPanel Extends TGUIObject
 	Field guiTextBox:TGUITextBox
 	Field guiTextBoxAlignment:TVec2D
 	Field _defaultValueColor:TColor
+	Field useBackgroundPadding:int = True
+
+
+	Method GetClassName:String()
+		Return "tguiscrollablepanel"
+	End Method
 
 
 	Method Create:TGUIPanel(pos:TVec2D, dimension:TVec2D, limitState:String = "")
@@ -33,30 +39,27 @@ Type TGUIPanel Extends TGUIObject
 	End Method
 
 
+	Method SetPadding:Int(pTop:Float, pLeft:Float, pBottom:Float, pRight:Float)
+		if guiBackground
+			useBackgroundPadding = False
+		endif
+		Super.SetPadding(pTop, pLeft, pBottom, pRight)
+	End Method
+
+
 	Method GetPadding:TRectangle()
 		'if no manual padding was setup - use sprite padding
-		if not _padding and guiBackground then return guiBackground.GetPadding()
+		if guiBackground and useBackgroundPadding then return guiBackground.GetPadding()
 		Return Super.GetPadding()
 	End Method
 
 
-	Method Resize(w:Float = 0, h:Float = 0)
+	Method SetSize(w:Float = 0, h:Float = 0)
 		'resize self
-		If w > 0 Then rect.dimension.setX(w) Else w = rect.GetW()
-		If h > 0 Then rect.dimension.setY(h) Else h = rect.GetH()
+		If w <= 0 Then w = rect.GetW()
+		If h <= 0 Then h = rect.GetH()
 
-		'move background
-		If guiBackground Then guiBackground.resize(w,h)
-		'move textbox
-		If guiTextBox
-			'text box is aligned to padding - so can start at "0,0"
-			'-> no additional offset
-			guiTextBox.rect.position.SetXY(0,0)
-
-			'getContentScreenWidth takes GetPadding into consideration
-			'which considers guiBackground already - so no need to distinguish
-			guiTextBox.resize(GetContentScreenWidth(),GetContentScreenHeight())
-		EndIf
+		Super.SetSize(w, h)
 	End Method
 
 
@@ -66,14 +69,6 @@ Type TGUIPanel Extends TGUIObject
 		if guiTextBox and guiTextBox.isAppearanceChanged() then return TRUE
 
 		return Super.isAppearanceChanged()
-	End Method
-
-
-	'override default to handle image changes
-	Method onStatusAppearanceChange:int()
-		'if background changed - or textbox, we to have resize and
-		'reposition accordingly
-		resize()
 	End Method
 
 
@@ -91,8 +86,13 @@ Type TGUIPanel Extends TGUIObject
 			guiBackground = obj
 			'set background to ignore parental padding (so it starts at 0,0)
 			guiBackground.SetOption(GUI_OBJECT_IGNORE_PARENTPADDING, True)
+			'never focus it (ignores "hover")
+			guiBackground.SetOption(GUI_OBJECT_CAN_GAIN_FOCUS, False)
 			'set background to to be on same level than parent
 			guiBackground.SetZIndex(-1)
+
+			'invalidate padding
+			onChangePadding()
 
 			'we manage it now, not the guimanager
 			addChild(obj)
@@ -116,11 +116,6 @@ Type TGUIPanel Extends TGUIObject
 				guiTextBox = Null
 			EndIf
 		Else
-			Local padding:TRectangle = new TRectangle.Init(0,0,0,0)
-			'read padding from background
-
-			if guiBackground then padding = guiBackground.GetSprite().GetNinePatchContentBorder()
-
 			if not guiTextBox
 				guiTextBox = New TGUITextBox.Create(new TVec2D.Init(0,0), new TVec2D.Init(50,50), value, "")
 				'we take care of the text box
@@ -141,7 +136,7 @@ Type TGUIPanel Extends TGUIObject
 		EndIf
 
 		'to resize textbox accordingly
-		Resize()
+		SetSize(-1,-1)
 	End Method
 
 
@@ -160,14 +155,45 @@ Type TGUIPanel Extends TGUIObject
 	End Method
 
 
+	Method UpdateChildren:Int()
+		If Not _children Or _children.Count() = 0 Then Return False
+		If HasOption(GUI_OBJECT_STATIC_CHILDREN) Then Return False
+
+		'update added elements
+		For Local obj:TGUIobject = EachIn _children.ReverseEnumerator()
+			obj.update()
+		Next
+	End Method
+
+
 	Method Update:Int()
 		'as we do not call "super.Update()" - we handle this manually
 		'if appearance changed since last update tick: inform widget
 		If isAppearanceChanged()
-			onStatusAppearanceChange()
+			onAppearanceChanged()
 			SetAppearanceChanged(false)
 		Endif
 
 		UpdateChildren()
+	End Method
+
+
+	Method UpdateLayout()
+'		Super.UpdateLayout()
+
+		'move textbox
+		If guiTextBox
+			'text box is aligned to padding - so can start at "0,0"
+			'-> no additional offset
+			guiTextBox.SetPosition(0,0)
+
+			'getContentScreenWidth takes GetPadding into consideration
+			'which considers guiBackground already - so no need to distinguish
+			guiTextBox.SetSize(GetContentScreenRect().GetW(), GetContentScreenRect().GetH())
+		EndIf
+
+		if guiBackground
+			guiBackground.SetSize(rect.GetW(), rect.GetH())
+		Endif
 	End Method
 End Type

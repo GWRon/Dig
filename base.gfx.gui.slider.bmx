@@ -49,6 +49,7 @@ Type TGUISlider extends TGUIObject
 	Field limitValue:int = False
 	Field limitMinValue:Double
 	Field limitMaxValue:Double
+	Field mouseScrollWheelStepSize:Double = 1.0
 	Field steps:int = 0 '<1 disables steps
 	Field handleSpriteName:String = "gfx_gui_slider.handle"
 	Field gaugeSpriteName:String = "gfx_gui_slider.gauge"
@@ -72,6 +73,12 @@ Type TGUISlider extends TGUIObject
 	Const VALUETYPE_INTEGER:int = 0
 	Const VALUETYPE_FLOAT:int = 1
 	Const VALUETYPE_DOUBLE:int = 2
+
+
+	Method GetClassName:String()
+		Return "tguislider"
+	End Method
+
 
 	Method Create:TGUISlider(pos:TVec2D, dimension:TVec2D, value:String, State:String = "")
 		'setup base widget
@@ -161,25 +168,47 @@ Type TGUISlider extends TGUIObject
 
 	'override default
 	Method SetValue(newValue:string)
-		local newValueD:Double = Max(minValue, Min(maxValue, Double(newValue)))
-		if steps > 0
-			local length:Double = (maxValue - minValue)
-			local stepSize:Double = length / steps
-			'math. rounding
-			'newValueD = ceil(stepSize * (newValueD / length) - 0.5)
-			'step rounding
-			'newValueD = stepSize * ceil(stepSize * (newValueD / length) -0.5)
-			newValueD = Ceil(newValueD / stepSize - 0.5) * stepSize
-		endif
+		If valueType = VALUETYPE_INTEGER
+			Local newValueI:Int = sgn(Double(newValue)) * Abs(Double(newValue) + 0.5)
+			Local minValueI:Int = sgn(minValue) * Int(Abs(minValue) + 0.5)
+			Local maxValueI:Int = sgn(maxValue) * Int(Abs(maxValue) + 0.5)
+			if minValueI > newValueI then newValueI = minValueI
+			if maxValueI < newValueI then newValueI = maxValueI
+			
+			'clamp value by potential limitations
+			If limitValue
+				Local limitMinValueI:Int = sgn(limitMinValue) * Int(Abs(limitMinValue) + 0.5)
+				Local limitMaxValueI:Int = sgn(limitMaxValue) * Int(Abs(limitMaxValue) + 0.5)
+				if limitMinValueI > newValueI then newValueI = limitMinValueI
+				if limitMaxValueI < newValueI then newValueI = limitMaxValueI
+			EndIf
 
-		'clamp value by potential limitations
-		if limitValue then newValueD = Max(limitMinValue, Min(newValueD, limitMaxValue))
+			'only adjust when different
+			If sgn(Double(value)) * Int(Abs(Double(value))+0.5) <> newValueI
+				value = newValueI
+				TriggerBaseEvent(GUIEventKeys.GUIObject_OnChangeValue, null, self )
+			EndIf
+		Else
+			local newValueD:Double = Max(minValue, Min(maxValue, Double(newValue)))
+			if steps > 0
+				local length:Double = (maxValue - minValue)
+				local stepSize:Double = length / steps
+				'math. rounding
+				'newValueD = ceil(stepSize * (newValueD / length) - 0.5)
+				'step rounding
+				'newValueD = stepSize * ceil(stepSize * (newValueD / length) -0.5)
+				newValueD = Ceil(newValueD / stepSize - 0.5) * stepSize
+			endif
 
-		'only adjust when different
-		if value <> string(newValueD)
-			value = newValueD
-			EventManager.triggerEvent( TEventSimple.Create( "guiobject.onChangeValue", null, self ) )
-		endif
+			'clamp value by potential limitations
+			if limitValue then newValueD = Max(limitMinValue, Min(newValueD, limitMaxValue))
+
+			'only adjust when different
+			if value <> string(newValueD)
+				value = newValueD
+				TriggerBaseEvent(GUIEventKeys.GUIObject_OnChangeValue, null, self )
+			endif
+		EndIf
 	End Method
 
 
@@ -187,11 +216,11 @@ Type TGUISlider extends TGUIObject
 	Method GetValue:String()
 		Select valueType
 			case VALUETYPE_INTEGER
-				return int(value)
+				return sgn(Double(value)) * Int(Abs(Double(value)) + 0.5)
 			case VALUETYPE_FLOAT
-				return float(value)
+				return Float(value)
 			default
-				return double(value)
+				return Double(value)
 		End Select
 	End Method
 
@@ -200,8 +229,8 @@ Type TGUISlider extends TGUIObject
 		'convert current mouse position to local widget coordinates
 		'-9 is "manual adjustment"
 		local mousePos:TVec2D = New TVec2D.Init(..
-									MouseManager.x - GetScreenX() - GetGaugeOffsetX(), ..
-									MouseManager.y - GetScreenY() - GetGaugeOffsetY() ..
+									MouseManager.x - GetScreenRect().GetX() - GetGaugeOffsetX(), ..
+									MouseManager.y - GetScreenRect().GetY() - GetGaugeOffsetY() ..
 								)
 
 		local scale:Float = (maxValue - minValue + 1) / Float(maxValue - minValue)
@@ -221,7 +250,7 @@ Type TGUISlider extends TGUIObject
 				SetRelativeValue( Max(0.0, scale * Min(1.0, (mousePos.y) / GetGaugeH())) )
 		End Select
 
-		EventManager.triggerEvent( TEventSimple.Create( "guislider.setValueByMouse", null, self ) )
+		TriggerBaseEvent(GUIEventKeys.GUISlider_SetValueByMouse,null, self )
 	End Method
 
 
@@ -321,22 +350,57 @@ Type TGUISlider extends TGUIObject
 		'only if left button was used
 		if triggerEvent.GetData().GetInt("button",0) <> 1 then return False
 
-		'only if not already handling the same situation with mouseDown
-		if not MouseIsDown Then SetValueByMouse
+		SetValueByMouse()
 
 		return Super.onClick(triggerEvent)
 	End Method
 
 
+	Method onMouseDown:Int(triggerEvent:TEventBase)
+		'only if left button was used
+		if triggerEvent.GetData().GetInt("button",0) <> 1 then return False
+
+		SetValueByMouse()
+
+		return Super.onMouseDown(triggerEvent)
+	End Method
+
+
+	'handle mousewheel right on the drop down "input" (not the list)
+	Method onMouseScrollWheel:Int( triggerEvent:TEventBase ) override
+		Local value:Int = triggerEvent.GetData().getInt("value",0)
+		If value = 0 Then Return False
+
+		If steps > 0
+			if value > 0 
+				SetValue( GetCurrentStep() + 1 )
+				TriggerBaseEvent(GUIEventKeys.GUISlider_SetValueByMouse, null, self )
+			Elseif value < 0
+				SetValue( GetCurrentStep() - 1 )
+				TriggerBaseEvent(GUIEventKeys.GUISlider_SetValueByMouse, null, self )
+			EndIf
+		Else
+			if valueType = VALUETYPE_INTEGER
+				SetValue( GetCurrentValue() + Int(mouseScrollWheelStepSize+0.5) *  value)
+			Else
+				SetValue( GetCurrentValue() + (maxValue - minValue) * mouseScrollWheelStepSize * 0.01 * value)
+			EndIf
+			TriggerBaseEvent(GUIEventKeys.GUISlider_SetValueByMouse, null, self )
+		EndIf
+
+		'set to accepted so that nobody else receives the event
+		triggerEvent.SetAccepted(True)
+		
+		Return True
+	End Method
+	
+
 	'override to update caption
 	Method Update:int()
 		Super.Update()
 
-		'adjust value
-		if MouseIsDown and hasFocus() Then SetValueByMouse()
-
 		'process long clicks to avoid odd "right click behaviour"
-		if hasFocus() and MouseManager.IsLongClicked(1)
+		if IsFocused() and MouseManager.IsLongClicked(1)
 			MouseManager.ResetLongClicked(1)
 		endif
 	End Method
@@ -409,7 +473,7 @@ Type TGUISlider extends TGUIObject
 						if switchDirection
 							gaugeSprite.DrawArea(position.getX() + GetGaugeOffsetX(), position.getY() + GetGaugeOffsetY(), filledW, GetGaugeH(), -1, TSprite.BORDER_RIGHT)
 						else
-							gaugeFilledSprite.DrawArea(position.getX() + GetGaugeOffsetX(), position.getY() + GetGaugeOffsetY(), filledW - gaugeFilledSprite.GetNinePatchBorderDimension().GetRight(), GetGaugeH(), -1, TSprite.BORDER_RIGHT)
+							gaugeFilledSprite.DrawArea(position.getX() + GetGaugeOffsetX(), position.getY() + GetGaugeOffsetY(), filledW - gaugeFilledSprite.GetNinePatchInformation().contentBorder.GetRight(), GetGaugeH(), -1, TSprite.BORDER_RIGHT)
 						endif
 					endif
 
@@ -532,7 +596,7 @@ Type TGUISlider extends TGUIObject
 	'draw foreground element
 	Method DrawHandle(position:TVec2D)
 		local state:string = ""
-		if MouseIsDown then state = ".active"
+		If IsActive() then state = ".active"
 
 		Local sprite:TSprite = GetHandleSprite()
 		if state <> "" then sprite = GetSpriteFromRegistry(GetHandleSpriteName() + state, sprite)
@@ -582,24 +646,29 @@ Type TGUISlider extends TGUIObject
 
 
 	Method DrawContent()
-		Local atPoint:TVec2D = GetScreenPos()
-		Local oldCol:TColor = new TColor.Get()
+		Local oldCol:SColor8; GetColor(oldCol)
+		Local oldColA:Float = GetAlpha()
 
-		SetColor 255, 255, 255
-		SetAlpha oldCol.a * GetScreenAlpha() * _gaugeAlpha
-		DrawGauge(atPoint)
-		SetAlpha oldCol.a * GetScreenAlpha()
-		DrawHandle(atPoint)
+		SetColor( 255, 255, 255 )
+		SetAlpha( oldColA * GetScreenAlpha() * _gaugeAlpha )
+		DrawGauge( GetScreenRect().position )
+		SetAlpha( oldColA * GetScreenAlpha() )
+		DrawHandle( GetScreenRect().position )
 
 		rem
 		?debug
 		SetColor 0,0,0
-		DrawRect(GetScreenX()+40, GetScreenY(), 100,20)
+		DrawRect(GetScreenRect().GetX()+40, GetScreenRect().GetY(), 100,20)
 		SetAlpha 1.0
 		SetColor 255,255,255
-		DrawText(GetValue()+" : " + Left(value, 6), GetScreenX()+42, GetScreenY()+2)
+		DrawText(GetValue()+" : " + Left(value, 6), GetScreenRect().GetX()+42, GetScreenRect().GetY()+2)
 		?
 		endrem
-		oldCol.SetRGBA()
+		SetColor(oldCol)
+		SetAlpha(oldColA)
+	End Method
+
+
+	Method UpdateLayout()
 	End Method
 End Type

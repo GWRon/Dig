@@ -2,7 +2,7 @@ Rem
 	====================================================================
 	GUI Modal Window
 	====================================================================
-	
+
 	====================================================================
 	If not otherwise stated, the following code is available under the
 	following licence:
@@ -46,7 +46,13 @@ Type TGUIModalWindow Extends TGUIWindowBase
 	'the area the window centers to
 	Field screenArea:TRectangle = Null
 	Field buttons:TGUIButton[]
+	Field buttonCallbacks:Int(index:Int, sender:TGUIObject)[]
+	'0 = centered, -1 = left aligned, 1 = right aligned
+	Field buttonAlignment:Int = 0
+	'templates for button positions
+	Field buttonPositionTemplate:Int = 0
 	Field autoAdjustHeight:Int = True
+	Field isOpen:Int
 	'=== CLOSING VARIABLES ===
 	'indicator if currently closing
 	Field closeActionStarted:Long = 0
@@ -73,11 +79,23 @@ Type TGUIModalWindow Extends TGUIWindowBase
 
 
 		'we want to know if one clicks on a windows buttons
-		AddEventListener(EventManager.registerListenerMethod("guiobject.onClick", Self, "onButtonClick"))
+		AddEventListener(EventManager.registerListenerMethod(GUIEventKeys.GUIObject_OnClick, Self, "onButtonClick"))
 
 		'fire event so others know that the window is created
-		EventManager.triggerEvent(TEventSimple.Create("guiModalWindow.onCreate", Self))
+		TriggerBaseEvent(GUIEventKeys.GUIModalWindow_OnCreate, Null, Self)
 		Return Self
+	End Method
+
+
+	'override to delete children too (not really needed)
+	Method Remove:Int() override
+		Super.Remove()
+
+		'buttons are normally removed by "Super.Remove()" already
+		'as they are added as "children" and are iterated on its own 
+		For Local o:TGUIObject = EachIn buttons
+			o.Remove()
+		Next
 	End Method
 
 
@@ -91,7 +109,7 @@ Type TGUIModalWindow Extends TGUIWindowBase
 	Method SetDialogueType:Int(typeID:Int)
 		For Local button:TGUIobject = EachIn Self.buttons
 			button.remove()
-			'DeleteChild(button)
+			'RemoveChild(button)
 		Next
 		buttons = New TGUIButton[0] '0 sized array
 
@@ -99,15 +117,20 @@ Type TGUIModalWindow Extends TGUIWindowBase
 			'a default button
 			Case 1
 				buttons = buttons[..1]
+				buttonCallbacks = buttonCallbacks[..1]
 				buttons[0] = New TGUIButton.Create(new TVec2D.Init(0, 0), new TVec2D.Init(120, -1), GetLocale("OK"))
+				buttonCallbacks[0] = onClickCallback_Close
 				AddChild(buttons[0])
 				'set to ignore parental padding (so it starts at 0,0)
 				buttons[0].SetOption(GUI_OBJECT_IGNORE_PARENTPADDING, True)
 			'yes and no button
 			Case 2
 				buttons = buttons[..2]
+				buttonCallbacks = buttonCallbacks[..2]
 				buttons[0] = New TGUIButton.Create(new TVec2D.Init(0, 0), new TVec2D.Init(90, -1), GetLocale("YES"))
 				buttons[1] = New TGUIButton.Create(new TVec2D.Init(0, 0), new TVec2D.Init(90, -1), GetLocale("NO"))
+				buttonCallbacks[0] = onClickCallback_Close
+				buttonCallbacks[1] = onClickCallback_Close
 				AddChild(buttons[0])
 				AddChild(buttons[1])
 				'set to ignore parental padding (so it starts at 0,0)
@@ -116,17 +139,57 @@ Type TGUIModalWindow Extends TGUIWindowBase
 
 		End Select
 	End Method
+	
+	
+	Function onClickCallback_Close:Int(index:Int, sender:TGUIObject)
+		local window:TGUIModalWindow = TGUIModalWindow(sender)
+		if not window then return False
+
+		window.Close(index)
+	End Function
 
 
 	'size 0, 0 is not possible (leads to autosize)
-	Method Resize(w:Float = 0, h:Float = 0)
-		Super.Resize(w, h)
+	Method SetSize(w:Float = 0, h:Float = 0)
+		Super.SetSize(w, h)
+		
 		'move button
 		If buttons.length = 1
-			buttons[0].rect.position.setXY(rect.GetW()/2 - buttons[0].rect.GetW()/2, GetScreenHeight() - 49)
+			Select buttonAlignment
+				Case -1
+					buttons[0].SetPosition(0, GetScreenRect().GetH() - 49)
+				Case 1
+					buttons[0].SetPosition(rect.GetW() - buttons[0].rect.GetW(), GetScreenRect().GetH() - 49)
+				Default
+					buttons[0].SetPosition(rect.GetW()/2 - buttons[0].rect.GetW()/2, GetScreenRect().GetH() - 49)
+			End Select
 		ElseIf buttons.length = 2
-			buttons[0].rect.position.setXY(rect.GetW()/2 - buttons[0].rect.GetW() - 10, GetScreenHeight() - 49)
-			buttons[1].rect.position.setXY(rect.GetW()/2 + 10, GetScreenHeight() - 49)
+			Select buttonAlignment
+				Case -1
+					buttons[0].SetPosition(0, GetScreenRect().GetH() - 49)
+					buttons[1].SetPosition(buttons[0].rect.GetW() + 10, GetScreenRect().GetH() - 49)
+				Case 1
+					buttons[0].SetPosition(rect.GetW() - buttons[1].rect.GetW() - 10 - buttons[0].rect.GetW(), GetScreenRect().GetH() - 49)
+					buttons[1].SetPosition(rect.GetW() - buttons[0].rect.GetW(), GetScreenRect().GetH() - 49)
+
+				Default
+					buttons[0].SetPosition(rect.GetW()/2 - buttons[0].rect.GetW() - 10, GetScreenRect().GetH() - 49)
+					buttons[1].SetPosition(rect.GetW()/2 + 10, GetScreenRect().GetH() - 49)
+			End Select
+		EndIf
+
+		'move some buttons according to a template (here: left or right)
+		'while keeping position of others intact
+		If buttonPositionTemplate = 1
+			if buttons.length > 1
+				buttons[0].SetPositionX(rect.GetW()/2 - buttons[0].rect.GetW()/2)
+				buttons[1].SetPositionX(GetContentX())
+			endif
+		ElseIf buttonPositionTemplate = 2
+			if buttons.length > 1
+				buttons[0].SetPositionX(rect.GetW()/2 - buttons[0].rect.GetW()/2)
+				buttons[1].SetPositionX(GetContentX() - buttons[1].rect.GetW())
+			endif
 		EndIf
 
 		Recenter()
@@ -134,13 +197,13 @@ Type TGUIModalWindow Extends TGUIWindowBase
 
 
 	'overwrite windowBase-method to recenter after appearance change
-	Method onStatusAppearanceChange:int()
-		Super.onStatusAppearanceChange()
+	Method onAppearanceChanged:int()
+		Super.onAppearanceChanged()
 		Recenter()
 	End Method
 
 
-	Method Recenter:Int(moveBy:TVec2D=Null)
+	Method Recenter:Int(moveByX:Float = 0, moveByY:Float = 0)
 		'center the window
 		Local centerX:Float=0.0
 		Local centerY:Float=0.0
@@ -152,28 +215,31 @@ Type TGUIModalWindow Extends TGUIWindowBase
 			centerY = screenArea.getY() + screenArea.GetH()/2
 		EndIf
 
-		If Not moveBy Then moveBy = new TVec2D.Init(0,0)
-		rect.position.setXY(centerX - rect.getW()/2 + moveBy.getX(),centerY - rect.getH()/2 + moveBy.getY() )
+		SetPosition(centerX - rect.getW()/2 + moveByX,centerY - rect.getH()/2 + moveByY)
 	End Method
 
 
 	Method Open:Int()
-		EventManager.triggerEvent(TEventSimple.Create("guiModalWindow.onOpen", Self))
+		TriggerBaseEvent(GUIEventKeys.GUIModalWindow_OnOpen, Null, Self)
+
+		isOpen = True
 	End Method
-	
+
 
 	'close the window (eg. with an animation)
 	Method Close:Int(closeButton:Int=-1)
 		'only close once :D
 		if closeActionStarted then return False
 		
+		isOpen = False
+
 		closeActionStarted = True
 		closeActionTime = Time.GetAppTimeGone()
 		closeActionStartPosition = rect.position.copy()
 
 		'fire event so others know that the window is closed
 		'and what button was used
-		EventManager.triggerEvent(TEventSimple.Create("guiModalWindow.onClose", new TData.AddNumber("closeButton", closeButton) , Self))
+		TriggerBaseEvent(GUIEventKeys.GUIModalWindow_OnClose, new TData.AddNumber("closeButton", closeButton) , Self)
 	End Method
 
 
@@ -208,7 +274,10 @@ Type TGUIModalWindow Extends TGUIWindowBase
 
 		For Local i:Int = 0 To Self.buttons.length - 1
 			If Self.buttons[i] <> sender Then Continue
-			Self.Close(i)
+			If Self.buttonCallbacks[i]
+				'run callback with window as param
+				Self.buttonCallbacks[i](i, self)
+			EndIf
 		Next
 	End Method
 
@@ -220,11 +289,11 @@ Type TGUIModalWindow Extends TGUIWindowBase
 		Super.Update()
 
 		if closeActionStarted
-			local yUntilScreenLeft:int = VirtualHeight() - (closeActionStartPosition.y + GetScreenHeight())
-			recenter(new TVec2D.Init(0, Float(- yUntilScreenLeft * TInterpolation.BackIn(0.0, 1.0, Min(closeActionDuration, Time.GetAppTimeGone() - closeActionTime), closeActionDuration))))
+			local yUntilScreenLeft:int = VirtualHeight() - (closeActionStartPosition.y + GetScreenRect().GetH())
+			Recenter(0, Float(- yUntilScreenLeft * TInterpolation.BackIn(0.0, 1.0, Min(closeActionDuration, Time.GetAppTimeGone() - closeActionTime), closeActionDuration)))
 		endif
 
-		if Not GuiManager.GetKeystrokeReceiver() and KeyManager.IsHit(KEY_ESCAPE)
+		if Not GuiManager.GetKeyboardInputReceiver() and KeyManager.IsHit(KEY_ESCAPE)
 			'do not allow another ESC-press for X ms
 			KeyManager.blockKey(KEY_ESCAPE, 250)
 			self.Close()
@@ -246,21 +315,23 @@ Type TGUIModalWindow Extends TGUIWindowBase
 
 
 	Method DrawBackground()
-		local oldCol:TColor = new TColor.Get()
+		Local oldCol:SColor8; GetColor(oldCol)
+		Local oldColA:Float = GetAlpha()
 		local newAlpha:Float = 1.0
 		if closeActionStarted
 			newAlpha = 1.0 - TInterpolation.Linear(0.0, 1.0, Min(closeActionDuration, Time.GetAppTimeGone() - closeActionTime), closeActionDuration)
 		endif
 		self.alpha = newAlpha
 
-		SetAlpha(oldCol.a * alpha * darkenedAreaAlpha)
+		SetAlpha(oldColA * alpha * darkenedAreaAlpha)
 		SetColor(0, 0, 0)
 		If Not DarkenedArea
 			DrawRect(0, 0, GetGraphicsManager().GetWidth(), GetGraphicsManager().GetHeight())
 		Else
 			DrawRect(DarkenedArea.getX(), DarkenedArea.getY(), DarkenedArea.getW(), DarkenedArea.getH())
 		EndIf
-		oldCol.SetRGBA()
+		SetColor(oldCol)
+		SetAlpha(oldColA)
 
 		'we manage drawing and updating our background
 		If guiBackground and guiBackground.IsEnabled() then guiBackground.Draw()

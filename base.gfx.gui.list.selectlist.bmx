@@ -11,7 +11,7 @@ Rem
 	====================================================================
 	LICENCE
 
-	Copyright (C) 2002-2014 Ronny Otto, digidea.de
+	Copyright (C) 2002-now Ronny Otto, digidea.de
 
 	This software is provided 'as-is', without any express or
 	implied warranty. In no event will the authors be held liable
@@ -38,9 +38,20 @@ Import "base.gfx.gui.list.base.bmx"
 
 Type TGUISelectList Extends TGUIListBase
 	Field selectedEntry:TGUIobject = Null
+	Field selectionChangedTime:Long
 
 
-    Method Create:TGUISelectList(position:TVec2D = null, dimension:TVec2D = null, limitState:String = "")
+	Method GetClassName:String()
+		Return "tguiselectlist"
+	End Method
+
+
+	Method Create:TGUISelectList(pos:SVec2I, dimension:SVec2I, limitState:String = "")
+		Return Create(new TVec2D.Init(pos.x, pos.y), new TVec2D.Init(dimension.x, dimension.y), limitState)
+	End Method
+
+
+    Method Create:TGUISelectList(position:TVec2D = Null, dimension:TVec2D = Null, limitState:String = "")
 		Super.Create(position, dimension, limitState)
 
 		'register listeners in a central location
@@ -50,19 +61,19 @@ Type TGUISelectList Extends TGUIListBase
 	End Method
 
 
-	Method Remove:int()
+	Method Remove:Int()
 		Super.Remove()
-		if selectedEntry
+		If selectedEntry
 			selectedEntry.Remove()
-			selectedEntry = null
-		endif
+			selectedEntry = Null
+		EndIf
 	End Method
 
 
 	'overrideable
 	Method RegisterListeners:Int()
 		'we want to know about clicks
-		AddEventListener(EventManager.registerListenerMethod("GUIListItem.onClick",	Self, "onClickOnEntry"))
+		AddEventListener(EventManager.registerListenerMethod(GUIEventKeys.GUIListItem_OnClick,	Self, "onClickOnEntry"))
 	End Method
 
 
@@ -71,40 +82,115 @@ Type TGUISelectList Extends TGUIListBase
 		If Not entry Then Return False
 
 		'ignore entries of other lists
-		if entry._parent <> self.guiEntriesPanel then Return False
+		If entry._parent <> Self.guiEntriesPanel Then Return False
 
 		'default to left button if nothing was sent
-		local button:int = triggerEvent.GetData().GetInt("button", 1)
-		if button = 1
+		Local button:Int = triggerEvent.GetData().GetInt("button", 1)
+		If button = 1
 			SelectEntry(entry)
-		endif
+		EndIf
+		
+		Return True
 	End Method
 
 
-	Method SelectEntry:Int(entry:TGUIListItem)
+	Method SelectEntry:Int(entry:TGUIObject)
 		'only mark selected if we are owner of that entry
 		If Self.HasItem(entry)
 			'remove old entry
 			Self.deselectEntry()
 			Self.selectedEntry = entry
 			Self.selectedEntry.SetSelected(True)
-
+			Self.selectionChangedTime = Time.GetTimeGone()
 			'inform others: we successfully selected an item
-			EventManager.triggerEvent( TEventSimple.Create( "GUISelectList.onSelectEntry", new TData.Add("entry", entry) , Self ) )
+			TriggerBaseEvent(GUIEventKeys.GUISelectList_OnSelectEntry, New TData.Add("entry", entry) , Self )
 		EndIf
 	End Method
-	
+
 
 	Method DeselectEntry:Int()
 		If TGUIListItem(selectedEntry)
 			TGUIListItem(selectedEntry).SetSelected(False)
 			selectedEntry = Null
+			selectionChangedTime = Time.GetTimeGone()
 		EndIf
 	End Method
 
 
-	Method getSelectedEntry:TGUIobject()
+	Method GetSelectedEntry:TGUIobject()
 		Return selectedEntry
+	End Method
+
+
+	Method ScrollToSelectedItem()
+		local item:TGUIObject = GetSelectedEntry()
+		if item Then ScrollToItem(item)
+	End Method
+
+
+	Method ScrollAndSelectItem(item:TGUIObject, alignment:Float = 0.5)
+		ScrollToItem(item, alignment)
+		SelectEntry(item)
+	End Method
+
+
+	Method ScrollAndSelectItem(index:Int, alignment:Float = 0.5)
+		ScrollAndSelectItem( GetItemAtIndex(index), alignment )
+	End Method
+	
+	
+	Method OnResize(dW:Float, dH:Float) override
+		Super.OnResize(dW, dH)
+
+'		InvalidateContentScreenRect()
+'		InvalidateLayout()
+		UpdateLayout()
+		
+		EnsureEntryIsVisible(GetSelectedEntry())
+	End Method
+	
+
+	Method HandleKeyboardScrolling() override	
+		Local oldScrollPercentageX:Float = GetScrollPercentageX()
+		Local oldScrollPercentageY:Float = GetScrollPercentageY()
+		
+		'use "IsPressedKey()" to not alter pressed-state
+		Local doDown:Int = KeyWrapper.IsPressed(KEY_DOWN)
+		Local doUp:Int = KeyWrapper.IsPressed(KEY_UP)
+
+		Super.HandleKeyboardScrolling()
+		
+		If doDown
+			'scroll back
+			'SetScrollPercentageY(oldScrollPercentageY)
+
+			Local focusItem:TGUIObject = GetSelectedEntry()
+			If Not focusItem
+				focusItem = GetItemAtIndex(0)
+			Else
+				Local currentIndex:Int = GetItemIndex(focusItem)
+				focusItem = GetItemAtIndex(currentIndex + 1)				
+			EndIf
+			If focusItem
+				SelectEntry(focusItem)
+				EnsureEntryIsVisible(focusItem)
+			EndIf
+		ElseIf doUp
+			'scroll back
+			'SetScrollPercentageY(oldScrollPercentageY)
+
+			Local focusItem:TGUIObject = GetSelectedEntry()
+			If Not focusItem
+				focusItem = GetItemAtIndex(0)
+			Else
+				local currentIndex:Int = GetItemIndex(focusItem)
+				focusItem = GetItemAtIndex(currentIndex - 1)				
+			EndIf
+			If focusItem
+				SelectEntry(focusItem)
+				EnsureEntryIsVisible(focusItem)
+			EndIf
+		EndIf
 	End Method
 End Type
 
@@ -112,8 +198,15 @@ End Type
 
 
 Type TGUISelectListItem Extends TGUIListItem
-    Method Create:TGUISelectListItem(position:TVec2D=null, dimension:TVec2D=null, value:String="")
-		if not dimension then dimension = new TVec2D.Init(80,20)
+
+
+	Method GetClassName:String()
+		Return "tguiselectlistitem"
+	End Method
+
+
+    Method Create:TGUISelectListItem(position:TVec2D=Null, dimension:TVec2D=Null, value:String="")
+		If Not dimension Then dimension = New TVec2D.Init(80,20)
 
 		'no "super.Create..." as we do not need events and dragable and...
    		Super.CreateBase(position, dimension, "")
@@ -127,30 +220,23 @@ Type TGUISelectListItem Extends TGUIListItem
 
 
 	Method DrawBackground()
-		local oldCol:TColor = new TColor.Get()
-
+		Local oldCol:SColor8; GetColor(oldCol)
+		Local oldColA:Float = GetAlpha()
+	
 		'available width is parentsDimension minus startingpoint
 		'Local maxWidth:Int = GetParent().getContentScreenWidth() - rect.getX()
-		Local maxWidth:Int = GetScreenWidth()
+		Local maxWidth:Int = GetScreenRect().GetW()
 		If isHovered()
 			SetColor 250,210,100
-			DrawRect(getScreenX(), getScreenY(), maxWidth, getScreenHeight())
-			SetColor 255,255,255
+			DrawRect(GetScreenRect().GetX(), GetScreenRect().GetY(), maxWidth, GetScreenRect().GetH())
 		ElseIf isSelected()
-			SetAlpha GetAlpha()*0.5
 			SetColor 250,210,100
-			DrawRect(getScreenX(), getScreenY(), maxWidth, getScreenHeight())
-			SetColor 255,255,255
-			SetAlpha GetAlpha()*2.0
+			SetAlpha oldColA*0.5
+			DrawRect(GetScreenRect().GetX(), GetScreenRect().GetY(), maxWidth, GetScreenRect().GetH())
 		EndIf
 
-		oldCol.SetRGBA()
-	End Method
-
-
-	Method DrawValue()
-		'draw value
-		GetFont().draw(value, Int(GetScreenX() + 5), Int(GetScreenY() + 2 + 0.5*(rect.getH()- GetFont().getHeight(Self.value))), valueColor)
+		SetColor(oldCol)
+		SetAlpha(oldColA)
 	End Method
 
 
@@ -158,18 +244,22 @@ Type TGUISelectListItem Extends TGUIListItem
 		DrawValue()
 	End Method
 
-	
+
 	Method Draw()
-		if not isDragged()
+		If Not isDragged()
 			'this allows to use a list in a modal dialogue
-			local upperParent:TGUIObject = TGUIListBase.FindGUIListBaseParent(self)
-			if upperParent then upperParent.RestrictViewPort()
+			Local upperParent:TGUIObject = TGUIListBase.FindGUIListBaseParent(Self)
+			If upperParent Then upperParent.RestrictViewPort()
 
 			Super.Draw()
 
-			if upperParent then upperParent.ResetViewPort()
-		else
+			If upperParent Then upperParent.ResetViewPort()
+		Else
 			Super.Draw()
-		endif
+		EndIf
+	End Method
+
+
+	Method UpdateLayout()
 	End Method
 End Type

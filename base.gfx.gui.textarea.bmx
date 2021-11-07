@@ -8,23 +8,37 @@ Type TGUITextArea Extends TGUIobject
 	Field guiTextPanel:TGUIScrollablePanel = Null
 	Field guiScrollerH:TGUIScroller = Null
 	Field guiScrollerV:TGUIScroller	= Null
-	Field _textLinesCache:string[]
-	Field _textDimension:TVec2D = new TVec2D.Init(200, 1200)
+	Field _drawTextSettings:TDrawTextSettings
+	Field _drawTextEffect:TDrawTextEffect
+	Field _textParseInfo:TTextParseInfo
+	Field _textDimension:SVec2I = new SVec2I(200, 1200)
+	Field _textDimensionValid:Int = False
 	Field _textCacheImage:TImage
-	Field _textCacheImageVisibleMin:TVec2D = new TVec2D
-	Field _textCacheImageVisibleMax:TVec2D = new TVec2D
-	Field _textCacheImageOffset:TVec2D = new TVec2D
+	Field _textCacheImageVisibleMin:SVec2I
+	Field _textCacheImageVisibleMax:SVec2I
+	Field _textCacheImageOffset:SVec2I
 	'pre-cached content both directions of each axis
-	Field _textCacheImagePreload:TVec2D = new TVec2D.Init(150,150)
+	Field _textCacheImagePreload:SVec2I = new SVec2I(150,150)
 	Field _textCacheImageValid:int = False
-	Field textColor:TColor = TColor.Create(0,0,0,1.0)
-	Field backgroundColor:TColor = TColor.Create(0,0,0,0)
-	Field backgroundColorHovered:TColor	= TColor.Create(0,0,0,0)
+	Field textColor:SColor8 = new SColor8.Black
+	Field backgroundColor:SColor8 = new SColor8(0,0,0,0)
+	Field backgroundColorHovered:SColor8 = new SColor8(0,0,0,0)
 	Field _mouseOverArea:Int = False
-	Field _wordwrap:int = False
-	Field _fixedLineHeight:Int = 0
-	Field _verticalScrollerAllowed:int = True 
-	Field _horizontalScrollerAllowed:int = True 
+	Field _verticalScrollerAllowed:int = True
+	Field _horizontalScrollerAllowed:int = True
+	
+	Global _defaultDrawTextSettings:TDrawTextSettings = new TDrawTextSettings
+	Global _defaultDrawTextEffect:TDrawTextEffect = new TDrawTextEffect
+
+
+	Method GetClassName:String()
+		Return "tguitextarea"
+	End Method
+
+
+	Method Create:TGUITextArea(pos:SVec2I, dimension:SVec2I, limitState:String = "")
+		Return Create(new TVec2D.Init(pos.x, pos.y), new TVec2D.Init(dimension.x, dimension.y), limitState)
+	End Method
 
 
     Method Create:TGUITextArea(position:TVec2D = null, dimension:TVec2D = null, limitState:String = "")
@@ -37,8 +51,10 @@ Type TGUITextArea Extends TGUIobject
 		'orientation of horizontal scroller has to get set manually
 		guiScrollerH.SetOrientation(GUI_OBJECT_ORIENTATION_HORIZONTAL)
 
-		guiTextPanel = New TGUIScrollablePanel.Create(null, new TVec2D.Init(rect.GetW() - guiScrollerV.rect.getW(), rect.GetH() - guiScrollerH.rect.getH()), self.state)
+		guiTextPanel = New TGUIScrollablePanel.Create(null, new TVec2D.Init(rect.GetW() - guiScrollerV.rect.getW(), rect.GetH() - guiScrollerH.rect.getH()), limitState)
 
+		AddChild(guiScrollerH)
+		AddChild(guiScrollerV)
 		AddChild(guiTextPanel) 'manage by our own
 
 
@@ -48,15 +64,16 @@ Type TGUITextArea Extends TGUIobject
 		'the text panel cannot be focused
 		guiTextPanel.setOption(GUI_OBJECT_CAN_GAIN_FOCUS, False)
 
+		'this element reacts to keystrokes (cursor up/down, page up/down ...)
+		SetOption(GUI_OBJECT_CAN_RECEIVE_KEYBOARDINPUT, True)
+
 		'register events
 		'someone uses the mouse wheel to scroll over the panel
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.OnScrollwheel", onScrollWheel, guiScrollerH))
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.OnScrollwheel", onScrollWheel, guiScrollerV))
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.OnScrollwheel", onScrollWheel, Self))
+		AddEventListener(EventManager.registerListenerFunction( GUIEventKeys.GUIObject_OnMouseScrollwheel, onScrollWheel, Self))
 		'- we are interested in certain events from the scroller or self
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.onScrollPositionChanged", onScroll, guiScrollerH ))
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.onScrollPositionChanged", onScroll, guiScrollerV ))
-		AddEventListener(EventManager.registerListenerFunction( "guiobject.onScrollPositionChanged", onScroll, self ))
+		AddEventListener(EventManager.registerListenerFunction( GUIEventKeys.GUIObject_OnScrollPositionChanged, onScroll, guiScrollerH ))
+		AddEventListener(EventManager.registerListenerFunction( GUIEventKeys.GUIObject_OnScrollPositionChanged, onScroll, guiScrollerV ))
+		AddEventListener(EventManager.registerListenerFunction( GUIEventKeys.GUIObject_OnScrollPositionChanged, onScroll, self ))
 
 
 		GUIManager.Add(Self)
@@ -64,7 +81,7 @@ Type TGUITextArea Extends TGUIobject
 	End Method
 
 
-	Method Remove:int()
+	Method Remove:int() override
 		super.Remove()
 
 		if guiTextPanel then guiTextPanel.Remove()
@@ -73,78 +90,42 @@ Type TGUITextArea Extends TGUIobject
 	End Method
 
 
+rem
+	'override to subtract potential scroller
+	Method _UpdateContentScreenW:Float() override
+		'calculate base
+		Super._UpdateContentScreenW()
 
-	'override resize and add minSize-support
-	'size 0, 0 is not possible (leads to autosize)
-	Method Resize(w:Float = 0, h:Float = 0)
-		Super.Resize(w,h)
+		'visible and relatively positioned _vertical_ scroller
+		'(subtracts from width)?
+		if guiScrollerV and guiScrollerV.hasOption(GUI_OBJECT_ENABLED) and not guiScrollerV.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
+			_contentScreenRect.SetW( _contentScreenRect.GetW() - guiScrollerV.rect.getW())
+		endif
 
-		'cache enabled state of both scrollers
-		local showScrollerH:int = 0<(guiScrollerH and guiScrollerH.hasOption(GUI_OBJECT_ENABLED))
-		local showScrollerV:int = 0<(guiScrollerV and guiScrollerV.hasOption(GUI_OBJECT_ENABLED))
-
-		'resize panel - but use resulting dimensions, not given (maybe restrictions happening!)
-		If guiTextPanel
-			'also set minsize so scroll works
-			guiTextPanel.minSize.SetXY(..
-				GetContentScreenWidth() - showScrollerV*guiScrollerV.GetScreenWidth(),..
-				GetContentScreenHeight() - showScrollerH*guiScrollerH.GetScreenHeight()..
-			)
-'				GetContentScreenHeight() - showScrollerH*guiScrollerH.rect.getH()..
-
-			guiTextPanel.Resize(..
-				GetContentScreenWidth() - showScrollerV * guiScrollerV.rect.getW(),..
-				GetContentScreenHeight() - showScrollerH * guiScrollerH.rect.getH()..
-			)
-		EndIf
-
-		'move horizontal scroller --
-		If showScrollerH and not guiScrollerH.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
-			guiScrollerH.rect.position.setXY(0, GetScreenHeight() - guiScrollerH.guiButtonMinus.rect.getH())
-			guiScrollerH.Resize(GetContentScreenWidth())
-		EndIf
-		'move vertical scroller |
-		If showScrollerV and not guiScrollerV.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
-			guiScrollerV.rect.position.setXY( GetScreenWidth() - guiScrollerV.guiButtonMinus.rect.getW(), 0)
-			guiScrollerV.Resize(0, GetContentScreenHeight())
-		EndIf
-
-		'recalculate scroll limits etc.
-		if guiTextPanel then RefreshScrollLimits()
-
-		'refresh text status
-		ResetTextCache()
+		Return _contentScreenRect.GetW() 
 	End Method
 
 
 	'override to subtract potential scroller
-	Method GetContentScreenWidth:Float()
-		'visible and relatively positioned _vertical_ scroller
-		'(subtracts from width)?
-		if guiScrollerV and guiScrollerV.hasOption(GUI_OBJECT_ENABLED) and not guiScrollerV.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
-			Return Super.GetContentScreenWidth() - guiScrollerV.rect.getW()
-		endif
+	Method _UpdateContentScreenH:Float() override
+		'calculate base
+		Super._UpdateContentScreenH()
 
-		Return Super.GetContentScreenWidth()
-	End Method
-
-	'available height for content/children
-	Method GetContentScreenHeight:Float()
 		'visible and relatively positioned _horizontal_ scroller
 		'(subtracts from height)?
 		if guiScrollerH and guiScrollerH.hasOption(GUI_OBJECT_ENABLED) and not guiScrollerH.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
-			Return Super.GetContentScreenHeight() - guiScrollerH.rect.getH()
+			_contentScreenRect.SetH( _contentScreenRect.GetH() - guiScrollerH.rect.getH())
 		endif
 
-		Return Super.GetContentScreenHeight()
+		Return _contentScreenRect.GetH() 
 	End Method
-
+endrem
 
 
 	Method RefreshScrollLimits:int()
 		if not guiTextPanel then return False
 
-		if not _textDimension then GetTextDimension()
+		if not _textDimensionValid then GetTextDimension()
 
 		'determine if we did not scroll the list to a middle
 		'position so this is true if we are at the very bottom
@@ -155,35 +136,37 @@ Type TGUITextArea Extends TGUIobject
 		Local yLimit:Float
 
 		'set scroll limits:
-		if _textDimension.getY() < guiTextPanel.getScreenheight()
+		if _textDimension.y < guiTextPanel.GetScreenRect().GetH()
 			'text might be "less high" than the available area - no need
 			'to align it at the bottom
 
 			'Ronny 16/06/16: commented out, does not seem to be needed
 			'                it also bugs textareas with a single line
 			'                as it allows scrolling for 1 line then
-			'yLimit = -_textDimension.getY()
+			'yLimit = -_textDimension.y
 		Else
 			'maximum is at the bottom of the area, not top - so
 			'subtract height
-			yLimit = - (_textDimension.getY() - guiTextPanel.getScreenheight())
+			yLimit = - (_textDimension.y - guiTextPanel.GetScreenRect().GetH())
+			'yLimit = - (_textDimension.y - guiScrollerV.GetScreenRect().GetH())
 		EndIf
 
-		if _textDimension.getX() < guiTextPanel.getScreenWidth()
+		if _textDimension.x < guiTextPanel.GetScreenRect().GetW()
 			'text might be "less wide" than the available area - no need
 			'to align it at the right
 
-			xLimit = -_textDimension.getX()
+			xLimit = -_textDimension.x
 		Else
 			'maximum is at the right of the area, not left - so
 			'subtract width
-			xLimit = - (_textDimension.getX() - guiTextPanel.getScreenWidth())
+			xLimit = - (_textDimension.x - guiTextPanel.GetScreenRect().GetW())
 		EndIf
-
 		guiTextPanel.SetLimits(xLimit, yLimit)
 
-		guiScrollerH.SetValueRange(0, _textDimension.getX())
-		guiScrollerV.SetValueRange(0, _textDimension.getY())
+'		guiScrollerH.SetValueRange(0, _textDimension.x)
+'		guiScrollerV.SetValueRange(0, _textDimension.y)
+		guiScrollerH.SetValueRange(0, - xLimit)
+		guiScrollerV.SetValueRange(0, - yLimit)
 	End Method
 
 
@@ -198,22 +181,27 @@ Type TGUITextArea Extends TGUIobject
 		guiScrollerV.setOption(GUI_OBJECT_VISIBLE, boolV)
 
 		'resize everything
-		Resize()
+		If changed Then UpdateLayout()
 	End Method
 
 
 	Method SetFixedLineHeight(lineHeight:int = -1)
-		if lineHeight <> _fixedLineHeight
-			_fixedLineHeight = lineHeight
+		if not _drawTextSettings then _drawTextSettings = new TDrawTextSettings
+
+		if lineHeight <> _drawTextSettings.data.lineHeight
+			_drawTextSettings.data.lineHeight = lineHeight
+
 			ResetTextCache()
 		endif
 	End Method
 
 
 	Method SetWordwrap(enable:int = True)
-		if _wordwrap = enable then return
+		if not _drawTextSettings then _drawTextSettings = new TDrawTextSettings
 
-		_wordwrap = enable
+		if _drawTextSettings.data.wordWrap = enable then return
+
+		_drawTextSettings.data.wordWrap = enable
 		ResetTextCache()
 		'UpdateContent()
 		'GenerateTextCache()
@@ -221,15 +209,21 @@ Type TGUITextArea Extends TGUIobject
 
 
 	Method GetLineHeight:Float()
-		if _fixedLineHeight = -1 then return GetFont().GetMaxCharHeight()
-		return _fixedLineHeight
+		local lHeight:Int = _defaultDrawTextSettings.data.lineHeight
+		if _drawTextSettings then lHeight = _drawTextSettings.data.lineHeight
+			
+		If lHeight = -1 then return GetFont().GetMaxCharHeight()
+		Return lHeight
 	End Method
-
-
+	
+	
 	Method ResetTextCache()
-		_textLinesCache = new String[0]
-		_textDimension = null
+		_textDimension = new SVec2I(0,0)
+		_textDimensionValid = False
 		_textCacheImageValid = False
+		if _textParseInfo then _textParseInfo.data.PrepareNewCalculation()
+		'_textParseInfo = new TTextParseInfo()
+'		_textParseInfo = Null
 	End Method
 
 
@@ -241,39 +235,60 @@ Type TGUITextArea Extends TGUIobject
 	End Method
 
 
-	Method GetValueLines:string[]()
-		if not _textLinesCache or (value.length > 0 and _textLinesCache.length = 0)
-			Local lineHeight:float = GetFont().getMaxCharHeight()
-			if _wordwrap
-				_textLinesCache = GetFont().TextToMultiLine(value, guiTextPanel.GetContentScreenWidth(), 0, lineHeight)
-			else
-				_textLinesCache = GetFont().TextToMultiLine(value, 0, 0, lineHeight)
-			endif
-		endif
-		return _textLinesCache
-	End Method
-
 
 	Method GenerateTextCache()
-		local createNew:int = False
-		local linesHeight:int = GetValueLines().length * GetFont().getMaxCharHeight()
-		'everything fits on the screen
-		if linesHeight < guiTextPanel.GetScreenHeight()
-			_textCacheImagePreload.SetY(25)
-		'much to scroll?
-		elseif linesHeight > guiTextPanel.GetScreenHeight() * 10
-			_textCacheImagePreload.SetY( MathHelper.Clamp(linesHeight * 10, 150, 400) )
-		else
-			_textCacheImagePreload.SetY( 150 )
+		local drawSettings:TDrawTextSettings = _drawTextSettings
+		local drawEffect:TDrawTextEffect = _drawTextEffect
+		if not drawSettings then drawSettings = _defaultDrawTextSettings
+		if not drawEffect then drawEffect = _defaultDrawTextEffect
+
+		if not _textParseInfo 
+			_textParseInfo = new TTextParseInfo()
 		endif
-		
-		local texHeight:int = Min(GetTextDimension().GetY(), guiTextPanel.GetScreenHeight()) + 2*_textCacheImagePreload.GetIntY()
-		local texWidth:int = Min(GetTextDimension().GetX(), guiTextPanel.GetScreenWidth()) + 2*_textCacheImagePreload.GetIntX()
+		if not _textParseInfo.data.calculated
+			local maxWidth:Int = -1
+			if drawSettings.data.wordWrap then maxWidth = guiTextPanel.GetContentWidth()
+			if not _drawTextSettings
+				_textParseInfo.data.CalculateDimensions(self.value, maxWidth, -1, GetFont(), _defaultDrawTextSettings.data)
+			else
+				_textParseInfo.data.CalculateDimensions(self.value, maxWidth, -1, GetFont(), _drawTextSettings.data)
+			endif
+'print "GenerateTextCache"
+'print "  maxWidth="+maxWidth + "  parseInfo dim="+_textParseInfo.data.GetBoxWidth(0)+", " + _textParseInfo.data.GetBoxHeight(0)
+		endif
+
+		local createNew:int = False
+		local linesHeight:int = _textParseInfo.data.GetBoxHeight(0)
+
+		'calculate how much "preload" area to give
+		'everything fits on the screen
+		if linesHeight < guiTextPanel.GetScreenRect().GetH()
+			_textCacheImagePreload = new SVec2I(_textCacheImagePreload.x, 25)
+		'much to scroll?
+		elseif linesHeight > guiTextPanel.GetScreenRect().GetH() * 10
+			_textCacheImagePreload = new SVec2I(_textCacheImagePreload.x, int(MathHelper.Clamp(linesHeight * 10, 150, 400)))
+		else
+			_textCacheImagePreload = new SVec2I(_textCacheImagePreload.x, 150)
+		endif
+
+		local textBoxWidth:Int
+		local texHeight:int
+		local texWidth:int
+		if guiTextPanel.GetScreenRect().GetH() < 0
+			texHeight = _textParseInfo.data.GetBoxHeight(0) + 2*_textCacheImagePreload.y
+		else
+			texHeight = Min(_textParseInfo.data.GetBoxHeight(0), guiTextPanel.GetScreenRect().GetH()) + 2*_textCacheImagePreload.y
+		endif
+		if guiTextPanel.GetScreenRect().GetW() < 0
+			textBoxWidth = _textParseInfo.data.GetBoxWidth(0)
+		else
+			textBoxWidth = Min(_textParseInfo.data.GetBoxWidth(0), guiTextPanel.GetScreenRect().GetW())
+		endif
+		texWidth = textBoxWidth +2*_textCacheImagePreload.x
 
 		if not _textCacheImage
 			createNew = True
 		elseif not _textCacheImageValid
-			'if _textCacheImage.Width <> GetTextDimension().GetX()
 			if _textCacheImage.Width <> texWidth
 				createNew = True
 			elseif _textCacheImage.Height <> texHeight
@@ -284,52 +299,59 @@ Type TGUITextArea Extends TGUIobject
 		'remove garbage or old content
 		LockImage(_textCacheImage).ClearPixels(0)
 
+
+		'render text into the texture
 		TBitmapFont.setRenderTarget(_textCacheImage)
+
 		'draw it offset by the top-cacheimage-size
-		local offsetX:int = guiTextPanel.scrollPosition.GetX() + _textCacheImagePreload.GetIntX()
-		local offsetY:int = guiTextPanel.scrollPosition.GetY() + _textCacheImagePreload.GetIntY()
+		local offsetX:int = guiTextPanel.scrollPosition.GetX() + _textCacheImagePreload.x
+		local offsetY:int = guiTextPanel.scrollPosition.GetY() + _textCacheImagePreload.y
+
+		GetFont().DrawBox(self.value, offsetX, offsetY, textBoxwidth, -1, new SVec2f(0,0), textColor, new SVec2f(0,0), _textParseInfo, EDrawTextOption.None, drawEffect, drawSettings, -1, -1)
 		
-		GetFont().DrawLinesBlock(GetValueLines(), offsetX, offsetY, Max(GetTextDimension().GetX(), -1), Max(GetTextDimension().GetY(), -1), , textColor, 0, true, 1.0, True, False, _fixedLineHeight)
 		TBitmapFont.setRenderTarget(null)
 
+
 		'refresh area / scroll coordinates
-		local dy:int = _textCacheImageVisibleMin.GetIntY() - guiTextPanel.scrollPosition.GetIntY()
-		local dx:int = _textCacheImageVisibleMin.GetIntX() - guiTextPanel.scrollPosition.GetIntX()
-		_textCacheImageVisibleMin.SetX( guiTextPanel.scrollPosition.GetIntX() )
-		_textCacheImageVisibleMin.SetY( guiTextPanel.scrollPosition.GetIntY() )
-		_textCacheImageVisibleMax.SetX( _textCacheImageVisibleMin.GetIntX() + guiTextPanel.GetScreenWidth() )
-		_textCacheImageVisibleMax.SetY( _textCacheImageVisibleMin.GetIntY() + guiTextPanel.GetScreenHeight() )
+		local dy:int = _textCacheImageVisibleMin.y - guiTextPanel.scrollPosition.GetIntY()
+		local dx:int = _textCacheImageVisibleMin.x - guiTextPanel.scrollPosition.GetIntX()
+		_textCacheImageVisibleMin = new SVec2I( guiTextPanel.scrollPosition.GetIntX(), guiTextPanel.scrollPosition.GetIntY() )
+		
 		'advance/de-advance by preload area
+		local newMaxX:Int = _textCacheImageVisibleMin.x + guiTextPanel.GetScreenRect().GetW()
+		local newMaxY:Int = _textCacheImageVisibleMin.y + guiTextPanel.GetScreenRect().GetH()
 		if dy < 0
-			_textCacheImageVisibleMax.AddY( - _textCacheImagePreload.y )
+			newMaxY :- _textCacheImagePreload.y
 		elseif dy > 0
-			_textCacheImageVisibleMax.AddY( + _textCacheImagePreload.y )
+			newMaxY :+ _textCacheImagePreload.y
 		endif
 		if dx < 0
-			_textCacheImageVisibleMax.AddX( - _textCacheImagePreload.x )
+			newMaxX :- _textCacheImagePreload.x
 		elseif dx > 0
-			_textCacheImageVisibleMax.AddX( + _textCacheImagePreload.x )
+			newMaxX :+ _textCacheImagePreload.x
 		endif
-		_textCacheImageOffset.SetXY(0,0)
-
-
+		_textCacheImageVisibleMax = new SVec2I(newMaxX, newMaxY)
+'print "GenerateTextCache  linesHeight="+linesHeight +"  _textCacheImagePreload="+_textCacheImagePreload.x+", "+_textCacheImagePreload.y + "   offset="+offsetX+", "+offsetY +"  newMax="+newMaxX+", "+newMaxX
+	
+		
+		_textCacheImageOffset = new SVec2I(0,0)
 		_textCacheImageValid = True
 	End Method
 
 
 	Method IsAtBottom:int()
 		if not guiTextPanel then return True
-		
+
 		local result:int = 1 > Floor(Abs(guiTextPanel.scrollLimit.GetY() - guiTextPanel.scrollPosition.getY()))
 
 		'if whole text fits on the screen, scroll limit will be
-		'lower than the container panel 
-		if Abs(guiTextPanel.scrollLimit.GetY()) < guiTextPanel.GetScreenHeight()
+		'lower than the container panel
+		if Abs(guiTextPanel.scrollLimit.GetY()) < guiTextPanel.GetScreenRect().GetH()
 			'if scrolled = 0 this could also mean we scrolled up to the top part
 			'in this case we check if the text fits into the panel
 			if guiTextPanel.scrollPosition.getY() = 0
 				result = 1
-				if GetTextDimension().GetY() > guiTextPanel.getScreenheight()
+				if GetTextDimension().y > guiTextPanel.GetScreenRect().GetH()
 					result = 0
 				endif
 			endif
@@ -339,36 +361,37 @@ Type TGUITextArea Extends TGUIobject
 
 
 	Method UpdateContent:int()
-		if not _textDimension then GetTextDimension()
+		if not _textDimensionValid then GetTextDimension()
 
 		'resize container panel
-		guiTextPanel.resize(_textDimension.getX(), _textDimension.getY())
+		guiTextPanel.SetSize(_textDimension.x, _textDimension.y)
 'print "Update Content: textDimension= "+_textDimension.getIntX()+"x"+_textDimension.getIntY()
-'print "                guiTextPanel screen= " + guiTextPanel.GetScreenWidth()+"x"+guiTextPanel.GetScreenHeight()
+'print "                guiTextPanel screen= " + guiTextPanel.GetScreenRect().GetW()+"x"+guiTextPanel.GetScreenRect().GetH()
 		'refresh scrolling limits
 		RefreshScrollLimits()
 
 		'if not all entries fit on the panel, enable scroller
 		SetScrollerState(..
-			_horizontalScrollerAllowed and (_textDimension.getX() > guiTextPanel.GetScreenWidth()), ..
-			_verticalScrollerAllowed and (_textDimension.getY() > guiTextPanel.GetScreenHeight()) ..
+			_horizontalScrollerAllowed and (_textDimension.x > guiTextPanel.GetScreenRect().GetW()), ..
+			_verticalScrollerAllowed and (_textDimension.y > guiTextPanel.GetScreenRect().GetH()) ..
 		)
 		GetTextDimension()
 'print "                textDimension2= "+_textDimension.getIntX()+"x"+_textDimension.getIntY()
-'print "                guiTextPanel screen2= " + guiTextPanel.GetScreenWidth()+"x"+guiTextPanel.GetScreenHeight()
+'print "                guiTextPanel screen2= " + guiTextPanel.GetScreenRect().GetW()+"x"+guiTextPanel.GetScreenRect().GetH()
 	End Method
 
 
 	Function FindGUITextAreaParent:TGUITextArea(guiObject:TGUIObject)
 		if not guiObject then return null
-		
+
 		local parent:TGUITextArea = TGUITextArea(guiObject)
 		if parent then return parent
-		
-		local obj:TGUIObject = guiObject.GetParent()
-		while obj <> guiObject and not TGUITextArea(obj) 
-			obj = obj.GetParent()
+
+		local obj:TGUIObject = guiObject._parent
+		While obj and obj <> guiObject And Not TGUITextArea(obj)
+			obj = obj._parent
 		wend
+		'return the area or null (if topmost parent is of incompatible type)
 		return TGUITextArea(obj)
 	End Function
 
@@ -378,7 +401,7 @@ Type TGUITextArea Extends TGUIobject
 		Local textArea:TGUITextArea = TGUITextArea(triggerEvent.GetSender())
 		Local scroller:TGUIScroller = TGUIScroller(triggerEvent.GetSender())
 		if scroller
-			textArea = TGUITextArea(scroller.GetParent())
+			textArea = TGUITextArea(scroller._parent)
 		endif
 
 		Local value:Int = triggerEvent.GetData().getInt("value",0)
@@ -403,8 +426,8 @@ Type TGUITextArea Extends TGUIobject
 		if direction <> ""
 			'try to scroll by 1.0 of a text line height
 			local scrollAmount:Float = abs(value) * 1.0 * textArea.GetFont().getMaxCharHeight() '25
-			
-			EventManager.triggerEvent(TEventSimple.Create("guiobject.onScrollPositionChanged", new TData.AddString("direction", direction).AddNumber("scrollAmount", scrollAmount), textArea))
+
+			TriggerBaseEvent(GUIEventKeys.GUIObject_OnScrollPositionChanged, new TData.AddString("direction", direction).AddNumber("scrollAmount", scrollAmount), textArea)
 		endif
 		'set to accepted so that nobody else receives the event
 		triggerEvent.SetAccepted(True)
@@ -428,7 +451,7 @@ Type TGUITextArea Extends TGUIobject
 		'the longer you pressed the mouse button, the "speedier" we get
 		'1px per 100ms. Start speeding up after 500ms, limit to 20px per scroll
 		baseScrollSpeed :+ Min(20, Max(0, MOUSEMANAGER.GetDownTime(1) - 500)/100.0)
-		
+
 		Local scrollAmount:Int = data.GetInt("scrollAmount", baseScrollSpeed)
 		'this should be "calculate height and change amount"
 		If data.GetString("direction") = "up" Then guiTextArea.ScrollContent(0, +scrollAmount)
@@ -437,7 +460,7 @@ Type TGUITextArea Extends TGUIobject
 		If data.GetString("direction") = "right" Then guiTextArea.ScrollContent(-scrollAmount, 0)
 		'maybe data was given in percents - so something like a
 		'"scrollTo"-value
-		If data.getString("changeType") = "percentage"
+		If data.getInt("isRelative") = True
 			local percentage:Float = data.GetFloat("percentage", 0)
 
 			if guiSender = guiTextArea.guiScrollerH
@@ -474,14 +497,15 @@ Type TGUITextArea Extends TGUIobject
 		if guiTextPanel.scrollPosition.GetIntY() <> oldY or guiTextPanel.scrollPosition.GetIntX() <> oldX
 			'recalc visible min/max
 			local currentVisibleMinY:int = guiTextPanel.scrollPosition.GetIntY()
-			local currentVisibleMaxY:int = _textCacheImageVisibleMin.GetIntY() + guiTextPanel.GetScreenHeight()
+			local currentVisibleMaxY:int = _textCacheImageVisibleMin.y + guiTextPanel.GetScreenRect().GetH()
 
-			_textCacheImageOffset.AddY( guiTextPanel.scrollPosition.GetIntY() - oldY )
-			_textCacheImageOffset.AddX( guiTextPanel.scrollPosition.GetIntX() - oldX )
+			local newX:Int = _textCacheImageOffset.x + guiTextPanel.scrollPosition.GetIntX() - oldX
+			local newY:Int = _textCacheImageOffset.y + guiTextPanel.scrollPosition.GetIntY() - oldY
+			_textCacheImageOffset = new SVec2I(newX, newY)
 'print "ScrollContent: Moved panel.  _textCacheImageOffsetY="+_textCacheImageOffset.y
 
 			if not _IsVisibleAreaInCacheArea()
-'print "reset cache: currentMinY="+currentVisibleMinY+" ImageMinY="+_textCacheImageVisibleMin.GetIntY()+"  currentMaxY="+currentVisibleMaxY+"  imageMaxY="+_textCacheImageVisibleMax.Y
+'print "reset cache: currentMinY="+currentVisibleMinY+" ImageMinY="+_textCacheImageVisibleMin.y+"  currentMaxY="+currentVisibleMaxY+"  imageMaxY="+_textCacheImageVisibleMax.Y
 				GenerateTextCache()
 			endif
 		endif
@@ -513,45 +537,59 @@ Type TGUITextArea Extends TGUIobject
 
 		ScrollContentTo(0, percentage, True)
 		return guiTextPanel.scrollPosition.GetY()
-		
+
 		'return guiTextPanel.SetScrollPercentageY(percentage)
+	End Method
+	
+	
+	Method _GetDrawTextSettings:TDrawTextSettings()
+		if _drawTextSettings Then return _drawTextSettings
+		Return _defaultDrawTextSettings
 	End Method
 
 
-	Method GetTextDimension:TVec2D()
-		if not _textDimension
-			_textDimension = new TVec2D
-			if _wordwrap
-				_textDimension.SetX( guiTextPanel.GetContentScreenWidth() )
-				_textDimension.SetY( GetFont().GetBlockHeight(value, _textDimension.GetX(), -1, _fixedLineHeight) )
+	Method _GetDrawTextEffect:TDrawTextEffect()
+		if _drawTextEffect Then return _drawTextEffect
+		Return _defaultDrawTextEffect
+	End Method
+		
+
+	Method GetTextDimension:SVec2I()
+		if not _textDimensionValid
+
+			if _GetDrawTextSettings().data.wordwrap
+				local tX:Int = guiTextPanel.GetContentScreenRect().GetW()
+				local tY:Int = GetFont().GetBoxHeight(value, tX, -1, _GetDrawTextSettings())
+				_textDimension = new SVec2I(tX, tY)
 			else
-				local dim:TVec2D = GetFont().getBlockDimension(value, 3500, -1, _fixedLineHeight)
-				_textDimension.SetXY( dim.GetX(), dim.GetY() )
+				_textDimension = GetFont().GetBoxDimension(value, 3500, -1, _GetDrawTextSettings())
 			endif
+			
+			_textDimensionValid = True
 		endif
 		return _textDimension
 	End Method
 
 
 	Method _IsVisibleAreaInCacheAreaV:int()
-		return abs((_textCacheImageVisibleMin.GetIntY() + guiTextPanel.GetScreenHeight()) - _textCacheImageVisibleMax.GetIntY()) <= _textCacheImagePreload.GetIntY() and ..
-			   abs(guiTextPanel.scrollPosition.GetIntY() - _textCacheImageVisibleMin.GetIntY()) <= _textCacheImagePreload.GetIntY()
+		return abs((_textCacheImageVisibleMin.y + guiTextPanel.GetScreenRect().GetH()) - _textCacheImageVisibleMax.y) <= _textCacheImagePreload.y and ..
+			   abs(guiTextPanel.scrollPosition.GetIntY() - _textCacheImageVisibleMin.y) <= _textCacheImagePreload.y
 	End Method
 
 
 	Method _IsVisibleAreaInCacheAreaH:int()
-		return abs((_textCacheImageVisibleMin.GetIntX() + guiTextPanel.GetScreenWidth()) - _textCacheImageVisibleMax.GetIntX()) <= _textCacheImagePreload.GetIntX() and ..
-			   abs(guiTextPanel.scrollPosition.GetIntX() - _textCacheImageVisibleMin.GetIntX()) <= _textCacheImagePreload.GetIntX()
+		return abs((_textCacheImageVisibleMin.x + guiTextPanel.GetScreenRect().GetW()) - _textCacheImageVisibleMax.x) <= _textCacheImagePreload.x and ..
+			   abs(guiTextPanel.scrollPosition.GetIntX() - _textCacheImageVisibleMin.x) <= _textCacheImagePreload.x
 	End Method
-	
+
 
 	Method _IsVisibleAreaInCacheArea:int()
 		return _IsVisibleAreaInCacheAreaH() and _IsVisibleAreaInCacheAreaV()
 	End Method
-	
 
-	Method onStatusAppearanceChange:int()
-		Super.onStatusAppearanceChange()
+
+	Method onAppearanceChanged:int()
+		Super.onAppearanceChanged()
 
 		'refresh cache (maybe we got a new font?)
 		RefreshScrollLimits()
@@ -559,11 +597,37 @@ Type TGUITextArea Extends TGUIobject
 
 		return True
 	End Method
-	
+
 
 	'override default update-method
 	Method Update:Int()
 		Super.Update()
+		
+		
+		'react to some special keys
+		If IsFocused()
+			If KeyWrapper.IsPressed(KEY_PAGEDOWN)
+				ScrollContent(0, -rect.GetH())
+			EndIf
+			If KeyWrapper.IsPressed(KEY_PAGEUP)
+				ScrollContent(0, +rect.GetH())
+			EndIf
+
+			If KeyManager.IsDown(KEY_HOME)
+				ScrollContentTo(0, 0.0, True)
+			ElseIf KeyManager.IsDown(KEY_END)
+				ScrollContentTo(0, 1.0, True)
+			EndIf
+
+			If KeyWrapper.IsPressed(KEY_DOWN)
+				local baseLineHeight:Int = GetFont().getMaxCharHeight()
+				ScrollContent(0, -baseLineHeight)
+			ElseIf KeyWrapper.IsPressed(KEY_UP)
+				local baseLineHeight:Int = GetFont().getMaxCharHeight()
+				ScrollContent(0, +baseLineHeight)
+			EndIf
+		EndIf
+
 
 		'need refresh?
 		if not _IsVisibleAreaInCacheArea() then GenerateTextCache()
@@ -577,24 +641,29 @@ Type TGUITextArea Extends TGUIobject
 			guiScrollerV.SetButtonStates(not guiTextPanel.ReachedTopLimit(), not guiTextPanel.ReachedBottomLimit())
 		endif
 
-		_mouseOverArea = THelper.MouseIn(int(GetScreenX()), int(GetScreenY()), int(rect.GetW()), int(rect.GetH()))
+		_mouseOverArea = THelper.MouseIn(int(GetScreenRect().GetX()), int(GetScreenRect().GetY()), int(rect.GetW()), int(rect.GetH()))
 	End Method
 
 
 	Method DrawBackground()
-		Local oldCol:TColor = new TColor.Get()
-		Local rect:TRectangle = new TRectangle.Init(guiTextPanel.GetScreenX(), guiTextPanel.GetScreenY(), Min(rect.GetW(), guiTextPanel.rect.GetW()), Min(rect.GetH(), guiTextPanel.rect.GetH()) )
+		Local oldCol:SColor8
+		GetColor(oldCol)
+		Local oldAlpha:Float = GetAlpha()
+		Local rect:TRectangle = new TRectangle.Init(guiTextPanel.GetScreenRect().GetX(), guiTextPanel.GetScreenRect().GetY(), Min(rect.GetW(), guiTextPanel.rect.GetW()), Min(rect.GetH(), guiTextPanel.rect.GetH()) )
 
 		If _mouseOverArea
-			backgroundColorHovered.setRGBA()
+			SetColor(backgroundColorHovered)
+			SetAlpha(oldAlpha * backgroundColorHovered.a/255.0)
 		Else
-			backgroundColor.setRGBA()
+			SetColor(backgroundColor)
+			SetAlpha(oldAlpha * backgroundColor.a/255.0)
 		EndIf
 		if GetAlpha() > 0
 			DrawRect(rect.GetX(), rect.GetY(), rect.GetW(), rect.GetH())
 		endif
 
-		oldCol.SetRGBA()
+		SetColor(oldCol)
+		SetAlpha(oldAlpha)
 	End Method
 
 
@@ -608,38 +677,110 @@ Type TGUITextArea Extends TGUIobject
 
 	Method DrawContent()
 rem
-
 		'orange: komplettes Widget
 '		SetColor 255, 255,0
 '		SetAlpha GetAlpha() * 0.25
-'		DrawRect(GetParent().GetScreenX(), GetParent().GetScreenY(), GetParent().GetScreenWidth(), GetParent().GetScreenHeight())
+'		DrawRect(GetParent().GetScreenRect().GetX(), GetParent().GetScreenRect().GetY(), GetParent().GetScreenRect().GetW(), GetParent().GetScreenRect().GetH())
 
 		'gruen: Inhaltsbereich
-'		SetColor 0,255,0
-'		DrawRect(GetContentScreenX(), GetContentScreenY(), GetContentScreenWidth(), GetContentScreenHeight())
-'		SetAlpha GetAlpha() * 4
+		SetColor 0,255,0
+		DrawRect(GetContentScreenRect().GetX(), GetContentScreenRect().GetY(), GetContentScreenRect().GetW(), GetContentScreenRect().GetH())
+		SetAlpha GetAlpha() * 4
 
 		'blau: textbereich
 		SetColor 0,0,125
-		DrawRect(GetContentScreenX(), GetContentScreenY(), GetTextDimension().GetX(), 50)
+		DrawRect(GetContentScreenRect().GetX(), GetContentScreenRect().GetY(), GetTextDimension().x, 50)
 
 		'cache width
 		SetColor 0,0,255
 		if _textCacheImage
-			DrawRect(GetContentScreenX(), GetContentScreenY() + 60, _textCacheImage.width, 20)
+			DrawRect(GetContentScreenRect().GetX(), GetContentScreenRect().GetY() + 60, _textCacheImage.width, 20)
 		endif
 		SetColor 255,0,0
-		DrawRect(guiTextPanel.GetScreenX(), guiTextPanel.GetScreenY(), guiTextPanel.GetScreenWidth(), guiTextPanel.GetScreenHeight())
+		DrawRect(guiTextPanel.GetScreenRect().GetX(), guiTextPanel.GetScreenRect().GetY(), guiTextPanel.GetScreenRect().GetW(), guiTextPanel.GetScreenRect().GetH())
 
+		SetAlpha 1.0
 		SetColor 0,0,0
 		DrawRect(0,0,200,100)
 		SetColor 255,255,255
-		DrawText("posX: "+guiTextPanel.scrollPosition.GetX() + "  limitX: "+guiTextPanel.scrollLimit.GetX(), 10, 30)  
-		DrawText("posY: "+guiTextPanel.scrollPosition.GetY() + "  limitY: "+guiTextPanel.scrollLimit.GetY(), 10, 50)  
+		DrawText("posX: "+int(guiTextPanel.scrollPosition.GetX()) + "  limitX: "+int(guiTextPanel.scrollLimit.GetX()), 10, 30)
+		DrawText("posY: "+int(guiTextPanel.scrollPosition.GetY()) + "  limitY: "+int(guiTextPanel.scrollLimit.GetY()), 10, 50)
 endrem
 		RestrictContentViewport()
+		'restrict even more
+		Local rect:TRectangle = GetContentScreenRect()
+		local panelRect:TRectangle = guiTextPanel.GetScreenRect()
+		If rect And rect.GetW() > 0 And rect.GetH() > 0
+			GUIManager.RestrictViewport(Int(rect.getX()), Int(rect.getY()), Int(Min(rect.getW(), panelRect.GetW())), Int(Min(rect.getH(), panelRect.GetH())))
+		EndIf
+
 		SetColor 255,255,255
-		DrawImage(GetTextImageCache(), GetContentScreenX() + _textCacheImageOffset.x - _textCacheImagePreload.x, GetContentScreenY() + _textCacheImageOffset.y - _textCacheImagePreload.y)
+		DrawImage(GetTextImageCache(), GetContentScreenRect().GetX() + _textCacheImageOffset.x - _textCacheImagePreload.x, GetContentScreenRect().GetY() + _textCacheImageOffset.y - _textCacheImagePreload.y)
+
+		'remove "even more" restriction
+		If rect And rect.GetW() > 0 And rect.GetH() > 0
+			GUIManager.ResetViewport()
+		endif
+
 		ResetViewport()
+		SetAlpha 1.0
+		SetColor 255,255,255
+	End Method
+
+
+	Method UpdateLayout()
+		'cache enabled state of both scrollers
+		Local showScrollerH:Int = 0<(guiScrollerH And guiScrollerH.hasOption(GUI_OBJECT_ENABLED))
+		Local showScrollerV:Int = 0<(guiScrollerV And guiScrollerV.hasOption(GUI_OBJECT_ENABLED))
+
+		'resize panel - but use resulting dimensions, not given (maybe restrictions happening!)
+		If guiTextPanel
+			'also set minsize so scroll works
+			guiTextPanel.minSize.SetXY(..
+				GetContentScreenRect().GetW() - showScrollerV * guiScrollerV.GetScreenRect().GetW(),..
+				GetContentScreenRect().GetH() - showScrollerH * guiScrollerH.rect.getH()..
+			)
+
+			guiTextPanel.SetSize(..
+				GetContentScreenRect().GetW() - showScrollerV * guiScrollerV.rect.getW(),..
+				GetContentScreenRect().GetH() - showScrollerH * guiScrollerH.rect.getH()..
+			)
+		EndIf
+
+
+		If guiScrollerH And Not guiScrollerH.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
+			If showScrollerV
+				guiScrollerH.SetSize(GetContentScreenRect().GetW() - guiScrollerV.GetScreenRect().GetW(), 0)
+			Else
+				guiScrollerH.SetSize(GetContentScreenRect().GetW())
+			EndIf
+		EndIf
+		If guiScrollerV And Not guiScrollerV.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
+			If showScrollerH
+				guiScrollerV.SetSize(0, GetContentScreenRect().GetH() - guiScrollerH.GetScreenRect().GetH() - 3)
+			Else
+				guiScrollerV.SetSize(0, GetContentScreenRect().GetH())
+			EndIf
+		EndIf
+
+
+		'move horizontal scroller --
+		If showScrollerH and not guiScrollerH.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
+			guiScrollerH.SetPosition(0, GetContentScreenRect().GetH() - guiScrollerH.guiButtonMinus.rect.getH())
+			guiScrollerH.InvalidateScreenRect()
+		EndIf
+		'move vertical scroller |
+		If showScrollerV and not guiScrollerV.hasOption(GUI_OBJECT_POSITIONABSOLUTE)
+			guiScrollerV.SetPosition( GetContentScreenRect().GetW() - guiScrollerV.guiButtonMinus.rect.getW(), 0)
+			guiScrollerV.InvalidateScreenRect()
+		EndIf
+
+
+
+		'recalculate scroll limits etc.
+		if guiTextPanel then RefreshScrollLimits()
+
+		'refresh text status
+		ResetTextCache()
 	End Method
 End Type

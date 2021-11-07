@@ -11,19 +11,28 @@ Import "base.util.registry.spriteloader.bmx"
 
 
 Type TGUIButton Extends TGUIobject
-	Field manualState:Int = 0
 	Field spriteName:String = "gfx_gui_button.default"
 	Field _sprite:TSprite 'private
 	Field caption:TGUILabel	= Null
-	Field captionArea:TRectangle = null
-	Field autoSizeModeWidth:int = 0
-	Field autoSizeModeHeight:int = 0
+	Field captionOffset:SVec2I
+	Field autoSizeModeWidth:Int = 0
+	Field autoSizeModeHeight:Int = 0
 
-	Global AUTO_SIZE_MODE_NONE:int = 0
-	Global AUTO_SIZE_MODE_TEXT:int = 1
-	Global AUTO_SIZE_MODE_SPRITE:int = 2
+	Global AUTO_SIZE_MODE_NONE:Int = 0
+	Global AUTO_SIZE_MODE_TEXT:Int = 1
+	Global AUTO_SIZE_MODE_SPRITE:Int = 2
 	Global _typeDefaultFont:TBitmapFont
-	Global _typeDefaultCaptionColor:TColor
+	Global _typeDefaultCaptionColor:SColor8 = SColor8.Black
+
+
+	Method GetClassName:String()
+		Return "tguibutton"
+	End Method
+
+
+	Method Create:TGUIButton(pos:SVec2I, dimension:SVec2I, value:String, State:String = "")
+		Return Create(new TVec2D.Init(pos.x, pos.y), new TVec2D.Init(dimension.x, dimension.y), value, State)
+	End Method
 
 
 	Method Create:TGUIButton(pos:TVec2D, dimension:TVec2D, value:String, State:String = "")
@@ -35,91 +44,86 @@ Type TGUIButton Extends TGUIobject
     	GUIManager.Add(Self)
 		Return Self
 	End Method
-
+	
+	
+	'override to delete additional widgets too
+	Method Remove:Int() override
+		Super.Remove()
+		
+		'just in case this TGUILabel was focused, the Remove()
+		'will clean this up 
+		if caption then caption.Remove()
+	End Method
+	
 
 	'override
 	Method onClick:Int(triggerEvent:TEventBase)
 		Super.onClick(triggerEvent)
 		'send a more specialized event
-		if not triggerEvent.isVeto()
-			EventManager.triggerEvent( TEventSimple.Create("guibutton.OnClick", triggerEvent._data, Self) )
-		endif
+		If Not triggerEvent.isVeto()
+			TriggerBaseEvent(GUIEventKeys.GUIButton_OnClick, triggerEvent.GetData(), Self)
+		EndIf
 	End Method
 
 
 	Method RepositionCaption:Int()
-		if not caption then return FALSE
+		If Not caption Then Return False
 
 		'resize to button dimension
-		if captionArea
-			local newX:Float = captionArea.GetX()
-			local newY:Float = captionArea.GetY()
-			local newDimX:Float = captionArea.GetW()
-			local newDimY:Float = captionArea.GetH()
-			'use parent values
-			if newX = -1 then newX = 0
-			if newY = -1 then newY = 0
-			'take all the space left
-			if newDimX <= 0 then newDimX = rect.GetW() - newX
-			if newDimY <= 0 then newDimY = rect.GetH() - newY
-
-			caption.rect.position.SetXY(newX, newY)
-			caption.rect.dimension.SetXY(newDimX, newDimY)
-		else
-			caption.rect.position.SetXY(0, 0)
-			caption.rect.dimension.CopyFrom(rect.dimension)
-		endif
+		caption.SetPosition(captionOffset.x, captionOffset.y)
+		caption.SetSize(rect.dimension.GetX() - captionOffset.x, rect.dimension.GetY() - captionOffset.y)
 	End Method
 
 
-	'override resize to add autocalculation and caption handling
+	'override SetSize() to add autocalculation and caption handling
 	'size 0, 0 is not possible (leads to autosize)
-	Method Resize(w:Float = 0, h:Float = 0)
+	Method SetSize(w:Float = 0, h:Float = 0)
+		If h <= 0 then h = rect.GetH()
+rem
 		'autocalculate width/height
-		if w <= 0
-			if autoSizeModeWidth = AUTO_SIZE_MODE_TEXT
-				w = GetFont().getWidth(self.value) + 8
-			elseif autoSizeModeWidth = AUTO_SIZE_MODE_SPRITE
-				w = GetSprite().GetWidth(false)
-			endif
-		endif
-		if h <= 0
+		If w <= 0
+			If autoSizeModeWidth = AUTO_SIZE_MODE_TEXT
+				w = GetFont().GetWidth(value) + 8
+			ElseIf autoSizeModeWidth = AUTO_SIZE_MODE_SPRITE
+				w = GetSprite().GetWidth(False)
+			EndIf
+		EndIf
+		If h <= 0
 			h = rect.GetH()
-			if autoSizeModeHeight <> AUTO_SIZE_MODE_NONE or h = -1
+			If autoSizeModeHeight <> AUTO_SIZE_MODE_NONE Or h = -1
 
-				if autoSizeModeHeight = AUTO_SIZE_MODE_TEXT
+				If autoSizeModeHeight = AUTO_SIZE_MODE_TEXT
 					h = GetFont().GetMaxCharHeight()
-				endif
+				EndIf
 
 				'if height is less then sprite height (the "minimum")
 				'use this
-				h = Max(h, GetSprite().GetHeight(false))
-			endif
-		endif
+				h = Max(h, GetSprite().GetHeight(False))
+			EndIf
+		EndIf
+endrem
 
-
-		If w > 0 Then rect.dimension.setX(w)
-		If h > 0 Then rect.dimension.setY(h)
-
-		'move caption according to its rules
-		RepositionCaption()
+		Super.SetSize(w, h)
 	End Method
 
 
-	Method SetAutoSizeMode(modeWidth:int = 1, modeHeight:int = 1)
-		autoSizeModeWidth = modeWidth
-		autoSizeModeHeight = modeHeight
-		Resize(-1,-1)
+	Method SetAutoSizeMode(modeWidth:Int = 1, modeHeight:Int = 1)
+		If autoSizeModeWidth <> modeWidth Or autoSizeModeHeight <> modeHeight
+			autoSizeModeWidth = modeWidth
+			autoSizeModeHeight = modeHeight
+
+			InvalidateLayout()
+		EndIf
 	End Method
 
 
 	'override to inform other elements too
-	Method SetAppearanceChanged:Int(bool:int)
+	Method SetAppearanceChanged:Int(bool:Int)
 		Super.SetAppearanceChanged(bool)
 		'only inform if changed
-		if bool = true
-			if caption then caption.SetAppearanceChanged(bool)
-		endif
+		If bool = True
+			If caption Then caption.SetAppearanceChanged(bool)
+		EndIf
 	End Method
 
 
@@ -127,44 +131,43 @@ Type TGUIButton Extends TGUIobject
 	'acts as cache
 	Method GetSprite:TSprite()
 		'refresh cache if not set or wrong sprite name
-		if not _sprite or _sprite.GetName() <> spriteName
+		If Not _sprite Or _sprite.GetName() <> spriteName
 			_sprite = GetSpriteFromRegistry(spriteName)
 			'new -non default- sprite: adjust appearance
-			if _sprite.GetName() <> "defaultsprite"
-				SetAppearanceChanged(TRUE)
-			endif
-		endif
-		return _sprite
-	End Method
-
-
-	'override default to handle image changes
-	Method onStatusAppearanceChange:int()
-		'if background changed we have to resize
-		resize(-1, -1)
+			If _sprite.GetName() <> "defaultsprite"
+				SetAppearanceChanged(True)
+			EndIf
+		EndIf
+		Return _sprite
 	End Method
 
 
 	'override default - to use caption instead of value
-	Method SetValue(value:string)
+	Method SetValue(value:String)
 		SetCaption(value)
 	End Method
 
 
 	'override default - to use caption instead of value
 	Method GetValue:String()
-		if not caption then return Super.GetValue()
-		return caption.GetValue()
+		If Not caption Then Return Super.GetValue()
+		Return caption.GetValue()
 	End Method
 
 
 	Method SetCaption:Int(text:String, color:TColor=Null)
-		if not caption
+		If Not caption
 			'caption area starts at top left of button
-			caption = New TGUILabel.Create(null, text, color, null)
-			caption.SetContentPosition(ALIGN_CENTER, ALIGN_CENTER)
+			if not color
+				caption = New TGUILabel.Create(new SVec2I(0,0), text, "")
+			else
+				caption = New TGUILabel.Create(new TVec2D.Init(0,0), text, color.ToSColor8(), "")
+			endif
+			
+			caption.SetContentAlignment(ALIGN_CENTER, ALIGN_CENTER)
 			'we want the caption to use the buttons font
-			caption.SetOption(GUI_OBJECT_FONT_PREFER_PARENT_TO_TYPE, TRUE)
+			caption.SetOption(GUI_OBJECT_FONT_PREFER_PARENT_TO_TYPE, True)
+			caption.SetOption(GUI_OBJECT_CAN_GAIN_FOCUS, False)
 			'we want to manage it...
 			GUIManager.Remove(caption)
 
@@ -172,27 +175,32 @@ Type TGUIButton Extends TGUIobject
 			RepositionCaption()
 
 			'assign button as parent of caption
-			caption.SetParent(self)
-		elseif caption.value <> text
+			caption.SetParent(Self)
+		ElseIf caption.value <> text
 			caption.SetValue(text)
-		endif
+			'reposition the caption
+'			RepositionCaption()
+		EndIf
 
 		If color
-			caption.color = color
-		Elseif _typeDefaultCaptionColor
+			caption.color = color.ToSColor8()
+		ElseIf _typeDefaultCaptionColor
 			caption.color = _typeDefaultCaptionColor
-		Endif
+		EndIf
 	End Method
 
 
-	Method SetCaptionOffset:Int(x:int = -1, y:int = -1)
-		if not captionArea then captionArea = new TRectangle
-		captionArea.position.SetXY(x,y)
+	Method SetCaptionOffset:Int(x:Int, y:Int)
+		captionOffset = new SVec2I(x,y)
+
+		RepositionCaption()
+
+		if caption then caption.InvalidateScreenRect()
 	End Method
 
 
-	Function SetTypeCaptionColor:Int(color:TColor)
-		_typeDefaultCaptionColor = color.Copy()
+	Function SetTypeCaptionColor:Int(color:SColor8)
+		_typeDefaultCaptionColor = color
 	End Function
 
 
@@ -203,74 +211,133 @@ Type TGUIButton Extends TGUIobject
 
 	'override in extended classes if wanted
 	Function GetTypeFont:TBitmapFont()
-		return _typeDefaultFont
+		Return _typeDefaultFont
 	End Function
 
 
 	Method GetSpriteName:String()
-		return spriteName
+		Return spriteName
 	End Method
 
 
 	Method SetCaptionAlign(alignType:String = "LEFT", valignType:String = "CENTER")
-		if not caption then return
+		If Not caption Then Return
 
 		'by default labels have left aligned content
 		Select aligntype.ToUpper()
-			case "CENTER" 	caption.SetContentPosition(ALIGN_LEFT, caption.contentPosition.y)
-			case "RIGHT" 	caption.SetContentPosition(ALIGN_RIGHT, caption.contentPosition.y)
-			default		 	caption.SetContentPosition(ALIGN_CENTER, caption.contentPosition.y)
+			Case "CENTER" 	caption.SetContentAlignment(ALIGN_LEFT, caption.contentAlignment.y)
+			Case "RIGHT" 	caption.SetContentAlignment(ALIGN_RIGHT, caption.contentAlignment.y)
+			Default		 	caption.SetContentAlignment(ALIGN_CENTER, caption.contentAlignment.y)
 		End Select
 	End Method
 
 
 	'override to update caption
-	Method Update:int()
+	Method Update:Int()
 		Super.Update()
-		if caption then caption.Update()
+		If caption Then caption.Update()
 	End Method
 
 
 	Method DrawButtonContent:Int(position:TVec2D)
-		if not caption then return False
-		if not caption.IsVisible() then return False
+		If Not caption Then Return False
+		If Not caption.IsVisible() Then Return False
 
 		'move caption
-		if state = ".active" then caption.rect.position.AddXY(1,1)
+		If IsActive()
+			caption.GetScreenRect().position.AddXY(1,1)
+			caption.Draw()
+			caption.GetScreenRect().position.AddXY(-1,-1)
+		Else
+			caption.Draw()
+		EndIf
+	End Method
+	
+	
+	Method DrawButtonBackground:Int(position:TVec2D)
+		Local sprite:TSprite = GetSprite()
+		If Not IsEnabled()
+			sprite = GetSpriteFromRegistry(GetSpriteName() + ".disabled", sprite)
+		Else
+			sprite = GetSpriteFromRegistry(GetSpriteName() + GetStateSpriteAppendix(), sprite)
+		EndIf
 
-		caption.Draw()
-
-		'move caption back
-		if state = ".active" then caption.rect.position.AddXY(-1,-1)
+		If sprite
+			'no active image available (when "mousedown" over widget)
+			If IsActive() And (sprite.name = spriteName Or sprite.name="defaultsprite")
+				sprite.DrawArea(position.getX()+1, position.getY()+1, rect.GetW(), rect.GetH())
+			Else
+				sprite.DrawArea(position.getX(), position.getY(), rect.GetW(), rect.GetH())
+			EndIf
+		EndIf
 	End Method
 
 
 	Method DrawContent()
-		Local atPoint:TVec2D = GetScreenPos()
-		Local oldCol:TColor = new TColor.Get()
+		Local atPoint:TVec2D = GetScreenRect().position
+		Local oldCol:SColor8; GetColor(oldCol)
+		Local oldColA:Float = GetAlpha()
 
 		SetColor 255, 255, 255
-		SetAlpha oldCol.a * GetScreenAlpha()
+		SetAlpha oldColA * GetScreenAlpha()
 
-		Local sprite:TSprite = GetSprite()
-		if not IsEnabled()
-			sprite = GetSpriteFromRegistry(GetSpriteName() + ".disabled", sprite)
-		else
-			if state <> "" then sprite = GetSpriteFromRegistry(GetSpriteName() + state, sprite)
-		endif
-
-		if sprite
-			'no active image available (when "mousedown" over widget)
-			if state = ".active" and (sprite.name = spriteName or sprite.name="defaultsprite")
-				sprite.DrawArea(atPoint.getX()+1, atPoint.getY()+1, rect.GetW(), rect.GetH())
-			else
-				sprite.DrawArea(atPoint.getX(), atPoint.getY(), rect.GetW(), rect.GetH())
-			endif
-		endif
+		DrawButtonBackground(atPoint)
 
 		'draw label/caption of button
 		DrawButtonContent(atPoint)
 
-		oldCol.SetRGBA()
+		SetColor(oldCol)
+		SetAlpha(oldColA)
+	End Method
+
+
+	'override
+	Method UpdateLayout()
+		'autocalculate width/height
+		If autoSizeModeWidth = AUTO_SIZE_MODE_TEXT
+			rect.SetW( GetFont().GetWidth(value) + 8)
+		ElseIf autoSizeModeWidth = AUTO_SIZE_MODE_SPRITE
+			rect.SetW( GetSprite().GetWidth(False) )
+		EndIf
+
+		If autoSizeModeHeight <> AUTO_SIZE_MODE_NONE Or rect.GetH() = -1
+			If autoSizeModeHeight = AUTO_SIZE_MODE_TEXT
+				rect.SetH( GetFont().GetMaxCharHeight() )
+			EndIf
+
+			'if height is less then sprite height (the "minimum")
+			'use this
+			rect.SetH( Max(rect.GetH(), GetSprite().GetHeight(False)) )
+		EndIf
+
+		'move caption according to its rules
+		RepositionCaption()
+	End Method
+
+
+	Method InvalidateScreenRect()
+		Super.InvalidateScreenRect()
+		if caption then caption.InvalidateScreenRect()
+	End Method
+
+
+	Method InvalidateContentScreenRect()
+		Super.InvalidateContentScreenRect()
+		if caption then caption.InvalidateContentScreenRect()
+	End Method
+
+
+	'override
+	Method OnReposition(dx:Float, dy:Float)
+		If dx = 0 And dy = 0 Then Return
+
+		Super.OnReposition(dx, dy)
+		If caption Then caption.OnReposition(dx, dy)
+	End Method
+
+
+	Method OnParentReposition(parent:TGUIObject, dx:Float, dy:Float)
+		Super.OnParentReposition(parent,dx,dy)
+		If caption Then caption.OnParentReposition(Self, dx, dy)
 	End Method
 End Type
